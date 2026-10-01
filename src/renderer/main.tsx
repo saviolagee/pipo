@@ -14,4 +14,6 @@ createRoot(document.getElementById('root') as HTMLElement).render(
 // Acesso aos stores para o painel de debug e scripts de validação visual.
 import { useUi } from './store/ui';
 import { useData } from './store/data';
-(window as unknown as { __pipo: unknown }).__pipo = { ui: useUi, data: useData };
+import { useChat } from './store/chat';
+import { preloadWhisper, whisperListeners } from './voice/recorder';
+(window as unknown as { __pipo: unknown }).__pipo = { ui: useUi, data: useData, chat: useChat, voice: { preloadWhisper, whisperListeners } };

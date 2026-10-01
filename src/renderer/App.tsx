@@ -21,6 +21,10 @@ import { DayReview } from './screens/DayReview';
 import { ChatScreen } from './screens/Chat';
 import { bindAgentEvents, useChat } from './store/chat';
 import { LocalAudio } from './components/LocalAudio';
+import { Toasts } from './components/Toast';
+import { DropZone, ingestDropped } from './screens/DropZone';
+import { QuickCapture } from './screens/QuickCapture';
+import type { IngestProgress } from '@shared/types';
 import { configureSfx, play } from './sound/sfx';
 import { useData } from './store/data';
 import { useUi } from './store/ui';
@@ -74,6 +78,9 @@ export function App(): React.JSX.Element {
   // No chat, cards de ação aparecem inline na conversa (seção 8.7).
   const overlayCards = ui.tab === 'chat' ? ui.cards.filter((c) => c.kind !== 'action') : ui.cards;
   const topCard = overlayCards[overlayCards.length - 1] ?? null;
+  const [ingest, setIngest] = useState<IngestProgress | null>(null);
+  const [swallowing, setSwallowing] = useState<string | null>(null);
+  const [clip, setClip] = useState<string | null>(null);
 
   useEffect(() => {
     if (settings) configureSfx(settings.volume, settings.muted);
@@ -129,6 +136,13 @@ export function App(): React.JSX.Element {
       api.on('tasks:changed', () => void useData.getState().refreshTasks()),
       api.on('stats:changed', (stats) => useData.getState().set({ stats })),
       api.on('activity:current', (activity) => useData.getState().set({ activity })),
+      api.on('toast:show', (toast) => useUi.getState().pushToast(toast)),
+      api.on('files:progress', (p) => setIngest(p.done && !p.error ? null : p)),
+      api.on('clipboard:candidate', ({ text }) => {
+        // Carinha curiosa + botão "virar tarefa?" na pill por 5s (sem expandir).
+        setClip(text);
+        setTimeout(() => setClip((c) => (c === text ? null : c)), 5000);
+      }),
     ];
     const onKey = (e: KeyboardEvent): void => {
       if (e.ctrlKey && e.altKey && e.key.toLowerCase() === 'd') useUi.setState((s) => ({ debugOpen: !s.debugOpen }));
@@ -153,6 +167,57 @@ export function App(): React.JSX.Element {
     useUi.getState().pin('onboarding', onboarding);
     if (onboarding) useUi.getState().setExpanded(true);
   }, [onboarding]);
+
+  // Arrastar arquivo sobre o notch (mesmo colapsado) abre a aba ＋ com a zona de drop [Ref 7, 8].
+  useEffect(() => {
+    let depth = 0;
+    const hasFiles = (e: DragEvent): boolean => !!e.dataTransfer && Array.from(e.dataTransfer.types).includes('Files');
+    const enter = (e: DragEvent): void => {
+      if (!hasFiles(e)) return;
+      depth++;
+      e.preventDefault();
+      useUi.setState({ dragOver: true, expanded: true, tab: 'add', captureMode: false });
+      void api.invoke('window:setInteractive', true);
+    };
+    const over = (e: DragEvent): void => {
+      if (hasFiles(e)) e.preventDefault();
+    };
+    const leave = (e: DragEvent): void => {
+      if (!hasFiles(e)) return;
+      depth = Math.max(0, depth - 1);
+      if (depth === 0) useUi.setState({ dragOver: false });
+    };
+    const drop = async (e: DragEvent): Promise<void> => {
+      e.preventDefault();
+      depth = 0;
+      useUi.setState({ dragOver: false });
+      const files = e.dataTransfer?.files;
+      if (!files?.length) return;
+      setSwallowing(files[0].name);
+      play('gulp');
+      setTimeout(() => setSwallowing(null), 500);
+      useUi.getState().pin('ingest', true);
+      const { attachments, error } = await ingestDropped(files);
+      useUi.getState().pin('ingest', false);
+      if (error) useUi.getState().pushToast({ id: `err:${Date.now()}`, text: error });
+      if (attachments.length) {
+        // Vai para o chat com o arquivo como chip e o input focado.
+        useChat.getState().addAttachments(attachments);
+        useUi.getState().setTab('chat');
+      }
+    };
+    window.addEventListener('dragenter', enter);
+    window.addEventListener('dragover', over);
+    window.addEventListener('dragleave', leave);
+    const onDrop = (e: DragEvent): void => void drop(e);
+    window.addEventListener('drop', onDrop);
+    return () => {
+      window.removeEventListener('drop', onDrop);
+      window.removeEventListener('dragenter', enter);
+      window.removeEventListener('dragover', over);
+      window.removeEventListener('dragleave', leave);
+    };
+  }, []);
 
   const onMascotClick = useCallback((e: React.MouseEvent): void => {
     e.stopPropagation();
@@ -206,6 +271,9 @@ export function App(): React.JSX.Element {
         return <DayReview />;
       case 'chat':
         return <ChatScreen mood={mascot.mood} accessories={mascot.accessories} state={mascot.state} />;
+      case 'add':
+        if (ui.dragOver || ingest || swallowing) return <DropZone progress={ingest} swallowing={swallowing} />;
+        return <QuickCapture key={ui.captureMode ? 'cap' : 'add'} autoVoice={ui.voiceRequested} />;
       default:
         if (focus?.phase === 'ritual') return <RitualCheck />;
         if (focus) return <FocusCard focus={focus} state={mascot.state} badge={mascot.badge} mood={mascot.mood} accessories={mascot.accessories} onMascotClick={onMascotClick} bump={bump} />;
@@ -232,9 +300,26 @@ export function App(): React.JSX.Element {
       <Notch
         glow={mascot.glow}
         onHoverChange={setHovered}
-        topBar={onboarding ? null : <TopBar />}
+        topBar={onboarding || (ui.tab === 'add' && ui.captureMode && !ui.dragOver) ? null : <TopBar />}
         fixedHeight={!onboarding && !topCard && ui.tab === 'chat' ? 384 : null}
-        pill={<Pill state={mascot.state} badge={mascot.badge} mood={mascot.mood} accessories={mascot.accessories} clipboardCandidate={null} />}
+        pill={<Pill state={mascot.state} badge={mascot.badge} mood={mascot.mood} accessories={mascot.accessories} clipboardCandidate={
+              clip ? (
+                <button
+                  type="button"
+                  className="rounded-full bg-white px-[10px] py-[2px] text-[11px] font-medium text-black"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    const text = clip;
+                    setClip(null);
+                    void api.invoke('capture:clipboardToTask', text);
+                  }}
+                >
+                  {t.capture.clipboardAsk}
+                </button>
+              ) : null
+            }
+          />
+        }
       >
         <div className="relative">
           {screen}
@@ -243,6 +328,7 @@ export function App(): React.JSX.Element {
       </Notch>
       <AnimatePresence>{ui.debugOpen && <DebugPanel />}</AnimatePresence>
       <LocalAudio />
+      <Toasts top={ui.expanded ? 260 : 32} />
     </>
   );
 }

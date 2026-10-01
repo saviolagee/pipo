@@ -43,6 +43,7 @@ export interface InvokeHandlers {
   'app:exportData': () => string | null;
   'app:wipeData': () => void;
   'app:macPermissions': () => { accessibility: boolean; screen: boolean };
+  'app:askMic': () => boolean;
 
   'window:setInteractive': (interactive: boolean) => void;
   'window:setExpanded': (expanded: boolean) => void;

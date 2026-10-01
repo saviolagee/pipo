@@ -58,6 +58,23 @@ export const t = {
     footer: (planned: string, goal: string, meetings: string) => `Hoje: ${planned} planejadas · ${goal} de meta · ${meetings} em reuniões`,
     overGoal: 'passou da meta',
   },
+  capture: {
+    placeholder: 'Anotar… (ex.: ligar pro Leo sexta 10h)',
+    hint: 'Enter salva · segure o microfone para falar',
+    listening: 'Ouvindo… solte para salvar',
+    transcribing: 'Transcrevendo no seu computador…',
+    downloadingModel: (p: number) => `Baixando o modelo de voz (só na primeira vez)… ${p}%`,
+    saving: 'Anotando…',
+    speak: 'Segurar para falar',
+    stop: 'Parar de gravar',
+    clipboardAsk: 'virar tarefa?',
+  },
+  drop: {
+    title: 'Solte seus arquivos',
+    kinds: ['PDF', 'Imagens', 'Texto', 'Docs'],
+    reading: (name: string, p: number) => `Lendo ${name} · ${p}%`,
+    hint: 'Ou arraste um arquivo até o Pipo, mesmo com ele fechado.',
+  },
   chat: {
     placeholder: 'Continuar…',
     send: 'Enviar',

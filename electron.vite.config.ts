@@ -25,7 +25,14 @@ export default defineConfig({
     resolve: { alias },
   },
   renderer: {
-    resolve: { alias: { ...alias, '@renderer': resolve(__dirname, 'src/renderer') } },
+    resolve: {
+      alias: {
+        ...alias,
+        '@renderer': resolve(__dirname, 'src/renderer'),
+        // WASM do onnxruntime servido localmente (o transformers.js buscaria num CDN).
+        '@ort-dist': resolve(__dirname, 'node_modules/onnxruntime-web/dist'),
+      },
+    },
     plugins: [react(), tailwindcss()],
     worker: { format: 'es' },
   },

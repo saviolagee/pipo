@@ -17,6 +17,7 @@ import { registerActivity } from './activity/ipc';
 import { startScheduler } from './scheduler';
 import { registerAgentIpc } from './agent/service';
 import { registerDayFlows } from './agent/day-flows';
+import { registerCapture } from './capture';
 import { startMcpBridge } from './mcp/server';
 import { registerSystemIpc } from './system';
 import { nextSuggested, registerTasksIpc } from './tasks/ipc';
@@ -71,6 +72,7 @@ app.whenReady().then(() => {
   startMcpBridge();
   registerAgentIpc();
   registerDayFlows();
+  registerCapture();
   startScheduler();
   createNotchWindow();
   createTray();

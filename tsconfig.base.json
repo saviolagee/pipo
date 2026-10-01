@@ -15,7 +15,8 @@
     "baseUrl": ".",
     "paths": {
       "@shared/*": ["src/shared/*"],
-      "@renderer/*": ["src/renderer/*"]
+      "@renderer/*": ["src/renderer/*"],
+      "@ort-dist/*": ["node_modules/onnxruntime-web/dist/*"]
     }
   }
 }

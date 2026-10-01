@@ -11,6 +11,7 @@ import { useChat } from '../store/chat';
 import { useData } from '../store/data';
 import { useUi } from '../store/ui';
 import { AttentionCard } from './AttentionCard';
+import { useVoice } from '../voice/useVoice';
 
 const c = t.chat;
 
@@ -82,6 +83,7 @@ export function ChatScreen({ mood, accessories, state }: { mood: number; accesso
     setText('');
   };
 
+  const voice = useVoice((v) => submit(v));
   const empty = chat.messages.length === 0 && !chat.busy;
 
   return (
@@ -183,7 +185,14 @@ export function ChatScreen({ mood, accessories, state }: { mood: number; accesso
             aria-label={c.placeholder}
             className="h-full min-w-0 flex-1 bg-transparent text-[13px] outline-none placeholder:text-fg-3"
           />
-          <button type="button" aria-label={c.voice} onClick={() => useUi.setState({ voiceRequested: true, captureMode: false })} className="flex h-[28px] w-[28px] items-center justify-center rounded-full text-fg-2 hover:text-fg">
+          <button
+            type="button"
+            aria-label={c.voice}
+            aria-pressed={voice.state === 'recording'}
+            onClick={() => void voice.toggle()}
+            title={voice.error ?? undefined}
+            className={`flex h-[28px] w-[28px] items-center justify-center rounded-full ${voice.state === 'recording' ? 'bg-red-500 text-white' : 'text-fg-2 hover:text-fg'}`}
+          >
             <IconMic size={15} />
           </button>
           <button type="button" aria-label={c.send} disabled={!text.trim() || chat.busy} onClick={() => submit()} className="flex h-[28px] w-[28px] items-center justify-center rounded-full bg-white text-black disabled:opacity-40">
