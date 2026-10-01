@@ -31,7 +31,10 @@ export const TIMEZONE = 'America/Sao_Paulo';
 /** Registro de atividade (seção 9.5). */
 export const ACTIVITY = {
   pollMs: 5_000,
-  idleThresholdSec: 180,
+  /** Padrão: o tempo só conta com mouse/teclado em uso; parado há mais de 1 min, para de contar. */
+  idleThresholdSec: 60,
+  /** Opções em Configurações → Privacidade → Tempo ativo. */
+  idleOptionsSec: [30, 60, 120, 180],
 } as const;
 
 /** Orçamento por nível de presença (seção 7, tela 13). */

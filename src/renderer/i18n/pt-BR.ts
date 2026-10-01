@@ -379,6 +379,8 @@ export const t = {
       data: 'Dados',
     },
     saved: 'Salvo',
+    activeTime: 'Tempo ativo',
+    activeTimeHint: 'O tempo só conta enquanto você mexe no mouse ou no teclado. Parado por mais que isso, para de contar (vídeo rodando sem você mexer não conta; reunião conta).',
     agentModel: 'Modelo',
     agentModels: {
       sonnet: ['Sonnet', 'Padrão. Rápido e bom pra quase tudo.'],

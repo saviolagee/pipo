@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import type { Settings as SettingsT, UnlockableAccessory } from '@shared/types';
 import { Button } from '../components/Button';
 import { DaysSettings } from './DaysSettings';
+import { ACTIVITY } from '@shared/config';
 import { Chip, Label, Option, Slider, TagInput, TextField, YesNo } from '../components/Form';
 import { t } from '../i18n/pt-BR';
 import { api } from '../lib/api';
@@ -372,6 +373,16 @@ function PrivacyBlock({ settings, onPatch, onMsg }: { settings: SettingsT; onPat
         <div className="flex items-center gap-[10px] text-[12px] text-fg-2">
           {s.trackingPaused}
           <YesNo value={settings.privacy.trackingPaused} onChange={(trackingPaused) => void onPatch({ privacy: { ...settings.privacy, trackingPaused } })} />
+        </div>
+      </Block>
+      <Block title={s.activeTime}>
+        <p className="mb-[6px] text-[11.5px] text-fg-3">{s.activeTimeHint}</p>
+        <div className="flex gap-[6px]">
+          {ACTIVITY.idleOptionsSec.map((sec) => (
+            <Chip key={sec} on={(settings.activity?.idleAfterSec ?? ACTIVITY.idleThresholdSec) === sec} onClick={() => void onPatch({ activity: { idleAfterSec: sec } })}>
+              {sec < 60 ? `${sec}s` : `${sec / 60} min`}
+            </Chip>
+          ))}
         </div>
       </Block>
       <Block title={s.ignoredApps}>

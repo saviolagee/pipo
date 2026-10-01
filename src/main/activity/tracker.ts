@@ -74,7 +74,11 @@ async function poll(): Promise<void> {
     return publish();
   }
   const idleSec = fakeSource ? 0 : powerMonitor.getSystemIdleTime();
-  if (idleSec >= ACTIVITY.idleThresholdSec) {
+  // O tempo só conta com mouse/teclado em uso. Vídeo rodando sem mexer em nada não conta;
+  // reunião (Zoom, Meet, Teams…) conta mesmo parado.
+  const limit = s.activity?.idleAfterSec ?? ACTIVITY.idleThresholdSec;
+  const inMeeting = recorder.current()?.category === 'meeting';
+  if (idleSec >= limit && !inMeeting) {
     recorder.idle(now, now - idleSec * 1000);
     return publish();
   }

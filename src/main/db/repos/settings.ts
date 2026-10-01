@@ -1,10 +1,11 @@
-import { DEFAULT_DISTRACTIONS, DEFAULT_IGNORED_APPS, DEFAULT_SHORTCUTS } from '@shared/config';
+import { DEFAULT_DISTRACTIONS, DEFAULT_IGNORED_APPS, DEFAULT_SHORTCUTS, ACTIVITY } from '@shared/config';
 import { DEFAULT_AGENT } from '@shared/models';
 import type { Settings } from '@shared/types';
 import { db } from '../index';
 
 export const DEFAULT_SETTINGS: Settings = {
   agent: { ...DEFAULT_AGENT },
+  activity: { idleAfterSec: ACTIVITY.idleThresholdSec },
   volume: 0.6,
   muted: false,
   paused: false,
@@ -42,6 +43,7 @@ export function getSettings(): Settings {
     privacy: { ...DEFAULT_SETTINGS.privacy, ...s.privacy },
     reactions: { ...DEFAULT_SETTINGS.reactions, ...s.reactions },
     agent: { ...DEFAULT_SETTINGS.agent, ...s.agent },
+    activity: { ...DEFAULT_SETTINGS.activity, ...s.activity },
   };
 }
 

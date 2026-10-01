@@ -400,8 +400,14 @@ export interface AgentSettings {
   effort: AgentEffort;
 }
 
+export interface ActivitySettings {
+  /** Sem mouse/teclado por mais que isso, o tempo para de contar (vídeo parado não conta; reunião conta). */
+  idleAfterSec: number;
+}
+
 export interface Settings {
   agent: AgentSettings;
+  activity: ActivitySettings;
   volume: number;
   muted: boolean;
   paused: boolean;
