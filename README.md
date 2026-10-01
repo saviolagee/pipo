@@ -79,4 +79,4 @@ Tudo fica na máquina. Títulos de janela **não** vão para o Claude — só ag
 títulos crus apenas quando você pede explicitamente ("o que eu fiz ontem à tarde?"), com confirmação.
 Configurações → Privacidade: pausar o registro, apps ignorados, apagar histórico.
 
-A referência visual está em [docs/referencia-visual.md](docs/referencia-visual.md).
+A referência visual está em [docs/referencia-visual.md](docs/referencia-visual.md). Próximos passos: [docs/plano-v2.md](docs/plano-v2.md) (equipe de Pipos coloridos).
