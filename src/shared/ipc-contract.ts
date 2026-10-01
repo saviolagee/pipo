@@ -1,6 +1,6 @@
 // Contrato de IPC tipado. Main implementa `InvokeHandlers`; o renderer chama via `window.pipo.invoke`.
 import type { HolidayPrefs } from './holidays';
-import type { Pipo, PipoLive, PipoMemoryRule, PipoRun, PipoSummary, PipoTrigger, PipoVersion } from './pipos';
+import type { Pipo, PipoLive, PipoMemoryRule, PipoPlaybook, PipoRun, PipoRunStep, PipoSummary, PipoTrigger, PipoVersion } from './pipos';
 import type {
   ActivityBlock,
   DayKind,
@@ -142,6 +142,11 @@ export interface InvokeHandlers {
   'pipos:update': (id: number, patch: Partial<Pick<Pipo, 'name' | 'color' | 'accessory' | 'personality' | 'model' | 'effort' | 'paused' | 'runOnDaysOff'>>) => Pipo;
   'pipos:delete': (id: number) => void;
   'pipos:setSecret': (id: number, name: string, value: string | null) => string[];
+  'pipos:run': (id: number, opts?: { dryRun?: boolean; trigger?: string; input?: unknown }) => { runId: number | null };
+  'pipos:cancel': (runId: number) => boolean;
+  'pipos:runDetail': (runId: number) => { run: PipoRun; steps: PipoRunStep[] } | null;
+  'pipos:runs': (id: number) => PipoRun[];
+  'pipos:saveVersion': (id: number, playbook: PipoPlaybook, changelog: string) => PipoVersion;
 }
 
 export type InvokeChannel = keyof InvokeHandlers;
@@ -181,6 +186,9 @@ export interface MainEvents {
   'day:today': DayStatus | null;
   'pipos:changed': PipoSummary[];
   'pipos:live': PipoLive;
+  'pipos:runUpdate': { run: PipoRun; steps: PipoRunStep[] };
+  'pipos:handoff': { fromPipoId: number; toPipoId: number };
+  'ui:openPipoRun': { pipoId: number; runId: number };
 }
 
 export type MainEventName = keyof MainEvents;

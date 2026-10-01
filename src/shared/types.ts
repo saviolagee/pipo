@@ -292,6 +292,10 @@ export interface Card {
   body?: string;
   buttons: CardButton[];
   autoDismissMs?: number;
+  /** Card de um Pipo colorido: o mascote aparece na cor dele. */
+  pipoColor?: string;
+  /** Lista para aprovação em lote (carrossel). */
+  list?: Array<{ title: string; detail?: string }>;
 }
 
 export interface Toast {

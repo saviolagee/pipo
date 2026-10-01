@@ -192,6 +192,24 @@ export async function captureToTask(text: string, source: 'manual' | 'voice' | '
   return fallback();
 }
 
+/**
+ * Chamada direta ao modelo para os passos `agent` dos Pipos coloridos: prompt de sistema próprio,
+ * sem as ferramentas do Pipo branco, só leitura das pastas indicadas.
+ */
+export async function runRaw(o: { system: string; prompt: string; model: AgentModel; effort: AgentEffort; readDirs: string[]; signal: AbortSignal }): Promise<string> {
+  if (!agentAvailable()) throw new Error('O Claude não está disponível. Confira em Configurações → Integrações.');
+  let text = '';
+  let result: ProviderEvent | null = null;
+  for await (const e of provider().send({ prompt: o.prompt, systemPrompt: o.system, sessionId: null, mcpContext: 'raw', readDirs: o.readDirs, signal: o.signal, model: o.model, effort: o.effort, tools: 'none' })) {
+    if (e.type === 'delta') text += e.text;
+    else if (e.type === 'tool') text = '';
+    else if (e.type === 'done' || e.type === 'error') result = e;
+  }
+  if (!result) throw new Error('Sem resposta do Claude.');
+  if (result.type === 'error') throw new Error(result.message);
+  return (text || (result.type === 'done' ? result.text : '')).trim();
+}
+
 /** Ao iniciar foco numa tarefa sem passos, o agente propõe de 3 a 5 (card de ação, seção 9.3). */
 export async function proposeSubtasks(task: Task): Promise<void> {
   if (!agentAvailable()) return;

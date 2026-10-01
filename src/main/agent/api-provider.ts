@@ -17,9 +17,9 @@ const MAX_TOOL_ROUNDS = 12;
 /** Histórico por sessão (a API é sem estado). Mantido em memória enquanto o app está aberto. */
 const sessions = new Map<string, BetaMessageParam[]>();
 
-function readAttachment(path: string): string {
+function readAttachment(path: string, dirs: string[]): string {
   const full = resolve(path);
-  if (!full.startsWith(resolve(paths.files) + sep)) return 'Acesso negado: só arquivos anexados podem ser lidos.';
+  if (![paths.files, ...dirs].some((d) => full.startsWith(resolve(d) + sep))) return 'Acesso negado: só arquivos anexados podem ser lidos.';
   if (!/\.(txt|md|csv|json)$/i.test(full)) return 'Este provedor só lê anexos de texto; PDFs e imagens precisam do Claude Code.';
   return readFileSync(full, 'utf8').slice(0, 200_000);
 }
@@ -37,7 +37,7 @@ export class AnthropicApiProvider implements AgentProvider {
     const history = sessions.get(sessionId) ?? [];
     history.push({ role: 'user', content: opts.prompt });
     const tools: BetaToolUnion[] = [
-      ...toolDescriptors().map((t) => ({ name: t.name, description: t.description, input_schema: t.inputSchema as BetaTool['input_schema'], eager_input_streaming: true })),
+      ...(opts.tools === 'none' ? [] : toolDescriptors()).map((t) => ({ name: t.name, description: t.description, input_schema: t.inputSchema as BetaTool['input_schema'], eager_input_streaming: true })),
       {
         name: 'read_attachment',
         description: 'Lê um arquivo anexado (texto) pelo caminho absoluto.',
@@ -94,7 +94,7 @@ export class AnthropicApiProvider implements AgentProvider {
             continue;
           }
           if (block.name === 'read_attachment') {
-            results.push({ type: 'tool_result', tool_use_id: block.id, content: readAttachment(String((input as { path?: unknown }).path ?? '')) });
+            results.push({ type: 'tool_result', tool_use_id: block.id, content: readAttachment(String((input as { path?: unknown }).path ?? ''), opts.readDirs) });
             continue;
           }
           const r = await callTool(block.name, input as Record<string, unknown>, ctx);

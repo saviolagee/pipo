@@ -15,8 +15,14 @@ import {
   listTriggers,
   listVersions,
   updatePipo,
+  addVersion,
+  getRun,
+  runSteps,
+  deleteOldRuns,
 } from './repo';
 import { deletePipoSecrets, secretNames, setPipoSecret } from './secrets';
+import { startRun } from './deps';
+import { cancelRun } from './runner';
 
 /** Preenchido pelos gatilhos (Fase 19): próxima execução agendada. */
 export const pipoHooks: { nextRunAt: (pipoId: number) => string | null } = { nextRunAt: () => null };
@@ -57,6 +63,21 @@ export function registerPiposIpc(): void {
     clearLive(id);
     pipesChanged();
   });
+  handle('pipos:run', async (id, opts) => ({ runId: await startRun(id, { dryRun: opts?.dryRun, trigger: opts?.trigger ?? 'manual', input: opts?.input }) }));
+  handle('pipos:cancel', (runId) => cancelRun(runId));
+  handle('pipos:runDetail', (runId) => {
+    const run = getRun(runId);
+    return run ? { run, steps: runSteps(runId) } : null;
+  });
+  handle('pipos:runs', (id) => listRuns(id, 50));
+  handle('pipos:saveVersion', (id, playbook, changelog) => {
+    const v = addVersion(id, playbook, changelog);
+    pipesChanged();
+    return v;
+  });
+  // Execuções antigas (mais de 90 dias) saem do histórico.
+  deleteOldRuns(90);
+
   handle('pipos:setSecret', (id, name, value) => {
     const p = getPipo(id);
     if (!p) throw new Error('Pipo não encontrado.');

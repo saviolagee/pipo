@@ -10,6 +10,8 @@ export const GOOGLE_SCOPES = [
   'https://www.googleapis.com/auth/calendar.events',
   'https://www.googleapis.com/auth/calendar.readonly',
   'https://www.googleapis.com/auth/gmail.readonly',
+  // Planilhas: passo `sheet` dos Pipos coloridos (V2). Quem conectou antes precisa reconectar.
+  'https://www.googleapis.com/auth/spreadsheets',
 ];
 
 interface TokenResponse {

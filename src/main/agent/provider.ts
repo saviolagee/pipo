@@ -22,6 +22,8 @@ export interface SendOptions {
   signal: AbortSignal;
   model: AgentModel;
   effort: AgentEffort;
+  /** 'none': sem as ferramentas do Pipo (passos `agent` dos Pipos coloridos: só leem arquivos). */
+  tools?: 'pipo' | 'none';
 }
 
 export interface AgentProvider {

@@ -11,7 +11,7 @@ import type { AgentProvider, ProviderEvent, SendOptions } from './provider';
 /** Ferramentas embutidas bloqueadas: o agente só usa as ferramentas do Pipo e lê anexos. */
 const DISALLOWED = ['Bash', 'Edit', 'Write', 'MultiEdit', 'NotebookEdit', 'WebFetch', 'WebSearch', 'Task', 'Agent', 'Glob', 'Grep', 'PowerShell'];
 
-export function buildArgs(opts: { systemPromptFile: string; sessionId: string | null; readDirs: string[]; mcpConfig: string; model?: AgentModel; effort?: AgentEffort }): string[] {
+export function buildArgs(opts: { systemPromptFile: string; sessionId: string | null; readDirs: string[]; mcpConfig: string | null; model?: AgentModel; effort?: AgentEffort }): string[] {
   const args = [
     '-p',
     '--output-format',
@@ -20,13 +20,13 @@ export function buildArgs(opts: { systemPromptFile: string; sessionId: string | 
     '--include-partial-messages',
     '--system-prompt-file',
     opts.systemPromptFile,
-    '--mcp-config',
-    opts.mcpConfig,
+    ...(opts.mcpConfig ? ['--mcp-config', opts.mcpConfig] : []),
+    // Estrito: nunca carrega os servidores MCP do usuário, só o do Pipo (ou nenhum).
     '--strict-mcp-config',
     '--tools',
     'Read',
     '--allowedTools',
-    'mcp__pipo__*',
+    opts.mcpConfig ? 'mcp__pipo__*' : 'Read',
     '--disallowedTools',
     DISALLOWED.join(','),
     '--permission-mode',
@@ -92,7 +92,7 @@ export class ClaudeCodeProvider implements AgentProvider {
     }
     const spFile = join(paths.workspace, `.system-prompt-${opts.mcpContext}.md`);
     writeFileSync(spFile, opts.systemPrompt);
-    const args = buildArgs({ systemPromptFile: spFile, sessionId: opts.sessionId, readDirs: opts.readDirs, mcpConfig: mcpConfigPath(), model: opts.model, effort: opts.effort });
+    const args = buildArgs({ systemPromptFile: spFile, sessionId: opts.sessionId, readDirs: opts.readDirs, mcpConfig: opts.tools === 'none' ? null : mcpConfigPath(), model: opts.model, effort: opts.effort });
     // O shim MCP herda esta variável e informa ao app de qual conversa veio a chamada.
     const env: NodeJS.ProcessEnv = { ...claudeEnv(), PIPO_MCP_CONTEXT: opts.mcpContext };
 

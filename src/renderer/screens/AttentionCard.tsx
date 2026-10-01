@@ -65,7 +65,7 @@ export function AttentionCard({ card, mood, accessories }: { card: Card; mood: n
       aria-label={card.label}
     >
       <div className="flex w-[84px] shrink-0 items-center justify-center">
-        <Mascot state={card.mascot} badge={badge} mood={mood} accessories={accessories} size={72} />
+        <Mascot state={card.mascot} badge={badge} mood={mood} accessories={card.pipoColor ? [] : accessories} size={72} color={card.pipoColor} />
       </div>
       <div className="min-w-0 flex-1">
         {card.label && (

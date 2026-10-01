@@ -1,9 +1,10 @@
 // Regras do orçamento de interrupções (seção 12). Funções puras, testadas em tests/interruptions.test.ts.
 
-export type InterruptionType = 'deadline' | 'distraction' | 'goal' | 'unstuck' | 'context' | 'pattern';
+export type InterruptionType = 'deadline' | 'distraction' | 'goal' | 'unstuck' | 'context' | 'pipo' | 'pattern';
 
-/** Prioridade: prazo vencendo > distração > meta > destravar > contexto > padrão. */
-export const PRIORITY: Record<InterruptionType, number> = { deadline: 6, distraction: 5, goal: 4, unstuck: 3, context: 2, pattern: 1 };
+/** Prioridade: prazo vencendo > distração > meta > destravar > contexto > Pipo colorido > padrão. */
+/** Relatório final de um Pipo colorido agendado fica entre contexto e padrão. */
+export const PRIORITY: Record<InterruptionType, number> = { deadline: 7, distraction: 6, goal: 5, unstuck: 4, context: 3, pipo: 2, pattern: 1 };
 
 export const MIN_GAP_MS = 20 * 60_000;
 export const SILENCE_AFTER_DECLINES = 3;
