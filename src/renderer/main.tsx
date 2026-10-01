@@ -16,5 +16,6 @@ createRoot(document.getElementById('root') as HTMLElement).render(<StrictMode>{i
 import { useUi } from './store/ui';
 import { useData } from './store/data';
 import { useChat } from './store/chat';
+import { usePipos } from './store/pipos';
 import { preloadWhisper, whisperListeners } from './voice/recorder';
-(window as unknown as { __pipo: unknown }).__pipo = { ui: useUi, data: useData, chat: useChat, voice: { preloadWhisper, whisperListeners } };
+(window as unknown as { __pipo: unknown }).__pipo = { ui: useUi, data: useData, chat: useChat, pipos: usePipos, voice: { preloadWhisper, whisperListeners } };

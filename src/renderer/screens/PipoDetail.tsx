@@ -149,6 +149,10 @@ export function PipoDetail({ p, onBack }: { p: PipoSummary; onBack: () => void }
   const [d, setD] = useState<Detail | null>(null);
   const [msg, setMsg] = useState<string | null>(null);
   const [confirmDelete, setConfirmDelete] = useState(false);
+  const [events, setEvents] = useState<Array<{ id: number; type: 'email_label' | 'folder' | 'meeting_end' | 'webhook'; label: string; lastFiredAt: string | null }>>([]);
+  useEffect(() => {
+    void api.invoke('pipos:events', p.id).then(setEvents);
+  }, [p.id]);
   const openRunId = usePipos((s) => s.openRunId);
   const team = usePipos((s) => s.list);
   const color = PIPO_COLORS[p.color];
@@ -229,6 +233,9 @@ export function PipoDetail({ p, onBack }: { p: PipoSummary; onBack: () => void }
         <Button size="sm" variant="tertiary" disabled={!p.activeVersion} onClick={() => void act(() => api.invoke('pipos:saveModel', p.id), tt.savedModel)}>
           {tt.saveModel}
         </Button>
+        <Button size="sm" variant="tertiary" disabled={!p.activeVersion} onClick={() => void act(async () => { const path = await api.invoke('pipos:exportFile', p.id); if (path) setMsg(tt.exported); })}>
+          {tt.exportPipo}
+        </Button>
         <span className="flex-1" />
         {confirmDelete ? (
           <>
@@ -282,6 +289,23 @@ export function PipoDetail({ p, onBack }: { p: PipoSummary; onBack: () => void }
                 );
               })}
           </Section>
+          {events.length > 0 && (
+            <Section title={tt.events}>
+              {events.map((ev) => (
+                <div key={ev.id} className="flex items-center gap-[6px] text-[11.5px] text-fg-2">
+                  <span className="shrink-0 text-fg-3">{tt.eventType[ev.type]}</span>
+                  <span className="mono min-w-0 flex-1 truncate" title={ev.label}>
+                    {ev.label}
+                  </span>
+                  {ev.type === 'webhook' && (
+                    <button type="button" className="text-fg-3 hover:text-fg" onClick={() => void navigator.clipboard.writeText(ev.label).then(() => setMsg(tt.copied))}>
+                      {tt.copy}
+                    </button>
+                  )}
+                </div>
+              ))}
+            </Section>
+          )}
           <AccessoryPicker p={p} />
         </div>
         <div>
@@ -300,19 +324,38 @@ export function PipoDetail({ p, onBack }: { p: PipoSummary; onBack: () => void }
             </div>
           </Section>
           <Section title={tt.memory}>
-            {(d?.memory.length ?? 0) === 0 ? (
-              <p className="text-[12px] text-fg-3">{tt.noMemory}</p>
-            ) : (
-              d?.memory.map((m) => (
-                <div key={m.id} className="group flex items-center gap-[6px] text-[12px] text-fg">
-                  <span className="text-fg-3">•</span>
-                  <span className="min-w-0 flex-1 truncate">{m.rule}</span>
-                  <button type="button" aria-label={t.common.remove} className="opacity-0 group-hover:opacity-100" onClick={() => void api.invoke('pipos:deleteMemory', m.id).then(reload)}>
-                    <IconX size={9} />
-                  </button>
-                </div>
-              ))
-            )}
+            {(d?.memory.length ?? 0) === 0 && <p className="text-[12px] text-fg-3">{tt.noMemory}</p>}
+            {d?.memory.map((m) => (
+              <div key={m.id} className="group flex items-center gap-[6px] text-[12px] text-fg">
+                <span className="text-fg-3">•</span>
+                <input
+                  defaultValue={m.rule}
+                  aria-label={tt.memory}
+                  onBlur={(e) => e.target.value.trim() && e.target.value.trim() !== m.rule && void api.invoke('pipos:updateMemory', m.id, e.target.value).then(reload)}
+                  onKeyDown={(e) => e.key === 'Enter' && (e.target as HTMLInputElement).blur()}
+                  onFocus={() => useUi.getState().pin('memory', true)}
+                  className="min-w-0 flex-1 truncate rounded-[4px] bg-transparent px-[2px] outline-none focus:bg-white/[0.06]"
+                />
+                <button type="button" aria-label={t.common.remove} className="opacity-0 group-hover:opacity-100" onClick={() => void api.invoke('pipos:deleteMemory', m.id).then(reload)}>
+                  <IconX size={9} />
+                </button>
+              </div>
+            ))}
+            <input
+              placeholder={tt.addRule}
+              aria-label={tt.addRule}
+              onKeyDown={(e) => {
+                const el = e.target as HTMLInputElement;
+                if (e.key === 'Enter' && el.value.trim()) {
+                  void api.invoke('pipos:addMemory', p.id, el.value.trim()).then(reload);
+                  el.value = '';
+                }
+              }}
+              onFocus={() => useUi.getState().pin('memory', true)}
+              onBlur={() => useUi.getState().pin('memory', false)}
+              className="mt-[4px] h-[24px] w-full rounded-[6px] px-[8px] text-[11.5px] outline-none placeholder:text-fg-3"
+              style={{ background: 'var(--bg-input)' }}
+            />
           </Section>
           <Section title={tt.secrets}>
             <p className="mono text-[11.5px] text-fg-2">{d?.secrets.length ? d.secrets.join(', ') : '—'}</p>

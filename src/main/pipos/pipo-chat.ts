@@ -6,6 +6,7 @@ import { promptHooks } from '../agent/service';
 import { addMessage, createConversation, getConversation } from '../db/repos/conversations';
 import { getProfile } from '../db/repos/profile';
 import { getKV, setKV } from '../db/repos/settings';
+import { db } from '../db';
 import { handle } from '../ipc';
 import { registerTools, type ToolCtx } from '../mcp/tools';
 import { builderHooks } from './builder-tools';
@@ -146,6 +147,14 @@ export function registerPipoChat(): void {
     const id = conversationOwner(conversationId);
     const p = id ? getPipo(id) : null;
     return p ? { id: p.id, name: p.name, slug: p.slug, color: PIPO_COLORS[p.color], accessory: p.accessory } : null;
+  });
+  handle('pipos:addMemory', (pipoId, rule) => {
+    addMemory(pipoId, rule, 'manual');
+    pipesChanged();
+  });
+  handle('pipos:updateMemory', (id, rule) => {
+    db().run('UPDATE pipo_memory SET rule = ? WHERE id = ?', rule.trim(), id);
+    pipesChanged();
   });
   handle('pipos:deleteMemory', (id) => {
     deleteMemory(id);

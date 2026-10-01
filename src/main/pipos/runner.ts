@@ -12,10 +12,15 @@ import { maskSecrets, pipoSecrets } from './secrets';
 import { runHttp, runMcp, runScript, runSheet, StepError, type StepEnv } from './steps';
 
 export type ConfirmAnswer = 'yes' | 'no' | 'always' | 'timeout';
+/** Aprovação em lote: os itens que ficaram (com as edições do usuário). */
+export interface ConfirmResult {
+  answer: ConfirmAnswer;
+  items?: unknown[];
+}
 
 export interface RunnerDeps {
   agent: (o: { system: string; prompt: string; model: AgentModel; effort: AgentEffort; readDirs: string[]; signal: AbortSignal }) => Promise<string>;
-  confirm: (o: { pipo: Pipo; runId: number; stepKey: string; title: string; message: string; preview: string | null; list: unknown[] | null }) => Promise<ConfirmAnswer>;
+  confirm: (o: { pipo: Pipo; runId: number; stepKey: string; title: string; message: string; preview: string | null; list: unknown[] | null }) => Promise<ConfirmAnswer | ConfirmResult>;
   notify: (o: { pipo: Pipo; title: string; body: string | null; final: boolean; run: PipoRun | null; trigger: string }) => void | Promise<void>;
   gfetch: <T>(url: string, init?: RequestInit) => Promise<T>;
   fetch: typeof fetch;
@@ -175,7 +180,8 @@ export async function execute(req: RunRequest, deps: RunnerDeps, onStart: (runId
     setLive(pipo.id, 'waiting', run.id, step.title);
     setStep(run.id, step.key, { status: 'waiting' });
     deps.update(run.id);
-    const a = await deps.confirm({ pipo, runId: run.id, stepKey: step.key, title: step.title, message: `Vou ${step.title.charAt(0).toLowerCase()}${step.title.slice(1)}. Pode?`, preview: null, list: null });
+    const r = await deps.confirm({ pipo, runId: run.id, stepKey: step.key, title: step.title, message: `Vou ${step.title.charAt(0).toLowerCase()}${step.title.slice(1)}. Pode?`, preview: null, list: null });
+    const a = typeof r === 'string' ? r : r.answer;
     if (a === 'always') setPermission(pipo.id, step.key, true, null);
     setLive(pipo.id, 'working', run.id, step.title);
     return a === 'yes' || a === 'always';
@@ -207,12 +213,16 @@ export async function execute(req: RunRequest, deps: RunnerDeps, onStart: (runId
         setLive(pipo.id, 'waiting', run.id, step.title);
         setStep(run.id, step.key, { status: 'waiting' });
         deps.update(run.id);
-        const a = await deps.confirm({ pipo, runId: run.id, stepKey: step.key, title: step.title, message, preview, list });
+        const r = await deps.confirm({ pipo, runId: run.id, stepKey: step.key, title: step.title, message, preview, list });
+        const a = typeof r === 'string' ? r : r.answer;
         setLive(pipo.id, 'working', run.id, step.title);
         if (a === 'always') setPermission(pipo.id, step.key, true, list ? Math.max(list.length, 1) : null);
         if (a !== 'yes' && a !== 'always') throw new CancelRun(a === 'timeout' ? 'Ninguém respondeu a confirmação.' : 'Você recusou a confirmação.');
         approvedInRun = true;
-        return { output: { aprovado: true } };
+        // Lote: os próximos passos usam {{passos.<chave>.saida.itens}} (só os aprovados, já editados).
+        const items = typeof r === 'string' ? list : (r.items ?? list);
+        if (list && items && !items.length) throw new CancelRun('Você pulou todos os itens.');
+        return { output: list ? { aprovado: true, itens: items, pulados: list.length - (items?.length ?? 0) } : { aprovado: true } };
       }
       case 'branch':
         if (evaluate(step.if, ctx)) return { output: { condicao: true }, jump: step.then === 'end' ? 'end' : step.then.replace(/^goto:/, '') };

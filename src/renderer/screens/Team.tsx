@@ -15,6 +15,20 @@ import { useUi } from '../store/ui';
 
 const tt = t.team;
 
+/** Importa um .pipo e já abre a criação a partir dele (pede as chaves e ensaia antes de contratar). */
+export async function importPipoFile(): Promise<void> {
+  try {
+    const r = await api.invoke('pipos:importFile', null);
+    if (!r) return;
+    const d = await api.invoke('pipos:startDraft', { fromModelId: r.modelId });
+    useUi.getState().setTab('chat');
+    await useChat.getState().openConversation(d.conversationId);
+    await useChat.getState().send(tt.importedMsg(r.name, r.secrets));
+  } catch (e) {
+    useUi.getState().pushToast({ id: `imp:${Date.now()}`, text: (e instanceof Error ? e.message : String(e)).replace(/^Error invoking remote method '[^']+': (Error: )?/, ''), durationMs: 6000 });
+  }
+}
+
 export function startCreatePipo(): void {
   useUi.getState().setTab('chat');
   useChat.getState().newConversation();
@@ -182,9 +196,14 @@ export function TeamScreen(): React.JSX.Element {
         <>
           <div className="flex items-center justify-between px-[4px] pb-[8px]">
             <span className="text-[11px] font-medium uppercase tracking-[0.04em] text-fg-3">{tt.title(list.length)}</span>
-            <Button size="sm" onClick={startCreatePipo}>
-              + {tt.create}
-            </Button>
+            <span className="flex gap-[6px]">
+              <Button size="sm" variant="tertiary" onClick={() => void importPipoFile()}>
+                {tt.importPipo}
+              </Button>
+              <Button size="sm" onClick={startCreatePipo}>
+                + {tt.create}
+              </Button>
+            </span>
           </div>
           {pending && <LinkChooser list={list} pending={pending} onDone={reloadEdges} />}
           <div className="scroll-thin min-h-0 flex-1 overflow-y-auto">

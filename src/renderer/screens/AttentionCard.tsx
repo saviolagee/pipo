@@ -23,6 +23,101 @@ export function respondCard(card: Card, buttonId: string): void {
   localHandlers.delete(card.id);
 }
 
+/** Aprovação em lote: um item por vez, ‹ ›, pular, editar o texto e aprovar o resto. */
+function BatchCarousel({ card }: { card: Card }): React.JSX.Element {
+  const items = card.list ?? [];
+  const [i, setI] = useState(0);
+  const [skip, setSkip] = useState<Set<number>>(new Set());
+  const [edits, setEdits] = useState<Record<number, string>>({});
+  const [editing, setEditing] = useState(false);
+  const it = items[i];
+  const kept = items.length - skip.size;
+  const go = (d: number): void => {
+    setEditing(false);
+    setI((v) => Math.max(0, Math.min(items.length - 1, v + d)));
+  };
+  const approve = (): void => {
+    const decisions = items.map((_, idx) => ({ index: idx, keep: !skip.has(idx), ...(edits[idx] !== undefined ? { detail: edits[idx] } : {}) }));
+    useUi.getState().dropCard(card.id);
+    void api.invoke('cards:respondBatch', card.id, decisions);
+  };
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent): void => {
+      const tag = (e.target as HTMLElement | null)?.tagName;
+      if (tag === 'TEXTAREA' || tag === 'INPUT') return;
+      if (e.key === 'ArrowRight') go(1);
+      if (e.key === 'ArrowLeft') go(-1);
+      if (e.key.toLowerCase() === 'y' && kept > 0) approve();
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  });
+  if (!it) return <></>;
+  return (
+    <div className="mt-[8px]">
+      <div className="rounded-[10px] px-[12px] py-[8px]" style={{ background: 'rgba(255,255,255,0.05)', opacity: skip.has(i) ? 0.45 : 1 }}>
+        <div className="flex items-center gap-[8px]">
+          <span className="mono text-[11px] text-fg-3">
+            {i + 1}/{items.length}
+          </span>
+          <span className={`min-w-0 flex-1 truncate text-[12.5px] ${skip.has(i) ? 'text-fg-3 line-through' : 'text-fg'}`}>{it.title}</span>
+          {edits[i] !== undefined && <span className="text-[10.5px] text-fg-3">{t.team.batchEdited}</span>}
+        </div>
+        {editing ? (
+          <textarea
+            autoFocus
+            value={edits[i] ?? it.detail ?? ''}
+            onChange={(e) => setEdits((x) => ({ ...x, [i]: e.target.value }))}
+            onFocus={() => useUi.getState().pin('batch', true)}
+            onBlur={() => useUi.getState().pin('batch', false)}
+            rows={4}
+            className="scroll-thin mt-[6px] w-full resize-none rounded-[8px] px-[10px] py-[6px] text-[12px] text-fg outline-none"
+            style={{ background: 'var(--bg-input)' }}
+          />
+        ) : (
+          (edits[i] ?? it.detail) && <div className="scroll-thin mt-[4px] max-h-[84px] overflow-y-auto whitespace-pre-line text-[12px] text-fg-2">{edits[i] ?? it.detail}</div>
+        )}
+      </div>
+      <div className="mt-[8px] flex items-center gap-[6px]">
+        <Button size="sm" variant="tertiary" onClick={() => go(-1)} disabled={i === 0} aria-label={t.team.batchPrev}>
+          ‹
+        </Button>
+        <Button size="sm" variant="tertiary" onClick={() => go(1)} disabled={i === items.length - 1} aria-label={t.team.batchNext}>
+          ›
+        </Button>
+        <Button
+          size="sm"
+          onClick={() =>
+            setSkip((s) => {
+              const n = new Set(s);
+              if (n.has(i)) n.delete(i);
+              else n.add(i);
+              return n;
+            })
+          }
+        >
+          {skip.has(i) ? t.team.batchInclude : t.team.batchSkip}
+        </Button>
+        {it.detail !== undefined && (
+          <Button size="sm" onClick={() => setEditing((v) => !v)}>
+            {editing ? t.team.batchDone : t.team.batchEdit}
+          </Button>
+        )}
+      </div>
+      <div className="mt-[6px] flex items-center justify-end gap-[6px]">
+        {card.buttons.map((b) => (
+          <Button key={b.id} size="sm" variant={b.variant} kbd={b.kbd} onClick={() => respondCard(card, b.id)}>
+            {b.label}
+          </Button>
+        ))}
+        <Button size="sm" variant="primary" kbd="Y" disabled={kept === 0} onClick={approve}>
+          {t.team.batchApprove(kept)}
+        </Button>
+      </div>
+    </div>
+  );
+}
+
 /** Campo seguro: o valor vai direto para o cofre do Pipo (main), nunca para o chat/agente. */
 function SecretField({ card }: { card: Card }): React.JSX.Element {
   const [value, setValue] = useState('');
@@ -118,7 +213,8 @@ export function AttentionCard({ card, mood, accessories }: { card: Card; mood: n
           </div>
         )}
         {big && <div className="mt-[6px] text-[15px] first:mt-0 font-semibold leading-snug text-fg">{card.title}</div>}
-        {card.list && card.list.length > 0 && (
+        {card.kind === 'pipo_batch' && <BatchCarousel card={card} />}
+        {card.kind !== 'pipo_batch' && card.list && card.list.length > 0 && (
           <div className="scroll-thin mt-[8px] flex max-h-[148px] flex-col gap-[3px] overflow-y-auto pr-[4px]">
             {card.list.map((item, i) => (
               <div key={i} className="rounded-[8px] px-[10px] py-[5px]" style={{ background: 'rgba(255,255,255,0.05)' }}>
@@ -130,7 +226,7 @@ export function AttentionCard({ card, mood, accessories }: { card: Card; mood: n
         )}
         {card.body && <div className={`${big ? 'mt-[2px]' : 'mt-[4px]'} whitespace-pre-line text-[12px] text-fg-2`}>{card.body}</div>}
         {card.secret && <SecretField card={card} />}
-        {card.buttons.length > 0 && (
+        {card.kind !== 'pipo_batch' && card.buttons.length > 0 && (
           <div className="mt-[10px] flex flex-wrap items-center gap-[8px]">
             {card.buttons.map((b) => (
               <Button key={b.id} size="sm" variant={b.variant} kbd={b.kbd} onClick={() => respondCard(card, b.id)}>

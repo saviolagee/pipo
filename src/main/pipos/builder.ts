@@ -1,10 +1,12 @@
 // /criarpipo e /editarpipo: liga a conversa do chat ao rascunho, ao prompt do construtor e às
 // ferramentas; campo seguro de segredos; modelos próprios ("Salvar como modelo").
-import { EMPTY_PLAYBOOK, PIPO_COLORS, type PipoModel, type PipoPlaybook } from '@shared/pipos';
+import { EMPTY_PLAYBOOK, PIPO_COLORS, type PipoModel } from '@shared/pipos';
+import { readFileSync, writeFileSync } from 'node:fs';
+import { BrowserWindow, dialog } from 'electron';
+import { deleteModel, exportPipo, getModel, importPipo, insertModel, listModels, modelFromPipo, writeFiles } from './models';
 import { promptHooks } from '../agent/service';
 import { createConversation, getConversation } from '../db/repos/conversations';
 import { getProfile } from '../db/repos/profile';
-import { db } from '../db';
 import { dismissCard } from '../cards';
 import { handle } from '../ipc';
 import { buildBuilderPrompt } from './builder-prompt';
@@ -15,52 +17,7 @@ import { pipesChanged } from './ipc';
 import { setLive } from './live';
 import { activePlaybook, createPipo, getPipo, listPipos } from './repo';
 import { takeSecretCard } from './secret-cards';
-import { secretNames, setPipoSecret } from './secrets';
-
-interface ModelRow {
-  id: number;
-  name: string;
-  personality_json: string;
-  playbook_json: string;
-  color: PipoModel['color'];
-  accessory: PipoModel['accessory'];
-  secrets_json: string;
-  created_at: string;
-}
-
-const toModel = (r: ModelRow): PipoModel => ({
-  id: r.id,
-  name: r.name,
-  color: r.color,
-  accessory: r.accessory,
-  personality: JSON.parse(r.personality_json) as PipoModel['personality'],
-  playbook: { ...EMPTY_PLAYBOOK, ...(JSON.parse(r.playbook_json) as Partial<PipoPlaybook>) },
-  secrets: JSON.parse(r.secrets_json) as string[],
-  createdAt: r.created_at,
-});
-
-export function listModels(): PipoModel[] {
-  return db().all<ModelRow>('SELECT * FROM pipo_models ORDER BY id DESC').map(toModel);
-}
-
-export function getModel(id: number): PipoModel | null {
-  const r = db().get<ModelRow>('SELECT * FROM pipo_models WHERE id = ?', id);
-  return r ? toModel(r) : null;
-}
-
-export function insertModel(m: Omit<PipoModel, 'id' | 'createdAt'>): PipoModel {
-  const { lastId } = db().run(
-    'INSERT INTO pipo_models (name, personality_json, playbook_json, color, accessory, secrets_json, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)',
-    m.name,
-    JSON.stringify(m.personality),
-    JSON.stringify(m.playbook),
-    m.color,
-    m.accessory,
-    JSON.stringify(m.secrets),
-    new Date().toISOString(),
-  );
-  return getModel(lastId) as PipoModel;
-}
+import { setPipoSecret } from './secrets';
 
 export function registerBuilder(): void {
   registerBuilderTools();
@@ -106,8 +63,9 @@ export function registerBuilder(): void {
       const used = new Set(listPipos().map((x) => x.color));
       const color = used.has(m.color) ? ((Object.keys(PIPO_COLORS) as Array<PipoModel['color']>).find((c) => !used.has(c)) ?? m.color) : m.color;
       const p = createPipo({ name: m.name, color, accessory: m.accessory, personality: m.personality });
+      writeFiles(p.slug, m.files);
       setLive(p.id, 'draft');
-      const d = createDraft(conv.id, { pipoId: p.id, plan: m.playbook }, m.id);
+      const d = createDraft(conv.id, { pipoId: p.id, plan: m.playbook, triggers: { schedule: m.triggers.schedule, after: null, events: [] } }, m.id);
       emitDraft(d);
       pipesChanged();
       return { conversationId: conv.id, draftId: d.id, resumed: false, name: p.name };
@@ -136,14 +94,31 @@ export function registerBuilder(): void {
     return true;
   });
 
-  handle('pipos:saveModel', (id) => {
-    const p = getPipo(id);
-    const v = p ? activePlaybook(id) : null;
-    if (!p || !v) throw new Error('Só dá para salvar como modelo um Pipo já contratado.');
-    return insertModel({ name: p.name, color: p.color, accessory: p.accessory, personality: p.personality, playbook: v.playbook, secrets: secretNames(p.slug) });
-  });
+  handle('pipos:saveModel', (id) => insertModel(modelFromPipo(id)));
   handle('pipos:models', () => listModels());
-  handle('pipos:deleteModel', (id) => {
-    db().run('DELETE FROM pipo_models WHERE id = ?', id);
+  handle('pipos:deleteModel', (id) => deleteModel(id));
+  // .pipo: compartilhar um Pipo (sem segredos) e importar de outra pessoa.
+  handle('pipos:exportFile', async (id) => {
+    const p = getPipo(id);
+    if (!p) throw new Error('Pipo não encontrado.');
+    const content = exportPipo(id);
+    const win = BrowserWindow.getFocusedWindow();
+    const opts = { defaultPath: `${p.slug}.pipo`, filters: [{ name: 'Pipo', extensions: ['pipo'] }] };
+    const r = win ? await dialog.showSaveDialog(win, opts) : await dialog.showSaveDialog(opts);
+    if (r.canceled || !r.filePath) return null;
+    writeFileSync(r.filePath, content);
+    return r.filePath;
+  });
+  handle('pipos:importFile', async (path) => {
+    let file = path ?? null;
+    if (!file) {
+      const win = BrowserWindow.getFocusedWindow();
+      const opts = { filters: [{ name: 'Pipo', extensions: ['pipo', 'json'] }], properties: ['openFile' as const] };
+      const r = win ? await dialog.showOpenDialog(win, opts) : await dialog.showOpenDialog(opts);
+      if (r.canceled || !r.filePaths[0]) return null;
+      file = r.filePaths[0];
+    }
+    const m = importPipo(readFileSync(file, 'utf8'));
+    return { modelId: m.id, name: m.name, secrets: m.secrets };
   });
 }

@@ -6,7 +6,7 @@ import { usePinOnFocus } from '../components/Form';
 import { IconArrowUp, IconFile, IconMic, IconPlus, IconSpark, IconX } from '../components/Icons';
 import { t } from '../i18n/pt-BR';
 import { prettyModel } from '@shared/models';
-import { PIPO_COLORS, pipoAccessoryLayers, type DraftInfo } from '@shared/pipos';
+import { PIPO_COLORS, pipoAccessoryLayers, type DraftInfo, type PipoModel } from '@shared/pipos';
 import { usePipos } from '../store/pipos';
 import { IconChevron } from '../components/Icons';
 import { suggestCommands } from '../lib/commands';
@@ -158,6 +158,11 @@ export function ChatScreen({ mood, accessories, state }: { mood: number; accesso
   };
 
   const voice = useVoice((v) => submit(v));
+  const [models, setModels] = useState<PipoModel[]>([]);
+  const draftStage = chat.draft?.stage;
+  useEffect(() => {
+    if (draftStage === 'start') void api.invoke('pipos:models').then(setModels);
+  }, [draftStage]);
   const suggestions = suggestCommands(text);
   const [sel, setSel] = useState(0);
   useEffect(() => setSel(0), [text]);
@@ -262,6 +267,27 @@ export function ChatScreen({ mood, accessories, state }: { mood: number; accesso
         </div>
       </div>
 
+      {chat.draft?.stage === 'start' && !chat.busy && chat.messages.length <= 2 && models.length > 0 && (
+        <div className="flex flex-wrap items-center gap-[5px] pl-[66px] pt-[4px]">
+          <span className="text-[11px] text-fg-3">{t.team.myModels}:</span>
+          {models.map((m) => (
+            <button
+              key={m.id}
+              type="button"
+              onClick={async () => {
+                const d2 = await api.invoke('pipos:startDraft', { fromModelId: m.id });
+                await useChat.getState().openConversation(d2.conversationId);
+                await useChat.getState().send(t.team.importedMsg(m.name, m.secrets));
+              }}
+              className="flex items-center gap-[5px] rounded-full px-[10px] py-[4px] text-[11.5px] text-fg transition-colors hover:bg-white/[0.1]"
+              style={{ background: 'var(--bg-card-hover)' }}
+            >
+              <span className="h-[7px] w-[7px] rounded-[2px]" style={{ background: PIPO_COLORS[m.color] }} />
+              {m.name}
+            </button>
+          ))}
+        </div>
+      )}
       {chat.draft?.stage === 'start' && !chat.busy && chat.messages.length <= 2 && (
         <div className="flex flex-wrap gap-[5px] pl-[66px] pt-[4px]">
           {t.team.ideas.map((idea) => (

@@ -4,13 +4,14 @@ import { join } from 'node:path';
 import { PIPO_COLORS, type Pipo, type PipoRun } from '@shared/pipos';
 import { runRaw } from '../agent/service';
 import { emit } from '../bus';
-import { showCard } from '../cards';
+import { showCard, takeCardPayload } from '../cards';
+import { randomUUID } from 'node:crypto';
 import { db } from '../db';
 import { focusState } from '../focus/session';
 import { googleFetch } from '../integrations/google-auth';
 import { interruptions } from '../interruptions/manager';
 import { activePlaybook, ensurePipoDirs, getPipo, getRun, listMemory, runSteps } from './repo';
-import { pipoSystemPrompt, requestRun, type ConfirmAnswer, type RunnerDeps } from './runner';
+import { pipoSystemPrompt, requestRun, type ConfirmAnswer, type ConfirmResult, type RunnerDeps } from './runner';
 
 /** Execuções que o próprio usuário pediu (o relatório final aparece na hora). */
 const USER_TRIGGERS = /^(manual|chat|rehearsal|ensaio)/;
@@ -24,16 +25,66 @@ export function flushHeldReports(): void {
   for (const r of items) void r();
 }
 
-async function confirm(o: Parameters<RunnerDeps['confirm']>[0]): Promise<ConfirmAnswer> {
-  const listItems = o.list?.slice(0, 50).map((x) => {
-    if (x && typeof x === 'object') {
-      const r = x as Record<string, unknown>;
-      const title = String(r.titulo ?? r.title ?? r.assunto ?? r.subject ?? r.email ?? r.nome ?? r.name ?? JSON.stringify(x)).slice(0, 120);
-      const detail = String(r.texto ?? r.body ?? r.corpo ?? r.mensagem ?? '').slice(0, 600);
-      return { title, detail: detail || undefined };
-    }
-    return { title: String(x).slice(0, 120) };
+const TEXT_FIELDS = ['texto', 'body', 'corpo', 'mensagem', 'message', 'html', 'text'];
+const TITLE_FIELDS = ['titulo', 'title', 'assunto', 'subject', 'email', 'to', 'para', 'nome', 'name'];
+
+/** Item da lista → título e texto mostrados (e qual campo o texto editado volta a ocupar). */
+export function describeItem(x: unknown): { title: string; detail?: string; field?: string } {
+  if (x && typeof x === 'object') {
+    const r = x as Record<string, unknown>;
+    const tf = TITLE_FIELDS.find((k) => typeof r[k] === 'string' && r[k]);
+    const df = TEXT_FIELDS.find((k) => typeof r[k] === 'string' && r[k]);
+    const extra = ['email', 'to', 'para'].find((k) => k !== tf && typeof r[k] === 'string');
+    const title = `${tf ? String(r[tf]) : JSON.stringify(x)}${extra ? ` · ${String(r[extra])}` : ''}`.slice(0, 160);
+    return { title, detail: df ? String(r[df]).slice(0, 4000) : undefined, field: df };
+  }
+  return { title: String(x).slice(0, 160) };
+}
+
+/** Aplica as decisões do carrossel: tira os pulados e põe o texto editado de volta no item. */
+export function applyDecisions(list: unknown[], decisions: Array<{ index: number; keep: boolean; detail?: string }>): unknown[] {
+  const out: unknown[] = [];
+  list.forEach((item, i) => {
+    const d = decisions.find((x) => x.index === i);
+    if (d && !d.keep) return;
+    if (d?.detail !== undefined && item && typeof item === 'object') {
+      const field = describeItem(item).field ?? 'texto';
+      out.push({ ...(item as Record<string, unknown>), [field]: d.detail });
+    } else out.push(item);
   });
+  return out;
+}
+
+async function confirm(o: Parameters<RunnerDeps['confirm']>[0]): Promise<ConfirmAnswer | ConfirmResult> {
+  // Lista: aprovação em lote num carrossel (revisar, editar e pular itens).
+  if (o.list && o.list.length) {
+    const id = `batch:${randomUUID()}`;
+    const answer = await showCard(
+      {
+        id,
+        kind: 'pipo_batch',
+        glow: 'attention',
+        mascot: 'attention',
+        pipoColor: PIPO_COLORS[o.pipo.color],
+        label: `${o.pipo.name} · ${o.title}`,
+        subject: o.message,
+        list: o.list.slice(0, 200).map((x) => {
+          const d = describeItem(x);
+          return { title: d.title, detail: d.detail };
+        }),
+        buttons: [
+          { id: 'no', label: 'Recusar tudo', kbd: 'N', variant: 'secondary' },
+          { id: 'always', label: `Sempre permitir (até ${o.list.length})`, variant: 'tertiary' },
+        ],
+      },
+      { timeoutMs: 60 * 60_000 },
+    );
+    const decisions = takeCardPayload<Array<{ index: number; keep: boolean; detail?: string }>>(id);
+    if (answer === 'always') return { answer: 'always', items: o.list };
+    if (answer === 'yes' && decisions) return { answer: 'yes', items: applyDecisions(o.list.slice(0, 200), decisions) };
+    return answer === 'timeout' ? 'timeout' : 'no';
+  }
+  const listItems = o.list?.slice(0, 50).map((x) => describeItem(x));
   const answer = await showCard(
     {
       kind: 'action',

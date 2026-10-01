@@ -190,3 +190,47 @@ rl.on('line', (l) => { const m = JSON.parse(l); if (m.id === undefined) return;
     expect(out).toEqual({ eco: p.name, token: '••••' });
   });
 });
+
+describe('aprovação em lote', () => {
+  it('itens pulados saem e o texto editado volta para o campo certo', async () => {
+    const { applyDecisions, describeItem } = await import('../src/main/pipos/deps');
+    const list = [
+      { email: 'a@x.com', assunto: 'Oi A', texto: 'Olá A' },
+      { email: 'b@x.com', assunto: 'Oi B', texto: 'Olá B' },
+      { email: 'c@x.com', assunto: 'Oi C', texto: 'Olá C' },
+    ];
+    expect(describeItem(list[0])).toEqual({ title: 'Oi A · a@x.com', detail: 'Olá A', field: 'texto' });
+    const out = applyDecisions(list, [{ index: 0, keep: true }, { index: 1, keep: false }, { index: 2, keep: true, detail: 'Olá C, revisado' }]);
+    expect(out).toEqual([list[0], { ...list[2], texto: 'Olá C, revisado' }]);
+  });
+
+  it('o passo confirm com lista entrega só os aprovados para o próximo passo', async () => {
+    openDb(':memory:');
+    const p = pipoWithScript(`console.log(JSON.stringify([{email:'a@x.com'},{email:'b@x.com'},{email:'c@x.com'}]))`);
+    const sent: unknown[] = [];
+    const run = await execute(
+      {
+        pipo: p,
+        version: 1,
+        dryRun: false,
+        trigger: 'manual',
+        playbook: {
+          limits: { maxRunMinutes: 1 },
+          metrics: [{ key: 'enviados', label: 'enviados', from: '{{passos.revisar.saida.itens | length}}' }],
+          steps: [
+            { kind: 'script', key: 'puxar', title: 'Puxar', command: 'node', args: ['scripts/puxar.js'] },
+            { kind: 'confirm', key: 'revisar', title: 'Revisar', message: 'Enviar?', list: '{{passos.puxar.saida}}' },
+            { kind: 'notify', key: 'fim', title: '{{passos.revisar.saida.itens | length}} aprovados' },
+          ],
+        },
+      },
+      deps({
+        confirm: async (o) => ({ answer: 'yes', items: (o.list ?? []).slice(1) }),
+        notify: (o) => void sent.push(o.title),
+      }),
+    );
+    expect(run.status).toBe('done');
+    expect(run.metrics.enviados).toBe(2);
+    expect(sent[0]).toBe('2 aprovados');
+  });
+});

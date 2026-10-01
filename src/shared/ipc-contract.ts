@@ -99,6 +99,7 @@ export interface InvokeHandlers {
   'activity:deleteRange': (from: string, to: string) => number;
 
   'cards:respond': (cardId: string, buttonId: string) => void;
+  'cards:respondBatch': (cardId: string, decisions: Array<{ index: number; keep: boolean; detail?: string }>) => void;
   'toasts:undo': (toastId: string) => void;
 
   'mood:get': () => MoodInfo;
@@ -163,9 +164,14 @@ export interface InvokeHandlers {
   'pipos:saveModel': (id: number) => PipoModel;
   'pipos:models': () => PipoModel[];
   'pipos:deleteModel': (id: number) => void;
+  'pipos:exportFile': (id: number) => string | null;
+  'pipos:importFile': (path?: string | null) => { modelId: number; name: string; secrets: string[] } | null;
   'pipos:chat': (pipoId: number) => { conversationId: number };
   'pipos:chatOwner': (conversationId: number) => { id: number; name: string; slug: string; color: string; accessory: Pipo['accessory'] } | null;
   'pipos:deleteMemory': (id: number) => void;
+  'pipos:addMemory': (pipoId: number, rule: string) => void;
+  'pipos:updateMemory': (id: number, rule: string) => void;
+  'pipos:events': (pipoId: number) => Array<{ id: number; type: 'email_label' | 'folder' | 'meeting_end' | 'webhook'; label: string; lastFiredAt: string | null }>;
   'pipos:links': () => Array<{ from: number; to: number; kind: 'after' | 'handoff'; delayMin: number }>;
   'pipos:link': (fromId: number, toId: number, delayMin: number) => void;
   'pipos:unlink': (fromId: number, toId: number) => void;

@@ -278,6 +278,7 @@ export type CardKind =
   | 'close_day'
   | 'pipo_plan'
   | 'pipo_secret'
+  | 'pipo_batch'
   | 'info';
 
 export interface CardButton {

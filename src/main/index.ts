@@ -27,6 +27,7 @@ import { registerBuilder } from './pipos/builder';
 import { registerTriggers } from './pipos/triggers';
 import { registerPipoChat } from './pipos/pipo-chat';
 import { registerLinks } from './pipos/links';
+import { registerEvents } from './pipos/events';
 import { openDashboard, registerDashboard } from './dashboard';
 import { registerContextReactions } from './insights/context-reactions';
 import { startMcpBridge } from './mcp/server';
@@ -100,6 +101,7 @@ app.whenReady().then(() => {
   registerTriggers();
   registerPipoChat();
   registerLinks();
+  registerEvents();
   registerDashboard();
   startScheduler();
   createNotchWindow();

@@ -76,14 +76,17 @@ async function onDistraction(a: CurrentActivity | null, item: string | null): Pr
 let meeting = false;
 let lastMeetingSeen = 0;
 /** Agenda (Fase 10) informa se há um evento em andamento. */
-export const meetingHooks: { calendarMeetingNow: (() => boolean) | null } = { calendarMeetingNow: null };
+export const meetingHooks: { calendarMeetingNow: (() => boolean) | null; ended: Array<() => void> } = { calendarMeetingNow: null, ended: [] };
 
 function setMeeting(on: boolean): void {
   if (on === meeting) return;
   meeting = on;
   interruptions.setMeeting(on);
   emit('meeting:active', on);
-  if (!on) void meetingFollowup();
+  if (!on) {
+    void meetingFollowup();
+    for (const h of meetingHooks.ended) h();
+  }
 }
 
 async function meetingFollowup(): Promise<void> {

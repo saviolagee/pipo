@@ -43,7 +43,24 @@ export function dismissCard(id: string, value = 'dismissed'): void {
   emit('card:dismiss', { id });
 }
 
+/** Respostas com conteúdo (aprovação em lote): id do card → itens decididos. */
+const payloads = new Map<string, unknown>();
+
+export function takeCardPayload<T>(id: string): T | undefined {
+  const v = payloads.get(id) as T | undefined;
+  payloads.delete(id);
+  return v;
+}
+
 export function registerCardsIpc(): void {
+  handle('cards:respondBatch', (id, decisions) => {
+    const p = pending.get(id);
+    if (!p) return;
+    if (p.timer) clearTimeout(p.timer);
+    pending.delete(id);
+    payloads.set(id, decisions);
+    p.resolve(decisions.some((d) => d.keep) ? 'yes' : 'no');
+  });
   handle('cards:respond', (id, buttonId) => {
     const p = pending.get(id);
     if (!p) return;
