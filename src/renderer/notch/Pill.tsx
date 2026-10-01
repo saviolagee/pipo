@@ -49,7 +49,7 @@ export function Pill({ state, badge, mood, accessories, clipboardCandidate }: Pr
     <div className="flex h-full w-full items-center justify-between px-[12px]">
       <div className="relative flex h-full min-w-[64px] items-center gap-[2px]">
         <div className="relative -my-2">
-          <Mascot state={state} mood={mood} size={22} accessories={accessories.filter((a) => a !== 'coffee')} glow={false} still={state === 'idle'} />
+          <Mascot state={state} mood={mood} size={22} accessories={accessories.filter((a) => a !== 'coffee')} glow={false} still={state === 'idle' || state === 'sleepy' || state === 'tired'} />
           {statusDot && <span className="absolute left-[2px] top-[5px] h-[6px] w-[6px] rounded-full" style={{ background: statusDot, boxShadow: '0 0 0 1.5px #000' }} />}
         </div>
         {shown.length > 0 && (

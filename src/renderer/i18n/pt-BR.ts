@@ -80,6 +80,50 @@ export const t = {
     emptyBody: 'Crie um Pipo conversando comigo: você conta o que ele faz, a gente monta o plano de execução e ele repete sempre igual, quando você quiser.',
     create: 'Criar Pipo',
     paused: 'pausado',
+    back: 'Voltar',
+    runTitle: (id: number) => `Execução #${id}`,
+    rehearsal: 'ensaio',
+    trigger: (t: string) =>
+      t.startsWith('schedule:recuperada')
+        ? 'agenda (recuperada)'
+        : t.startsWith('schedule')
+          ? 'agenda'
+          : t.startsWith('after:')
+            ? `depois de @${t.slice(6)}`
+            : t === 'chat'
+              ? 'pelo chat'
+              : t === 'rehearsal' || t === 'ensaio'
+                ? 'ensaio'
+                : 'manual',
+    cancel: 'Parar',
+    run: 'Rodar',
+    rehearse: 'Ensaiar',
+    rehearsing: 'Ensaiando em modo seco…',
+    pause: 'Pausar',
+    resume: 'Retomar',
+    talk: 'Conversar',
+    edit: 'Editar plano',
+    saveModel: 'Salvar como modelo',
+    savedModel: 'Salvo nos seus modelos (aparece no /criarpipo)',
+    delete: 'Apagar',
+    deleteConfirm: 'Apagar o Pipo, o plano e o histórico?',
+    plan: 'Plano',
+    planV: (v: number) => `Plano · v${v}`,
+    noPlan: 'Ainda sem plano contratado. Continue a criação no chat.',
+    whenRuns: 'Quando roda',
+    onlyManual: 'Só quando você pede',
+    nextRun: (w: string) => `Próxima: ${w}`,
+    afterPipo: (from: string, delay: number) => `Depois de @${from}${delay ? ` (+${delay >= 1440 ? `${Math.round(delay / 1440)} dia(s)` : delay >= 60 ? `${Math.round(delay / 60)}h` : `${delay} min`})` : ''}`,
+    runs: 'Execuções',
+    noRuns: 'Ainda não rodou.',
+    inProgress: 'em andamento…',
+    memory: 'Regras que aprendeu',
+    noMemory: 'Nenhuma ainda. Corrija ele no chat e ele lembra.',
+    secrets: 'Chaves no cofre',
+    look: 'Cor e acessório',
+    talkingTo: 'Conversando com',
+    whitePipo: 'Pipo',
+    lastRun: (w: string) => `última: ${w}`,
     secretPlaceholder: 'cole a chave aqui (vai direto para o cofre)',
     secretSave: 'Guardar',
     createFirstMessage: 'Quero criar um Pipo novo.',

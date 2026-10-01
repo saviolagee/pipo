@@ -1,10 +1,11 @@
 import { create } from 'zustand';
-import type { DraftInfo } from '@shared/pipos';
+import type { DraftInfo, PipoAccessory } from '@shared/pipos';
 import type { AgentErrorCode, Attachment, ChatMessage } from '@shared/types';
 import { isFocusNextIntent } from '@shared/intents';
 import { api } from '../lib/api';
 import { matchCommand, runAtMention } from '../lib/commands';
 import { focusNext } from '../lib/focus';
+import { usePipos } from './pipos';
 import { play } from '../sound/sfx';
 import { useUi } from './ui';
 
@@ -19,6 +20,8 @@ interface ChatState {
   pending: Attachment[];
   /** Rascunho do /criarpipo ligado à conversa (barra de progresso). */
   draft: DraftInfo | null;
+  /** Conversa de um Pipo colorido (na cor dele). */
+  owner: { id: number; name: string; slug: string; color: string; accessory: PipoAccessory } | null;
   /** Abre uma conversa existente (ex.: retomar um rascunho). */
   openConversation: (id: number) => Promise<void>;
   send: (text: string) => Promise<void>;
@@ -42,8 +45,9 @@ export const useChat = create<ChatState>((set, get) => ({
   lastPrompt: null,
   pending: [],
   draft: null,
+  owner: null,
   openConversation: async (id) => {
-    set({ conversationId: id, messages: await api.invoke('agent:messages', id), streaming: '', error: null, busy: false, tool: null, draft: await api.invoke('pipos:draftFor', id) });
+    set({ conversationId: id, messages: await api.invoke('agent:messages', id), streaming: '', error: null, busy: false, tool: null, draft: await api.invoke('pipos:draftFor', id), owner: await api.invoke('pipos:chatOwner', id) });
   },
   send: async (text) => {
     const t = text.trim();
@@ -56,6 +60,15 @@ export const useChat = create<ChatState>((set, get) => ({
     }
     // "@prospector roda": dispara o Pipo sem passar pelo agente.
     if (!get().pending.length && (await runAtMention(t))) return;
+    // "@prospector por que falhou ontem?": a conversa vai para o chat do Pipo, na cor dele.
+    const at = /^@([\w-]+)[,:]?\s+([\s\S]+)$/.exec(t);
+    const target = at ? usePipos.getState().list.find((p) => p.slug === at[1].toLowerCase()) : null;
+    if (at && target && get().owner?.id !== target.id) {
+      const { conversationId } = await api.invoke('pipos:chat', target.id);
+      await get().openConversation(conversationId);
+      await get().send(at[2]);
+      return;
+    }
     // "foca na próxima": o app resolve na hora, sem esperar o agente.
     if (isFocusNextIntent(t) && !get().pending.length) {
       await focusNext();
@@ -85,7 +98,7 @@ export const useChat = create<ChatState>((set, get) => ({
       useUi.setState({ agentBusy: false });
     }
   },
-  newConversation: () => set({ conversationId: null, messages: [], streaming: '', error: null, busy: false, tool: null, draft: null }),
+  newConversation: () => set({ conversationId: null, messages: [], streaming: '', error: null, busy: false, tool: null, draft: null, owner: null }),
   addAttachments: (a) => set((s) => ({ pending: [...s.pending, ...a.filter((x) => !s.pending.some((p) => p.id === x.id))] })),
   removeAttachment: (id) => set((s) => ({ pending: s.pending.filter((p) => p.id !== id) })),
   reload: async () => {

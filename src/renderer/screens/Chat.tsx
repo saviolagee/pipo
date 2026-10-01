@@ -6,7 +6,9 @@ import { usePinOnFocus } from '../components/Form';
 import { IconArrowUp, IconFile, IconMic, IconPlus, IconSpark, IconX } from '../components/Icons';
 import { t } from '../i18n/pt-BR';
 import { prettyModel } from '@shared/models';
-import type { DraftInfo } from '@shared/pipos';
+import { PIPO_COLORS, pipoAccessoryLayers, type DraftInfo } from '@shared/pipos';
+import { usePipos } from '../store/pipos';
+import { IconChevron } from '../components/Icons';
 import { suggestCommands } from '../lib/commands';
 import { api } from '../lib/api';
 import { Mascot } from '../mascot/Mascot';
@@ -81,6 +83,49 @@ function DraftBar({ draft }: { draft: DraftInfo }): React.JSX.Element {
   );
 }
 
+/** "Conversando com ● Prospector ▾": troca entre o Pipo branco e os coloridos. */
+function TalkingTo(): React.JSX.Element {
+  const owner = useChat((s) => s.owner);
+  const all = usePipos((s) => s.list);
+  const team = all.filter((p) => p.activeVersion);
+  const [open, setOpen] = useState(false);
+  useEffect(() => useUi.getState().pin('talkPicker', open), [open]);
+  if (!team.length && !owner) return <span />;
+  return (
+    <div className="relative">
+      <button type="button" onClick={() => setOpen((v) => !v)} className="flex items-center gap-[6px] rounded-full px-[8px] py-[2px] text-[11.5px] text-fg-2 hover:bg-white/[0.06] hover:text-fg">
+        <span className="text-fg-3">{t.team.talkingTo}</span>
+        <span className="h-[7px] w-[7px] rounded-[2px]" style={{ background: owner?.color ?? '#F4F4F5' }} />
+        <span className="font-medium text-fg">{owner?.name ?? t.team.whitePipo}</span>
+        <IconChevron size={8} dir={open ? 'up' : 'down'} />
+      </button>
+      {open && (
+        <div className="absolute left-0 top-[24px] z-20 w-[220px] rounded-[12px] p-[4px]" style={{ background: '#161618', border: '1px solid var(--border-subtle)', boxShadow: '0 10px 30px rgba(0,0,0,0.5)' }}>
+          {[{ id: 0, name: t.team.whitePipo, color: '#F4F4F5', slug: '' }, ...team.map((p) => ({ id: p.id, name: p.name, color: PIPO_COLORS[p.color], slug: p.slug }))].map((p) => (
+            <button
+              key={p.id}
+              type="button"
+              onClick={async () => {
+                setOpen(false);
+                if (!p.id) useChat.getState().newConversation();
+                else {
+                  const { conversationId } = await api.invoke('pipos:chat', p.id);
+                  await useChat.getState().openConversation(conversationId);
+                }
+              }}
+              className="flex w-full items-center gap-[8px] rounded-[8px] px-[8px] py-[5px] text-left text-[12px] text-fg hover:bg-white/[0.06]"
+            >
+              <span className="h-[8px] w-[8px] rounded-[3px]" style={{ background: p.color }} />
+              <span className="flex-1">{p.name}</span>
+              {p.slug && <span className="mono text-[10.5px] text-fg-3">@{p.slug}</span>}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 export function ChatScreen({ mood, accessories, state }: { mood: number; accessories: Accessory[]; state: MascotState }): React.JSX.Element {
   const chat = useChat();
   const cards = useUi((s) => s.cards);
@@ -125,6 +170,7 @@ export function ChatScreen({ mood, accessories, state }: { mood: number; accesso
   return (
     <div className="flex flex-col px-[12px] pb-[12px]" style={{ height: 384 }}>
       <div className="flex min-h-[28px] items-center gap-[6px] pl-[66px]">
+        <TalkingTo />
         {allAtts.map((a) => (
           <FileChip key={a.id} a={a} onRemove={chat.pending.some((p) => p.id === a.id) ? () => chat.removeAttachment(a.id) : undefined} />
         ))}
@@ -159,7 +205,13 @@ export function ChatScreen({ mood, accessories, state }: { mood: number; accesso
                 </span>
               </motion.div>
             ) : (
-              <motion.div key={m.id} initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="group max-w-[90%] select-text text-[13px] leading-[1.5] text-fg">
+              <motion.div
+                key={m.id}
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                className="group max-w-[90%] select-text text-[13px] leading-[1.5] text-fg"
+                style={chat.owner ? { borderLeft: `2px solid ${chat.owner.color}`, paddingLeft: 10 } : undefined}
+              >
                 <Rich text={m.text} />
                 <div className="mt-[3px] flex h-[16px] items-center gap-[10px] text-[10.5px] text-fg-3">
                   {m.model && <span title={m.model}>{prettyModel(m.model)}</span>}
@@ -242,7 +294,13 @@ export function ChatScreen({ mood, accessories, state }: { mood: number; accesso
           </div>
         )}
         <div className="absolute -top-[58px] left-0">
-          <Mascot state={chat.busy ? 'thinking' : chat.error ? 'sad' : state === 'happy' ? 'happy' : 'idle'} size={48} mood={mood} accessories={accessories.filter((a) => a !== 'coffee')} />
+          <Mascot
+            state={chat.busy ? 'thinking' : chat.error ? 'sad' : state === 'happy' ? 'happy' : 'idle'}
+            size={48}
+            mood={mood}
+            color={chat.owner?.color}
+            accessories={chat.owner ? pipoAccessoryLayers(chat.owner.accessory) : accessories.filter((a) => a !== 'coffee')}
+          />
         </div>
         <div className="ml-[66px] flex h-[36px] flex-1 items-center gap-[6px] rounded-full pl-[16px] pr-[4px]" style={{ background: '#1A1A1F' }}>
           <input

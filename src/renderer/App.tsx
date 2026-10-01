@@ -21,7 +21,7 @@ import { TasksScreen } from './screens/Tasks';
 import { DayReview } from './screens/DayReview';
 import { ChatScreen, INLINE_CARD_KINDS } from './screens/Chat';
 import { TeamScreen } from './screens/Team';
-import { bindPipoEvents } from './store/pipos';
+import { bindPipoEvents, usePipos } from './store/pipos';
 import { bindAgentEvents, useChat } from './store/chat';
 import { LocalAudio } from './components/LocalAudio';
 import { Toasts } from './components/Toast';
@@ -147,6 +147,10 @@ export function App(): React.JSX.Element {
       api.on('integrations:changed', (integrations) => useData.getState().set({ integrations })),
       api.on('music:nowPlaying', (nowPlaying) => useData.getState().set({ nowPlaying })),
       api.on('day:today', (today) => useData.getState().set({ today })),
+      api.on('ui:openPipoRun', ({ pipoId, runId }) => {
+        usePipos.getState().open(pipoId, runId);
+        useUi.getState().setTab('team');
+      }),
       api.on('stripe:income', (income) => useData.getState().set({ income })),
       api.on('stripe:payment', (p) => {
         const s = useData.getState().settings?.money;

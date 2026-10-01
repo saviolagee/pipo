@@ -156,6 +156,9 @@ export interface InvokeHandlers {
   'pipos:saveModel': (id: number) => PipoModel;
   'pipos:models': () => PipoModel[];
   'pipos:deleteModel': (id: number) => void;
+  'pipos:chat': (pipoId: number) => { conversationId: number };
+  'pipos:chatOwner': (conversationId: number) => { id: number; name: string; slug: string; color: string; accessory: Pipo['accessory'] } | null;
+  'pipos:deleteMemory': (id: number) => void;
 }
 
 export type InvokeChannel = keyof InvokeHandlers;

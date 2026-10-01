@@ -25,6 +25,7 @@ import { registerDays } from './days/flows';
 import { registerPiposIpc } from './pipos/ipc';
 import { registerBuilder } from './pipos/builder';
 import { registerTriggers } from './pipos/triggers';
+import { registerPipoChat } from './pipos/pipo-chat';
 import { registerContextReactions } from './insights/context-reactions';
 import { startMcpBridge } from './mcp/server';
 import { registerSystemIpc, setAutostart } from './system';
@@ -95,6 +96,7 @@ app.whenReady().then(() => {
   registerPiposIpc();
   registerBuilder();
   registerTriggers();
+  registerPipoChat();
   startScheduler();
   createNotchWindow();
   createTray();
