@@ -144,3 +144,12 @@ export const IconSpark = ({ size = 12, ...p }: P): React.JSX.Element => (
     <path d="M12 2.5c.4 4.6 2.9 7.1 7.5 7.5-4.6.4-7.1 2.9-7.5 7.5-.4-4.6-2.9-7.1-7.5-7.5 4.6-.4 7.1-2.9 7.5-7.5" />
   </svg>
 );
+
+/** Equipe: dois marshmallows lado a lado. */
+export const IconTeam = ({ size = 16, ...p }: P): React.JSX.Element => (
+  <svg {...base(size, p)}>
+    <rect x="2.5" y="8" width="11" height="9" rx="3.2" />
+    <rect x="12.5" y="5.5" width="9" height="7.5" rx="2.8" fill="currentColor" stroke="none" opacity="0.55" />
+    <path d="M6.2 12.2v.6M9.8 12.2v.6" strokeWidth="2" />
+  </svg>
+);

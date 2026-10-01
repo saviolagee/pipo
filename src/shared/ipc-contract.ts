@@ -1,5 +1,6 @@
 // Contrato de IPC tipado. Main implementa `InvokeHandlers`; o renderer chama via `window.pipo.invoke`.
 import type { HolidayPrefs } from './holidays';
+import type { Pipo, PipoLive, PipoMemoryRule, PipoRun, PipoSummary, PipoTrigger, PipoVersion } from './pipos';
 import type {
   ActivityBlock,
   DayKind,
@@ -135,6 +136,12 @@ export interface InvokeHandlers {
   'days:clearRange': (start: string, end: string) => number;
   'days:holidayPrefs': () => HolidayPrefs;
   'days:setHolidayPrefs': (p: HolidayPrefs) => HolidayPrefs;
+  'pipos:list': () => PipoSummary[];
+  'pipos:get': (id: number) => { pipo: Pipo; versions: PipoVersion[]; triggers: PipoTrigger[]; runs: PipoRun[]; memory: PipoMemoryRule[]; secrets: string[] } | null;
+  'pipos:create': (p: { name: string; color: Pipo['color']; accessory?: Pipo['accessory']; personality: Pipo['personality']; model?: Pipo['model']; effort?: Pipo['effort']; runOnDaysOff?: boolean }) => Pipo;
+  'pipos:update': (id: number, patch: Partial<Pick<Pipo, 'name' | 'color' | 'accessory' | 'personality' | 'model' | 'effort' | 'paused' | 'runOnDaysOff'>>) => Pipo;
+  'pipos:delete': (id: number) => void;
+  'pipos:setSecret': (id: number, name: string, value: string | null) => string[];
 }
 
 export type InvokeChannel = keyof InvokeHandlers;
@@ -172,6 +179,8 @@ export interface MainEvents {
   /** Abre o chat e envia uma mensagem (ex.: "Planejar meu dia" a partir de um card). */
   'chat:send': { text: string };
   'day:today': DayStatus | null;
+  'pipos:changed': PipoSummary[];
+  'pipos:live': PipoLive;
 }
 
 export type MainEventName = keyof MainEvents;

@@ -1,5 +1,5 @@
 import { motion } from 'motion/react';
-import { IconChat, IconCheckCircle, IconGear, IconHome, IconPlus, IconSpeaker } from '../components/Icons';
+import { IconChat, IconCheckCircle, IconGear, IconHome, IconPlus, IconSpeaker, IconTeam } from '../components/Icons';
 import { t } from '../i18n/pt-BR';
 import { api } from '../lib/api';
 import { useData } from '../store/data';
@@ -9,6 +9,7 @@ const TABS: Array<{ id: Tab; label: string; Icon: (p: { size?: number }) => Reac
   { id: 'home', label: t.tabs.home, Icon: IconHome },
   { id: 'tasks', label: t.tabs.tasks, Icon: IconCheckCircle },
   { id: 'chat', label: t.tabs.chat, Icon: IconChat },
+  { id: 'team', label: t.tabs.team, Icon: IconTeam },
   { id: 'add', label: t.tabs.add, Icon: IconPlus },
 ];
 

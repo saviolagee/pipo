@@ -22,6 +22,7 @@ import { registerDebug } from './debug';
 import { registerIntegrations } from './integrations/ipc';
 import { registerInsights } from './insights';
 import { registerDays } from './days/flows';
+import { registerPiposIpc } from './pipos/ipc';
 import { registerContextReactions } from './insights/context-reactions';
 import { startMcpBridge } from './mcp/server';
 import { registerSystemIpc, setAutostart } from './system';
@@ -89,6 +90,7 @@ app.whenReady().then(() => {
   registerIntegrations();
   registerInsights();
   registerDays();
+  registerPiposIpc();
   startScheduler();
   createNotchWindow();
   createTray();

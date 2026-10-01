@@ -19,6 +19,8 @@ import { RitualCheck } from './screens/RitualCheck';
 import { TasksScreen } from './screens/Tasks';
 import { DayReview } from './screens/DayReview';
 import { ChatScreen } from './screens/Chat';
+import { TeamScreen } from './screens/Team';
+import { bindPipoEvents } from './store/pipos';
 import { bindAgentEvents, useChat } from './store/chat';
 import { LocalAudio } from './components/LocalAudio';
 import { Toasts } from './components/Toast';
@@ -98,6 +100,7 @@ export function App(): React.JSX.Element {
       });
     const offs = [
       bindAgentEvents(),
+      bindPipoEvents(),
       api.on('ui:toggle', () => useUi.setState((s) => ({ expanded: !s.expanded }))),
       api.on('ui:collapse', () => useUi.getState().setExpanded(false)),
       api.on('ui:navigate', (p) => {
@@ -265,6 +268,8 @@ export function App(): React.JSX.Element {
         return <TasksScreen />;
       case 'review':
         return <DayReview />;
+      case 'team':
+        return <TeamScreen />;
       case 'chat':
         return <ChatScreen mood={mascot.mood} accessories={mascot.accessories} state={mascot.state} />;
       case 'add':

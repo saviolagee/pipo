@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import type { Accessory, Card, GlowKind, MascotState, Toast } from '@shared/types';
 
-export type Tab = 'home' | 'tasks' | 'chat' | 'add' | 'settings' | 'review';
+export type Tab = 'home' | 'tasks' | 'chat' | 'team' | 'add' | 'settings' | 'review';
 
 interface UiState {
   expanded: boolean;

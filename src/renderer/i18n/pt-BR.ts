@@ -5,6 +5,7 @@ export const t = {
     home: 'Início',
     tasks: 'Tarefas',
     chat: 'Chat',
+    team: 'Equipe',
     add: 'Adicionar',
     settings: 'Configurações',
     sound: 'Som',
@@ -72,6 +73,13 @@ export const t = {
     customName: 'nome (ex.: Aniversário da cidade)',
     customDate: 'data (ex.: 25/01)',
     remove: 'remover',
+  },
+  team: {
+    title: (n: number) => (n === 1 ? '1 Pipo na equipe' : `${n} Pipos na equipe`),
+    emptyTitle: 'Sua equipe ainda está vazia',
+    emptyBody: 'Crie um Pipo conversando comigo: você conta o que ele faz, a gente monta o plano de execução e ele repete sempre igual, quando você quiser.',
+    create: 'Criar Pipo',
+    paused: 'pausado',
   },
   focusNext: {
     prefix: 'Focar:',

@@ -22,6 +22,8 @@ export interface MascotProps {
   glow?: boolean;
   /** Remove animações contínuas (ícones minúsculos, ghosts). */
   still?: boolean;
+  /** Cor do corpo (Pipos coloridos). Padrão: branco marshmallow. */
+  color?: string;
   className?: string;
   style?: React.CSSProperties;
   onClick?: (e: React.MouseEvent) => void;
@@ -117,6 +119,16 @@ function useSpontaneousHop(active: boolean): number {
   return n;
 }
 
+/** Escurece (amount < 0) ou clareia uma cor #RRGGBB. */
+export function shade(hex: string, amount: number): string {
+  const n = parseInt(hex.slice(1), 16);
+  const f = (c: number): number => Math.max(0, Math.min(255, Math.round(c + (amount < 0 ? c : 255 - c) * amount)));
+  const r = f((n >> 16) & 255);
+  const g = f((n >> 8) & 255);
+  const b = f(n & 255);
+  return `#${((r << 16) | (g << 8) | b).toString(16).padStart(6, '0')}`;
+}
+
 /** Colcheia (♪) ou duas colcheias ligadas (♫), desenhadas em vetor (não depende da fonte). */
 function MusicNote({ x, y, double = false }: { x: number; y: number; double?: boolean }): React.JSX.Element {
   return (
@@ -147,6 +159,7 @@ export function Mascot({
   hands = null,
   glow = true,
   still = false,
+  color,
   className,
   style,
   onClick,
@@ -160,9 +173,9 @@ export function Mascot({
   const hop = useSpontaneousHop(band === 'high' && state === 'idle' && !still);
   const { animate, transition } = bodyMotion(state, mood, still);
   const px = (size * 100) / 64;
-  const shadow = glow ? `drop-shadow(0 0 ${Math.max(2, (18 * size) / 64)}px rgba(255,255,255,${band === 'veryLow' ? 0.2 : 0.35}))` : 'none';
-  const bodyTop = band === 'veryLow' ? '#E4E4E7' : '#FFFFFF';
-  const bodyBottom = band === 'veryLow' ? '#D4D4D8' : '#E9E9EE';
+  const shadow = glow ? `drop-shadow(0 0 ${Math.max(2, (18 * size) / 64)}px ${color ? `${color}73` : `rgba(255,255,255,${band === 'veryLow' ? 0.2 : 0.35})`})` : 'none';
+  const bodyTop = color ?? (band === 'veryLow' ? '#E4E4E7' : '#FFFFFF');
+  const bodyBottom = color ? shade(color, -0.14) : band === 'veryLow' ? '#D4D4D8' : '#E9E9EE';
   const cheeks = state === 'celebrating' || state === 'dizzy' || (state === 'happy' && band === 'high');
   const typing = state === 'working' && !still;
   const dancing = state === 'dancing' && !still;
