@@ -115,6 +115,18 @@ export const t = {
       'Pesquisar uma empresa antes da reunião',
     ],
   },
+  money: {
+    payment: (v: string, desc: string | null) => `+${v} entrou 💸${desc ? ` · ${desc}` : ''}`,
+    paymentHidden: 'Entrou um pagamento 💸',
+    period: { today: 'hoje', week: 'na semana', month: 'no mês' } as Record<'today' | 'week' | 'month', string>,
+    tooltip: (today: string, week: string, month: string, n: number) => `Stripe — hoje ${today} (${n} pagamento${n === 1 ? '' : 's'}) · semana ${week} · mês ${month}`,
+    stripeHint: 'Crie uma chave restrita na Stripe (Developers → API keys → Create restricted key) com permissão de leitura (Read) em "Balance transactions". O Pipo só lê; nunca cobra nem reembolsa.',
+    keyPlaceholder: 'rk_live_…',
+    connect: 'Conectar',
+    showInPill: 'Mostrar na pill',
+    hideValues: 'Esconder valores',
+    periodLabel: 'Período na pill',
+  },
   focusNext: {
     prefix: 'Focar:',
     labelWith: (title: string, min: number) => `Focar em ${title} por ${min} minutos`,

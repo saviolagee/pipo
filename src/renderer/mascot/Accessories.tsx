@@ -68,6 +68,49 @@ export function AccessoriesFront({ items, sipping }: { items: Accessory[]; sippi
           <circle cx={59} cy={31} r={1.4} fill="#22C55E" />
         </g>
       )}
+      {has('cap') && (
+        // Boné com aba para a frente.
+        <g>
+          <path d="M26 36 Q 28 20 50 19 Q 72 20 74 36 Z" fill="#18181B" />
+          <path d="M60 33 Q 80 31 90 37 Q 78 39 64 37 Z" fill="#27272A" />
+          <circle cx={50} cy={20} r={2} fill="#3F3F46" />
+        </g>
+      )}
+      {has('beanie') && (
+        <g>
+          <path d="M24 38 Q 26 16 50 15 Q 74 16 76 38 Z" fill="#7C3AED" />
+          <rect x={22} y={33} width={56} height={7} rx={3.5} fill="#A78BFA" />
+          <circle cx={50} cy={13} r={4.2} fill="#EDE9FE" />
+        </g>
+      )}
+      {has('bow') && (
+        <g transform="translate(66 30) rotate(18)">
+          <path d="M0 0 L-9 -6 L-9 6 Z" fill="#F43F5E" />
+          <path d="M0 0 L9 -6 L9 6 Z" fill="#F43F5E" />
+          <circle cx={0} cy={0} r={2.6} fill="#BE123C" />
+        </g>
+      )}
+      {has('tie') && (
+        <g>
+          <path d="M46 78 h8 l-1.5 3 h-5 z" fill="#1E3A8A" />
+          <path d="M47.5 81 h5 l3 12 -5.5 5 -5.5 -5 z" fill="#2563EB" />
+        </g>
+      )}
+      {has('magnifier') && (
+        <g transform="translate(84 62) rotate(-30)">
+          <rect x={-1.6} y={6} width={3.2} height={12} rx={1.6} fill="#92400E" />
+          <circle cx={0} cy={0} r={7} fill="rgba(186,230,253,0.35)" stroke="#3F3F46" strokeWidth={2.2} />
+          <path d="M-3 -3 q 2 -2 4 -1.5" stroke="#FFFFFF" strokeWidth={1.2} fill="none" strokeLinecap="round" opacity={0.8} />
+        </g>
+      )}
+      {has('pencil') && (
+        <g transform="translate(76 30) rotate(35)">
+          <rect x={-2} y={0} width={4} height={18} fill="#FACC15" />
+          <rect x={-2} y={-3} width={4} height={3} fill="#F9A8D4" />
+          <path d="M-2 18 L0 23 L2 18 Z" fill="#FDE68A" />
+          <path d="M-0.7 21 L0 23 L0.7 21 Z" fill="#18181B" />
+        </g>
+      )}
       {has('nightcap') && (
         <g>
           <path d="M24 40 Q 40 18 70 22 Q 84 24 90 34 Q 76 30 72 34 Q 78 38 76 42 Z" fill="#6366F1" />

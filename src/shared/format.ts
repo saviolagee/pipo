@@ -34,3 +34,18 @@ export function fmtDue(iso: string, now = new Date()): string {
   if (diff > 1 && diff < 7) return `${WEEKDAYS_SHORT[d.getDay()]}${time}`;
   return `${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}${time}`;
 }
+
+/** "R$ 1.240,50"; compacto: "R$ 1,2 mil", "R$ 35 mil". */
+export function fmtMoney(value: number, currency = 'BRL', compact = false): string {
+  const abs = Math.abs(value);
+  const opts: Intl.NumberFormatOptions = { style: 'currency', currency, maximumFractionDigits: abs >= 1000 || (compact && abs >= 100) ? 0 : 2, minimumFractionDigits: 0 };
+  if (compact && abs >= 1000) {
+    opts.notation = 'compact';
+    opts.maximumFractionDigits = abs >= 10_000 ? 0 : 1;
+  }
+  try {
+    return new Intl.NumberFormat('pt-BR', opts).format(value);
+  } catch {
+    return `${currency} ${value.toFixed(2)}`;
+  }
+}

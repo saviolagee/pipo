@@ -9,6 +9,7 @@ import { handle } from '../ipc';
 import { agentHooks } from '../mcp/tools';
 import { musicApi, setMusicApi, startMusic } from '../music';
 import { nowPlaying, refreshNowPlaying, startNowPlaying } from '../music/now-playing';
+import { connectStripe, currentIncome, disconnectStripe, refreshIncome, registerStripeTools } from './stripe';
 import { connectSpotify, disconnectSpotify, setSpotifyClientId, spotifyApi } from '../music/spotify';
 import { every } from '../scheduler';
 import { statsHooks, todayStats } from '../stats';
@@ -17,7 +18,7 @@ import { connectGoogle, disconnectGoogle, googleConnected, setGoogleClient } fro
 import { unreadEmails } from './gmail';
 
 export function integrationsList(): IntegrationInfo[] {
-  return [getIntegration('google').info, getIntegration('spotify').info];
+  return [getIntegration('google').info, getIntegration('spotify').info, getIntegration('stripe').info];
 }
 
 function changed(): void {
@@ -75,7 +76,23 @@ export function registerIntegrations(): void {
   });
 
   const prevExtra = providers.extra;
-  providers.extra = () => ({ ...prevExtra(), integrations: integrationsList() });
+  providers.extra = () => ({ ...prevExtra(), integrations: integrationsList(), income: currentIncome() });
+
+  registerStripeTools();
+  handle('stripe:connect', async (key) => {
+    const detail = await connectStripe(key);
+    changed();
+    return detail;
+  });
+  handle('stripe:income', async () => (await refreshIncome().catch(() => currentIncome())) ?? currentIncome());
+  // Dinheiro entrando: a cada 2 min (só com a Stripe conectada).
+  every('stripe', 2 * 60_000, async () => {
+    try {
+      await refreshIncome(process.uptime() < 150);
+    } catch (e) {
+      console.warn('[stripe]', e instanceof Error ? e.message : e);
+    }
+  });
 
   handle('integrations:list', () => integrationsList());
   handle('integrations:connect', async (p) => {
@@ -88,6 +105,7 @@ export function registerIntegrations(): void {
   });
   handle('integrations:disconnect', (p) => {
     if (p === 'google') disconnectGoogle();
+    else if (p === 'stripe') disconnectStripe();
     else disconnectSpotify();
     changed();
     return getIntegration(p).info;

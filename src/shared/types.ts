@@ -324,8 +324,28 @@ export interface CalendarEvent {
   meetingUrl: string | null;
 }
 
-export type IntegrationProvider = 'google' | 'spotify' | 'claude';
+export type IntegrationProvider = 'google' | 'spotify' | 'claude' | 'stripe';
 export type IntegrationStatus = 'connected' | 'disconnected' | 'error';
+
+/** Dinheiro entrando pela Stripe (valores na moeda principal, em unidades, não centavos). */
+export interface StripeIncome {
+  currency: string;
+  today: number;
+  week: number;
+  month: number;
+  paymentsToday: number;
+  last: { amount: number; at: string; description: string | null; id: string } | null;
+  updatedAt: string;
+}
+
+export interface MoneySettings {
+  /** Mostrar quanto entrou na pill. */
+  showInPill: boolean;
+  /** Período mostrado na pill. */
+  period: 'today' | 'week' | 'month';
+  /** Esconde os valores (mostra só "↑" quando entra). */
+  hideValues: boolean;
+}
 
 export interface IntegrationInfo {
   provider: IntegrationProvider;
@@ -406,6 +426,7 @@ export interface ActivitySettings {
 }
 
 export interface Settings {
+  money: MoneySettings;
   agent: AgentSettings;
   activity: ActivitySettings;
   volume: number;
@@ -434,6 +455,8 @@ export interface DayStatus {
 export interface Bootstrap {
   /** Status de hoje (folga, férias, feriado…), se houver. */
   today?: DayStatus | null;
+  /** Último resumo da Stripe, se conectada. */
+  income?: StripeIncome | null;
   profile: Profile | null;
   settings: Settings;
   rituals: Ritual[];

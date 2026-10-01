@@ -8,6 +8,8 @@ interface UiState {
   tab: Tab;
   /** Motivos que impedem o colapso automático (input com foco, card, onboarding…). */
   pins: Record<string, boolean>;
+  /** Momento do último pagamento da Stripe (a pill pisca o valor). */
+  moneyFlash: number;
   cards: Card[];
   toasts: Toast[];
   /** Expressão temporária por cima da expressão derivada. */
@@ -44,6 +46,7 @@ export const useUi = create<UiState>((set) => ({
   expanded: false,
   tab: 'home',
   pins: {},
+  moneyFlash: 0,
   cards: [],
   toasts: [],
   transient: null,

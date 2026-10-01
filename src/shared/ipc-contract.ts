@@ -5,6 +5,7 @@ import type {
   ActivityBlock,
   DayKind,
   DayStatus,
+  StripeIncome,
   AgentEvent,
   Attachment,
   Bootstrap,
@@ -120,7 +121,7 @@ export interface InvokeHandlers {
 
   'integrations:list': () => IntegrationInfo[];
   'integrations:connect': (provider: 'google' | 'spotify') => IntegrationInfo;
-  'integrations:disconnect': (provider: 'google' | 'spotify') => IntegrationInfo;
+  'integrations:disconnect': (provider: 'google' | 'spotify' | 'stripe') => IntegrationInfo;
   'integrations:setGoogleClient': (cfg: { clientId: string; clientSecret: string }) => void;
   'integrations:setSpotifyClient': (cfg: { clientId: string }) => void;
   'calendar:upcoming': () => CalendarEvent[];
@@ -129,6 +130,8 @@ export interface InvokeHandlers {
   'music:test': () => void;
 
   'debug:simulate': (what: 'meeting' | 'pomodoro_end' | 'distraction' | 'deadline' | 'goal' | 'pattern' | 'unlock' | 'seed4weeks' | 'absence' | 'vacationBack') => void;
+  'stripe:connect': (key: string) => string;
+  'stripe:income': () => StripeIncome | null;
   'days:list': (start: string, end: string) => DayStatus[];
   'days:set': (date: string, kind: DayKind, opts?: { minutes?: number | null; note?: string | null }) => DayStatus;
   'days:clear': (date: string) => void;
@@ -190,6 +193,8 @@ export interface MainEvents {
   /** Abre o chat e envia uma mensagem (ex.: "Planejar meu dia" a partir de um card). */
   'chat:send': { text: string };
   'day:today': DayStatus | null;
+  'stripe:income': StripeIncome | null;
+  'stripe:payment': { amount: number; currency: string; description: string | null };
   'pipos:changed': PipoSummary[];
   'pipos:live': PipoLive;
   'pipos:runUpdate': { run: PipoRun; steps: PipoRunStep[] };

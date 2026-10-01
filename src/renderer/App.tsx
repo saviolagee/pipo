@@ -1,6 +1,7 @@
 import { AnimatePresence } from 'motion/react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { NOTCH } from '@shared/config';
+import { fmtMoney } from '@shared/format';
 import { t } from './i18n/pt-BR';
 import { api } from './lib/api';
 import { Confetti } from './mascot/effects/Confetti';
@@ -146,6 +147,13 @@ export function App(): React.JSX.Element {
       api.on('integrations:changed', (integrations) => useData.getState().set({ integrations })),
       api.on('music:nowPlaying', (nowPlaying) => useData.getState().set({ nowPlaying })),
       api.on('day:today', (today) => useData.getState().set({ today })),
+      api.on('stripe:income', (income) => useData.getState().set({ income })),
+      api.on('stripe:payment', (p) => {
+        const s = useData.getState().settings?.money;
+        useUi.getState().pushToast({ id: `pay:${Date.now()}`, text: s?.hideValues ? t.money.paymentHidden : t.money.payment(fmtMoney(p.amount, p.currency), p.description), durationMs: 6000 });
+        useUi.setState({ moneyFlash: Date.now() });
+        play('chime');
+      }),
       api.on('mood:changed', (mood) => useData.getState().set({ mood })),
       api.on('streak:changed', (streak) => useData.getState().set({ streak })),
       api.on('files:progress', (p) => setIngest(p.done && !p.error ? null : p)),

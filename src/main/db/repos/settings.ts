@@ -5,6 +5,7 @@ import { db } from '../index';
 
 export const DEFAULT_SETTINGS: Settings = {
   agent: { ...DEFAULT_AGENT },
+  money: { showInPill: true, period: 'today', hideValues: false },
   activity: { idleAfterSec: ACTIVITY.idleThresholdSec },
   volume: 0.6,
   muted: false,
@@ -43,6 +44,7 @@ export function getSettings(): Settings {
     privacy: { ...DEFAULT_SETTINGS.privacy, ...s.privacy },
     reactions: { ...DEFAULT_SETTINGS.reactions, ...s.reactions },
     agent: { ...DEFAULT_SETTINGS.agent, ...s.agent },
+    money: { ...DEFAULT_SETTINGS.money, ...s.money },
     activity: { ...DEFAULT_SETTINGS.activity, ...s.activity },
   };
 }

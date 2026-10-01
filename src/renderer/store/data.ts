@@ -10,6 +10,7 @@ import type {
   MoodInfo,
   NowPlaying,
   DayStatus,
+  StripeIncome,
   Profile,
   Ritual,
   Settings,
@@ -36,6 +37,8 @@ interface DataState {
   nowPlaying: NowPlaying | null;
   /** Folga/férias/feriado de hoje (Fase 15). */
   today: DayStatus | null;
+  /** Dinheiro entrando pela Stripe. */
+  income: StripeIncome | null;
   activity: CurrentActivity | null;
   inMeeting: boolean;
   events: CalendarEvent[];
@@ -62,6 +65,7 @@ export const useData = create<DataState>((set, get) => ({
   claude: { state: 'checking' },
   nowPlaying: null,
   today: null,
+  income: null,
   activity: null,
   inMeeting: false,
   events: [],
@@ -81,6 +85,7 @@ export const useData = create<DataState>((set, get) => ({
       integrations: b.integrations,
       claude: b.claude,
       today: b.today ?? null,
+      income: b.income ?? null,
     });
     await Promise.all([get().refreshTasks(), get().refreshStats(), api.invoke('music:nowPlaying').then((nowPlaying) => set({ nowPlaying }))]);
   },

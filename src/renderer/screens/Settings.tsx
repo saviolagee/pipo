@@ -3,6 +3,7 @@ import type { Settings as SettingsT, UnlockableAccessory } from '@shared/types';
 import { Button } from '../components/Button';
 import { DaysSettings } from './DaysSettings';
 import { ACTIVITY } from '@shared/config';
+import { fmtMoney } from '@shared/format';
 import { Chip, Label, Option, Slider, TagInput, TextField, YesNo } from '../components/Form';
 import { t } from '../i18n/pt-BR';
 import { api } from '../lib/api';
@@ -127,6 +128,9 @@ export function SettingsScreen(): React.JSX.Element {
             </Block>
             <Block title="Spotify">
               <SpotifyBlock />
+            </Block>
+            <Block title="Stripe">
+              <StripeBlock onPatch={patchSettings} />
             </Block>
             <Block title="Claude">
               <ClaudeStep />
@@ -265,6 +269,81 @@ function SpotifyBlock(): React.JSX.Element {
 }
 
 /** Avançado: provedor por chave de API (desativado por padrão; o padrão é a assinatura via Claude Code). */
+function StripeBlock({ onPatch }: { onPatch: (p: Partial<SettingsT>) => Promise<void> }): React.JSX.Element {
+  const integrations = useData((st) => st.integrations);
+  const income = useData((st) => st.income);
+  const money = useData((st) => st.settings?.money);
+  const info = integrations.find((i) => i.provider === 'stripe');
+  const [key, setKey] = useState('');
+  const [err, setErr] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
+  const m = t.money;
+  const connect = async (): Promise<void> => {
+    setBusy(true);
+    setErr(null);
+    try {
+      await api.invoke('stripe:connect', key);
+      setKey('');
+      useData.getState().set({ integrations: await api.invoke('integrations:list'), income: await api.invoke('stripe:income') });
+    } catch (e) {
+      setErr(errText(e));
+    } finally {
+      setBusy(false);
+    }
+  };
+  if (info?.status !== 'connected')
+    return (
+      <div className="flex flex-col gap-[8px]">
+        <p className="text-[11.5px] text-fg-3">{m.stripeHint}</p>
+        <div className="flex items-center gap-[8px]">
+          <TextField value={key} onChange={setKey} placeholder={m.keyPlaceholder} className="w-[260px] text-[12px]" pinKey="stripe" ariaLabel="Stripe key" />
+          <Button size="sm" variant="primary" disabled={!key.trim() || busy} onClick={() => void connect()}>
+            {m.connect}
+          </Button>
+        </div>
+        {err && <p className="text-[11.5px] text-attention">{err}</p>}
+      </div>
+    );
+  return (
+    <div className="flex flex-col gap-[8px] text-[12px] text-fg-2">
+      <div className="flex items-center gap-[8px]">
+        <span className="h-[7px] w-[7px] rounded-full bg-[#22C55E]" />
+        <span className="flex-1">{info.detail}</span>
+        {income && <span className="mono text-[#4ADE80]">{fmtMoney(income.today, income.currency)} hoje</span>}
+        <Button
+          size="sm"
+          variant="tertiary"
+          onClick={async () => {
+            useData.getState().set({ integrations: await api.invoke('integrations:list') });
+            await api.invoke('integrations:disconnect', 'stripe');
+            useData.getState().set({ integrations: await api.invoke('integrations:list'), income: null });
+          }}
+        >
+          {t.integrations.disconnect}
+        </Button>
+      </div>
+      {money && (
+        <>
+          <div className="flex items-center gap-[10px]">
+            {m.showInPill}
+            <YesNo value={money.showInPill} onChange={(showInPill) => void onPatch({ money: { ...money, showInPill } })} />
+            {m.hideValues}
+            <YesNo value={money.hideValues} onChange={(hideValues) => void onPatch({ money: { ...money, hideValues } })} />
+          </div>
+          <div className="flex items-center gap-[6px]">
+            {m.periodLabel}
+            {(['today', 'week', 'month'] as const).map((p) => (
+              <Chip key={p} on={money.period === p} onClick={() => void onPatch({ money: { ...money, period: p } })}>
+                {m.period[p]}
+              </Chip>
+            ))}
+          </div>
+        </>
+      )}
+    </div>
+  );
+}
+
 function AgentBlock({ settings, onPatch }: { settings: SettingsT; onPatch: (p: Partial<SettingsT>) => Promise<void> }): React.JSX.Element {
   const a = settings.agent;
   const models = ['sonnet', 'opus', 'haiku', 'default'] as const;
