@@ -131,6 +131,11 @@ export const t = {
     exportCsv: 'Exportar CSV',
     closeWithPipo: 'Fechar com o Pipo',
     empty: 'Nada registrado ainda.',
+    day: 'Dia',
+    week: 'Semana',
+    weekTitle: 'Últimos 7 dias',
+    weekLine: (w: string, g: string, n: number, d: string) => `${w} de ${g} de meta · ${n} focos completos · ${d} distraído`,
+    pattern: 'Padrão da semana',
   },
   focus: {
     label: 'Foco',

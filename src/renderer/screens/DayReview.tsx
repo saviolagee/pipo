@@ -1,6 +1,6 @@
 import { motion } from 'motion/react';
 import { useCallback, useEffect, useState } from 'react';
-import type { DayReview as Review, TimeReportRow } from '@shared/types';
+import type { DayReview as Review, TimeReportRow, WeeklySummary } from '@shared/types';
 import { Button } from '../components/Button';
 import { t } from '../i18n/pt-BR';
 import { api, fmtHM, fmtTime } from '../lib/api';
@@ -30,6 +30,12 @@ function Bars({ rows, total }: { rows: TimeReportRow[]; total: number }): React.
 /** Revisão / fechamento do dia (seções 9.5 e 9.10). */
 export function DayReview(): React.JSX.Element {
   const [data, setData] = useState<Review | null>(null);
+  const [mode, setMode] = useState<'day' | 'week'>(useUi.getState().weeklyReview ? 'week' : 'day');
+  const [week, setWeek] = useState<WeeklySummary | null>(null);
+  useEffect(() => {
+    if (mode === 'week') void api.invoke('stats:weekly').then(setWeek);
+    useUi.setState({ weeklyReview: false });
+  }, [mode]);
   const [msg, setMsg] = useState<string | null>(null);
   const clients = useData((s) => s.clients);
   const claudeOk = useData((s) => s.claude.state === 'ok');
@@ -89,6 +95,33 @@ export function DayReview(): React.JSX.Element {
         {msg && <p className="mt-[6px] max-w-full truncate text-[11px] text-fg-2">{msg}</p>}
       </div>
       <div className="scroll-thin flex min-w-0 flex-1 flex-col gap-[14px] overflow-y-auto rounded-[16px] p-[14px]" style={{ background: 'var(--bg-card)' }}>
+        <div className="flex justify-end gap-[4px]">
+          {(['day', 'week'] as const).map((m) => (
+            <button key={m} type="button" onClick={() => setMode(m)} className={`rounded-full px-[10px] py-[2px] text-[11px] ${mode === m ? 'bg-white text-black' : 'text-fg-2 hover:text-fg'}`}>
+              {m === 'day' ? r.day : r.week}
+            </button>
+          ))}
+        </div>
+        {mode === 'week' && week && (
+          <>
+            <section>
+              <h3 className="mb-[6px] text-[11px] font-medium uppercase tracking-[0.04em] text-fg-3">{r.weekTitle}</h3>
+              <p className="text-[13px] text-fg">{r.weekLine(fmtHM(week.workedMin), fmtHM(week.goalMin), week.focusSessions, fmtHM(week.distractedMin))}</p>
+            </section>
+            <section>
+              <h3 className="mb-[8px] text-[11px] font-medium uppercase tracking-[0.04em] text-fg-3">{r.byClient}</h3>
+              <Bars rows={week.byClient} total={Math.max(...week.byClient.map((x) => x.minutes), 1)} />
+            </section>
+            {week.pattern && (
+              <section>
+                <h3 className="mb-[6px] text-[11px] font-medium uppercase tracking-[0.04em] text-fg-3">{r.pattern}</h3>
+                <p className="text-[12.5px] text-fg-2">{week.pattern.text}</p>
+              </section>
+            )}
+          </>
+        )}
+        {mode === 'day' && (
+        <>
         <section>
           <h3 className="mb-[8px] text-[11px] font-medium uppercase tracking-[0.04em] text-fg-3">{r.byClient}</h3>
           <Bars rows={data.byClient} total={maxClient} />
@@ -141,6 +174,8 @@ export function DayReview(): React.JSX.Element {
             </div>
           ))}
         </section>
+        </>
+        )}
       </div>
     </div>
   );

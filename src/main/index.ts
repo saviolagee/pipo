@@ -20,6 +20,7 @@ import { registerDayFlows } from './agent/day-flows';
 import { registerCapture } from './capture';
 import { registerDebug } from './debug';
 import { registerIntegrations } from './integrations/ipc';
+import { registerInsights } from './insights';
 import { registerContextReactions } from './insights/context-reactions';
 import { startMcpBridge } from './mcp/server';
 import { registerSystemIpc } from './system';
@@ -78,6 +79,7 @@ app.whenReady().then(() => {
   registerContextReactions();
   registerDebug();
   registerIntegrations();
+  registerInsights();
   startScheduler();
   createNotchWindow();
   createTray();

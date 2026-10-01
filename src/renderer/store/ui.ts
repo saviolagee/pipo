@@ -18,6 +18,7 @@ interface UiState {
   captureMode: boolean;
   /** Captura pós-reunião: o texto vira tarefas pelo agente (com confirmação). */
   capturePurpose: 'meeting' | null;
+  weeklyReview: boolean;
   voiceRequested: boolean;
   debugOpen: boolean;
   entranceKey: number;
@@ -51,6 +52,7 @@ export const useUi = create<UiState>((set) => ({
   dragOver: false,
   captureMode: false,
   capturePurpose: null,
+  weeklyReview: false,
   voiceRequested: false,
   debugOpen: false,
   entranceKey: 0,

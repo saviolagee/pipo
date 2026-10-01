@@ -102,6 +102,7 @@ export function App(): React.JSX.Element {
       api.on('ui:collapse', () => useUi.getState().setExpanded(false)),
       api.on('ui:navigate', (p) => {
         useUi.getState().setTab(p.tab, p.expand);
+        if (p.weekly !== undefined) useUi.setState({ weeklyReview: p.weekly });
         if (p.capture !== undefined) useUi.setState({ captureMode: p.capture, voiceRequested: !!p.voice, capturePurpose: p.purpose ?? null });
       }),
       api.on('ui:paused', (paused) => {
@@ -141,6 +142,8 @@ export function App(): React.JSX.Element {
       api.on('meeting:active', (inMeeting) => useData.getState().set({ inMeeting })),
       api.on('integrations:changed', (integrations) => useData.getState().set({ integrations })),
       api.on('music:nowPlaying', (nowPlaying) => useData.getState().set({ nowPlaying })),
+      api.on('mood:changed', (mood) => useData.getState().set({ mood })),
+      api.on('streak:changed', (streak) => useData.getState().set({ streak })),
       api.on('files:progress', (p) => setIngest(p.done && !p.error ? null : p)),
       api.on('clipboard:candidate', ({ text }) => {
         // Carinha curiosa + botão "virar tarefa?" na pill por 5s (sem expandir).

@@ -43,18 +43,20 @@ async function closeDayCheck(): Promise<void> {
   const end = hmToMin(p.endTime);
   if (now < end || now > end + 120) return;
   setDayFlag('closeDay');
+  // Sexta: resumo semanal curto + o padrão da semana.
+  const friday = new Date().getDay() === 5;
   const answer = await showCard({
     kind: 'close_day',
     glow: 'none',
     mascot: 'sleepy',
-    label: 'fim do expediente',
-    title: 'Bora fechar o dia?',
+    label: friday ? 'fim da semana' : 'fim do expediente',
+    title: friday ? 'Bora fechar a semana?' : 'Bora fechar o dia?',
     buttons: [
       { id: 'later', label: 'Depois', kbd: 'N', variant: 'secondary' },
       { id: 'close', label: 'Fechar o dia', kbd: 'Y', variant: 'primary' },
     ],
   });
-  if (answer === 'close') emit('ui:navigate', { tab: 'review', expand: true });
+  if (answer === 'close') emit('ui:navigate', { tab: 'review', expand: true, weekly: friday });
 }
 
 export function registerDayFlows(): void {
