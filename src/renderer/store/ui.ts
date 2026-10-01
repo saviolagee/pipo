@@ -16,6 +16,8 @@ interface UiState {
   glowOverride: GlowKind | null;
   dragOver: boolean;
   captureMode: boolean;
+  /** Captura pós-reunião: o texto vira tarefas pelo agente (com confirmação). */
+  capturePurpose: 'meeting' | null;
   voiceRequested: boolean;
   debugOpen: boolean;
   entranceKey: number;
@@ -48,6 +50,7 @@ export const useUi = create<UiState>((set) => ({
   glowOverride: null,
   dragOver: false,
   captureMode: false,
+  capturePurpose: null,
   voiceRequested: false,
   debugOpen: false,
   entranceKey: 0,

@@ -6,6 +6,7 @@ import { t } from '../i18n/pt-BR';
 import { api } from '../lib/api';
 import { Mascot } from '../mascot/Mascot';
 import { play } from '../sound/sfx';
+import { useChat } from '../store/chat';
 import { useUi } from '../store/ui';
 import { useVoice } from '../voice/useVoice';
 
@@ -21,6 +22,14 @@ export function QuickCapture({ autoVoice }: { autoVoice?: boolean }): React.JSX.
   const submit = async (value: string, source: 'manual' | 'voice'): Promise<void> => {
     const v = value.trim();
     if (!v || busy) return;
+    if (useUi.getState().capturePurpose === 'meeting') {
+      // Anotações da reunião: o agente transforma em tarefas (cada uma pede confirmação).
+      useUi.setState({ captureMode: false, capturePurpose: null });
+      useUi.getState().setTab('chat');
+      useChat.getState().newConversation();
+      void useChat.getState().send(`Anotações da reunião que acabou. Transforme os próximos passos em tarefas (com data e estimativa quando der):\n${v}`);
+      return;
+    }
     setBusy(true);
     useUi.setState({ agentBusy: true });
     try {
@@ -50,6 +59,7 @@ export function QuickCapture({ autoVoice }: { autoVoice?: boolean }): React.JSX.
   useEffect(() => api.on('ui:navigate', (p) => p.capture && p.voice && void voice.toggle()), [voice]);
 
   const recording = voice.state === 'recording';
+  const meeting = useUi((st) => st.capturePurpose === 'meeting');
   const mascotState = recording ? 'listening' : busy || voice.state === 'transcribing' ? 'thinking' : 'idle';
   const status =
     voice.modelProgress !== null && voice.state === 'transcribing'
@@ -75,7 +85,7 @@ export function QuickCapture({ autoVoice }: { autoVoice?: boolean }): React.JSX.
             onChange={(e) => setText(e.target.value)}
             onKeyDown={(e) => e.key === 'Enter' && void submit(text, 'manual')}
             {...pin}
-            placeholder={q.placeholder}
+            placeholder={meeting ? q.meetingPlaceholder : q.placeholder}
             aria-label={q.placeholder}
             disabled={busy}
             className="h-full min-w-0 flex-1 bg-transparent text-[14px] outline-none placeholder:text-fg-3"

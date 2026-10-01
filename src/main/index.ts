@@ -18,6 +18,8 @@ import { startScheduler } from './scheduler';
 import { registerAgentIpc } from './agent/service';
 import { registerDayFlows } from './agent/day-flows';
 import { registerCapture } from './capture';
+import { registerDebug } from './debug';
+import { registerContextReactions } from './insights/context-reactions';
 import { startMcpBridge } from './mcp/server';
 import { registerSystemIpc } from './system';
 import { nextSuggested, registerTasksIpc } from './tasks/ipc';
@@ -51,7 +53,6 @@ function registerCoreIpc(): void {
     if (patch.paused !== undefined) setPaused(patch.paused);
     return next;
   });
-  handle('debug:simulate', () => undefined);
   ipcMain.on('ui:ready', () => undefined);
 }
 
@@ -73,6 +74,8 @@ app.whenReady().then(() => {
   registerAgentIpc();
   registerDayFlows();
   registerCapture();
+  registerContextReactions();
+  registerDebug();
   startScheduler();
   createNotchWindow();
   createTray();

@@ -150,7 +150,7 @@ export interface MainEvents {
   'music:nowPlaying': NowPlaying | null;
   'music:local': { action: 'play' | 'pause' | 'stop'; filePath?: string };
   'files:progress': IngestProgress;
-  'ui:navigate': { tab: 'home' | 'tasks' | 'chat' | 'add' | 'settings' | 'review'; expand: boolean; capture?: boolean; voice?: boolean };
+  'ui:navigate': { tab: 'home' | 'tasks' | 'chat' | 'add' | 'settings' | 'review'; expand: boolean; capture?: boolean; voice?: boolean; purpose?: 'meeting' };
   'ui:toggle': null;
   'ui:collapse': null;
   'ui:paused': boolean;

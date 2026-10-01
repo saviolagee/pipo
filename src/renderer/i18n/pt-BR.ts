@@ -68,6 +68,7 @@ export const t = {
     speak: 'Segurar para falar',
     stop: 'Parar de gravar',
     clipboardAsk: 'virar tarefa?',
+    meetingPlaceholder: 'Quais foram os próximos passos da reunião?',
   },
   drop: {
     title: 'Solte seus arquivos',
