@@ -81,7 +81,7 @@ export function AttentionCard({ card, mood, accessories }: { card: Card; mood: n
           </div>
         )}
         {big && <div className="mt-[6px] text-[15px] first:mt-0 font-semibold leading-snug text-fg">{card.title}</div>}
-        {card.body && <div className={`${big ? 'mt-[2px]' : 'mt-[4px]'} text-[12px] text-fg-2`}>{card.body}</div>}
+        {card.body && <div className={`${big ? 'mt-[2px]' : 'mt-[4px]'} whitespace-pre-line text-[12px] text-fg-2`}>{card.body}</div>}
         {card.buttons.length > 0 && (
           <div className="mt-[10px] flex flex-wrap items-center gap-[8px]">
             {card.buttons.map((b) => (

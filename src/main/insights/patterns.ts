@@ -4,6 +4,7 @@ import type { PatternSuggestion, Weekday, WeeklySummary } from '@shared/types';
 import { timeReport } from '../activity/review';
 import { db } from '../db';
 import { listClients, norm } from '../db/repos/clients';
+import { isNeutral } from '../db/repos/days';
 import { statsFor } from '../stats';
 import { addDays, dayRange } from '../time';
 
@@ -98,6 +99,7 @@ export function patternInput(weeks: number, now = new Date()): PatternInput {
   for (let i = 1; i <= 7 * weeks; i++) {
     const d = addDays(now, -i);
     const st = statsFor(d);
+    if (isNeutral(st.date)) continue;
     days.push({ date: st.date, weekday: d.getDay() as Weekday, distractedMin: st.distractedMin, workedMin: st.workedMin });
   }
   return { tasks, sessions, days };

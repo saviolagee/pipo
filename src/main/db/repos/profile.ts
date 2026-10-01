@@ -1,6 +1,7 @@
 import { PRESENCE_BUDGET } from '@shared/config';
 import type { FocusPreset, Profile, Weekday } from '@shared/types';
 import { db } from '../index';
+import { goalFactor } from './days';
 
 interface ProfileRow {
   name: string;
@@ -107,7 +108,8 @@ export function resetOnboarding(): void {
 export function goalForDate(p: Profile | null, d: Date): number {
   if (!p) return 360;
   const wd = d.getDay() as Weekday;
-  if (p.goalPerDay && p.goalPerDay[wd] !== undefined) return p.goalPerDay[wd] ?? 0;
-  if (!p.workDays.includes(wd)) return 0;
-  return p.dailyGoalMin;
+  const base = p.goalPerDay && p.goalPerDay[wd] !== undefined ? (p.goalPerDay[wd] ?? 0) : p.workDays.includes(wd) ? p.dailyGoalMin : 0;
+  // Folga/férias/feriado/doente zeram a meta; meio período corta pela metade (Fase 15).
+  const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+  return Math.round(base * goalFactor(key));
 }

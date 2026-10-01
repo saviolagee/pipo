@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import type { Settings as SettingsT, UnlockableAccessory } from '@shared/types';
 import { Button } from '../components/Button';
+import { DaysSettings } from './DaysSettings';
 import { Chip, Label, Option, Slider, TagInput, TextField, YesNo } from '../components/Form';
 import { t } from '../i18n/pt-BR';
 import { api } from '../lib/api';
@@ -17,7 +18,7 @@ import { useUi } from '../store/ui';
 
 const s = t.settings;
 type SectionId = keyof typeof s.sections;
-const SECTIONS: SectionId[] = ['profile', 'goal', 'focus', 'rituals', 'distractions', 'clients', 'integrations', 'agent', 'personality', 'privacy', 'shortcuts', 'data'];
+const SECTIONS: SectionId[] = ['profile', 'goal', 'days', 'focus', 'rituals', 'distractions', 'clients', 'integrations', 'agent', 'personality', 'privacy', 'shortcuts', 'data'];
 const DRAFT_SECTIONS: SectionId[] = ['profile', 'goal', 'focus', 'rituals', 'distractions', 'clients', 'personality'];
 
 function errText(e: unknown): string {
@@ -88,6 +89,8 @@ export function SettingsScreen(): React.JSX.Element {
         );
       case 'goal':
         return <GoalStep {...p} />;
+      case 'days':
+        return <DaysSettings onMsg={setMsg} />;
       case 'focus':
         return (
           <>

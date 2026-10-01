@@ -8,11 +8,15 @@ import { handle } from './ipc';
 import { tasksChanged } from './tasks/ipc';
 
 /** Ganchos das fases seguintes (padrões, streak, dados simulados). */
-export const debugHooks: Partial<Record<'pattern' | 'unlock' | 'seed4weeks', () => void | Promise<void>>> = {};
+export const debugHooks: Partial<Record<'pattern' | 'unlock' | 'seed4weeks' | 'absence' | 'vacationBack', () => void | Promise<void>>> = {};
 
 export function registerDebug(): void {
   handle('debug:simulate', async (what) => {
     switch (what) {
+      case 'absence':
+      case 'vacationBack':
+        await debugHooks[what]?.();
+        break;
       case 'meeting':
         simulateMeeting(true);
         setTimeout(() => simulateMeeting(false), 8000);

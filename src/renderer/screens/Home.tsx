@@ -67,11 +67,14 @@ export function Home({ state, badge, mood, accessories, look, bump, onMascotClic
   const phrase = useData((s) => s.mood.phrase);
   const paused = useData((s) => s.settings?.paused ?? false);
   const nowPlaying = useData((s) => s.nowPlaying);
+  const today = useData((s) => s.today);
+  const dayPhrase =
+    today?.kind === 'holiday' ? t.days.phrase.holiday(today.note ?? '') : today && (today.kind === 'off' || today.kind === 'vacation' || today.kind === 'sick') ? t.days.phrase[today.kind] : null;
   const song = state === 'dancing' && nowPlaying ? `♪ ${nowPlaying.track}${nowPlaying.artist ? ` — ${nowPlaying.artist}` : ''}` : null;
 
   const parts: string[] = [];
   if (stats) {
-    parts.push(t.home.hoursOf(fmtHM(stats.workedMin), fmtHM(stats.goalMin)));
+    parts.push(stats.goalMin > 0 ? t.home.hoursOf(fmtHM(stats.workedMin), fmtHM(stats.goalMin)) : t.home.hoursOnly(fmtHM(stats.workedMin)));
     parts.push(t.home.tasksCount(stats.openTodayTasks));
     if (stats.nextMeeting) parts.push(t.home.nextMeeting(fmtTime(stats.nextMeeting.start)));
   }
@@ -89,8 +92,8 @@ export function Home({ state, badge, mood, accessories, look, bump, onMascotClic
             <Speech />
           </div>
         </div>
-        <motion.p key={paused ? 'p' : (song ?? phrase)} initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }} className="relative mt-[2px] h-[18px] max-w-[90%] truncate text-[13px] text-fg">
-          {paused ? t.home.paused : (song ?? phrase)}
+        <motion.p key={paused ? 'p' : (song ?? dayPhrase ?? phrase)} initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }} className="relative mt-[2px] h-[18px] max-w-[90%] truncate text-[13px] text-fg">
+          {paused ? t.home.paused : (song ?? dayPhrase ?? phrase)}
         </motion.p>
       </div>
       <div className="mt-[10px] flex items-center justify-between gap-3 px-[4px]">

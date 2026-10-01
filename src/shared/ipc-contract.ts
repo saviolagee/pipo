@@ -1,6 +1,9 @@
 // Contrato de IPC tipado. Main implementa `InvokeHandlers`; o renderer chama via `window.pipo.invoke`.
+import type { HolidayPrefs } from './holidays';
 import type {
   ActivityBlock,
+  DayKind,
+  DayStatus,
   AgentEvent,
   Attachment,
   Bootstrap,
@@ -124,7 +127,14 @@ export interface InvokeHandlers {
   'music:nowPlaying': () => NowPlaying | null;
   'music:test': () => void;
 
-  'debug:simulate': (what: 'meeting' | 'pomodoro_end' | 'distraction' | 'deadline' | 'goal' | 'pattern' | 'unlock' | 'seed4weeks') => void;
+  'debug:simulate': (what: 'meeting' | 'pomodoro_end' | 'distraction' | 'deadline' | 'goal' | 'pattern' | 'unlock' | 'seed4weeks' | 'absence' | 'vacationBack') => void;
+  'days:list': (start: string, end: string) => DayStatus[];
+  'days:set': (date: string, kind: DayKind, opts?: { minutes?: number | null; note?: string | null }) => DayStatus;
+  'days:clear': (date: string) => void;
+  'days:setRange': (start: string, end: string, kind: DayKind, note?: string | null) => number;
+  'days:clearRange': (start: string, end: string) => number;
+  'days:holidayPrefs': () => HolidayPrefs;
+  'days:setHolidayPrefs': (p: HolidayPrefs) => HolidayPrefs;
 }
 
 export type InvokeChannel = keyof InvokeHandlers;
@@ -161,6 +171,7 @@ export interface MainEvents {
   'sfx:play': SfxName;
   /** Abre o chat e envia uma mensagem (ex.: "Planejar meu dia" a partir de um card). */
   'chat:send': { text: string };
+  'day:today': DayStatus | null;
 }
 
 export type MainEventName = keyof MainEvents;

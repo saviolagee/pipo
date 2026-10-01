@@ -5,6 +5,7 @@ import { activityListeners } from '../activity/tracker';
 import { agentAvailable } from '../agent/service';
 import { emit } from '../bus';
 import { showCard } from '../cards';
+import { isAbsent } from '../db/repos/days';
 import { getProfile } from '../db/repos/profile';
 import { getSettings, patchSettings } from '../db/repos/settings';
 import { getTask, listTasks, snoozeTask } from '../db/repos/tasks';
@@ -14,7 +15,7 @@ import { agentHooks } from '../mcp/tools';
 import { dayFlag, every, setDayFlag } from '../scheduler';
 import { tasksChanged } from '../tasks/ipc';
 import { fmtDue } from '@shared/format';
-import { hmToMin, minutesOfDay } from '../time';
+import { dayKey, hmToMin, minutesOfDay } from '../time';
 
 const POLL_SEC = 5;
 
@@ -159,7 +160,7 @@ function inWorkHours(): boolean {
   const p = getProfile();
   if (!p) return false;
   const d = new Date();
-  if (!p.workDays.includes(d.getDay() as (typeof p.workDays)[number])) return false;
+  if (!p.workDays.includes(d.getDay() as (typeof p.workDays)[number]) || isAbsent(dayKey(d))) return false;
   const m = minutesOfDay(d);
   return m >= hmToMin(p.startTime) && m < hmToMin(p.endTime);
 }

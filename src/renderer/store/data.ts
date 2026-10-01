@@ -9,6 +9,7 @@ import type {
   IntegrationInfo,
   MoodInfo,
   NowPlaying,
+  DayStatus,
   Profile,
   Ritual,
   Settings,
@@ -33,6 +34,8 @@ interface DataState {
   integrations: IntegrationInfo[];
   claude: ClaudeStatus;
   nowPlaying: NowPlaying | null;
+  /** Folga/férias/feriado de hoje (Fase 15). */
+  today: DayStatus | null;
   activity: CurrentActivity | null;
   inMeeting: boolean;
   events: CalendarEvent[];
@@ -58,6 +61,7 @@ export const useData = create<DataState>((set, get) => ({
   integrations: [],
   claude: { state: 'checking' },
   nowPlaying: null,
+  today: null,
   activity: null,
   inMeeting: false,
   events: [],
@@ -76,6 +80,7 @@ export const useData = create<DataState>((set, get) => ({
       focus: b.focus,
       integrations: b.integrations,
       claude: b.claude,
+      today: b.today ?? null,
     });
     await Promise.all([get().refreshTasks(), get().refreshStats(), api.invoke('music:nowPlaying').then((nowPlaying) => set({ nowPlaying }))]);
   },

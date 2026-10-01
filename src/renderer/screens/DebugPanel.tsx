@@ -7,10 +7,10 @@ import { play } from '../sound/sfx';
 import { useUi } from '../store/ui';
 
 const STATES: MascotState[] = ['idle', 'looking', 'happy', 'working', 'thinking', 'attention', 'sleepy', 'eating', 'celebrating', 'dizzy', 'sad', 'tired', 'listening', 'shh', 'dancing'];
-const ACCESSORIES: Accessory[] = ['headphones', 'glasses', 'coffee', 'nightcap', 'scarf', 'cool_glasses', 'hat', 'crown', 'cape'];
+const ACCESSORIES: Accessory[] = ['headphones', 'glasses', 'coffee', 'nightcap', 'scarf', 'cool_glasses', 'hat', 'crown', 'cape', 'pajama'];
 const GLOWS: GlowKind[] = ['none', 'focus', 'attention', 'done', 'dizzy'];
 const SFX: SfxName[] = ['pop', 'chime', 'alert', 'gulp', 'boing', 'tick'];
-const SIMS = ['meeting', 'pomodoro_end', 'distraction', 'deadline', 'goal', 'pattern', 'unlock', 'seed4weeks'] as const;
+const SIMS = ['meeting', 'pomodoro_end', 'distraction', 'deadline', 'goal', 'pattern', 'unlock', 'seed4weeks', 'absence', 'vacationBack'] as const;
 
 function Chip({ on, onClick, children }: { on: boolean; onClick: () => void; children: React.ReactNode }): React.JSX.Element {
   return (

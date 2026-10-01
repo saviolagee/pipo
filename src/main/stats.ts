@@ -1,6 +1,7 @@
 // Estatísticas do dia (linha de status do Início, anel da meta, rodapé de Tarefas).
 import type { CalendarEvent, DayStats } from '@shared/types';
 import { db } from './db';
+import { offlineMinutes } from './db/repos/days';
 import { goalForDate, getProfile } from './db/repos/profile';
 import { listTasks } from './db/repos/tasks';
 import { dayKey, dayRange } from './time';
@@ -29,7 +30,8 @@ export function statsFor(date: Date): DayStats {
   const today = isToday ? listTasks('today') : [];
   return {
     date: dayKey(date),
-    workedMin: Math.round(worked.workedMin),
+    // Horas informadas como "trabalhei fora do PC" somam às registradas.
+    workedMin: Math.round(worked.workedMin + offlineMinutes(dayKey(date))),
     goalMin: goalForDate(getProfile(), date),
     focusMin: Math.round(f.focusMin),
     distractedMin: Math.round(worked.distractedMin),

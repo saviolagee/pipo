@@ -15,6 +15,7 @@ import { computeMood, currentMood, refreshMood } from './mood';
 import { patterns, weeklySummary } from './patterns';
 import { seedFourWeeks } from './seed';
 import { equip, getStreak, refreshStreak } from './streak';
+import { dayHooks } from '../days/flows';
 
 function isoWeek(d: Date): string {
   const t = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
@@ -85,6 +86,11 @@ export function registerInsights(): void {
   handle('streak:equip', (eq) => equip(eq));
   handle('stats:weekly', () => weeklySummary());
 
+  // Marcar folga/férias muda metas, médias e sequência na hora.
+  dayHooks.changed = () => {
+    refreshMood();
+    void refreshStreak();
+  };
   every('mood', 15 * 60_000, () => void refreshMood());
   every('streak', 15 * 60_000, () => void refreshStreak());
   every('weeklyPattern', 30 * 60_000, () => void weeklyPattern());

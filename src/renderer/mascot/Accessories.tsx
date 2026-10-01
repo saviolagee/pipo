@@ -16,6 +16,20 @@ export function AccessoriesFront({ items, sipping }: { items: Accessory[]; sippi
   const has = (a: Accessory): boolean => items.includes(a);
   return (
     <g>
+      {has('pajama') && (
+        // Pijama listrado de folga: listras azuis recortadas no corpo + golinha.
+        <g>
+          <clipPath id="pipo-pajama-clip">
+            <rect x={18} y={32} width={64} height={48} rx={16} />
+          </clipPath>
+          <g clipPath="url(#pipo-pajama-clip)" fill="#93C5FD" opacity={0.5}>
+            {Array.from({ length: 8 }, (_, i) => (
+              <rect key={i} x={19 + i * 8.6} y={32} width={3.4} height={48} />
+            ))}
+          </g>
+          <path d="M40 80 L50 72 L60 80" fill="none" stroke="#60A5FA" strokeWidth={2.2} strokeLinejoin="round" />
+        </g>
+      )}
       {has('scarf') && (
         <g>
           <rect x={19} y={70} width={62} height={8} rx={4} fill="#EF4444" />

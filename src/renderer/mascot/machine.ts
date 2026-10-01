@@ -67,6 +67,9 @@ export function useMascot(hovered: boolean): { state: MascotState; accessories: 
 
   const accessories: Accessory[] = ui.debug.accessories ? [...ui.debug.accessories] : [...data.streak.equipped];
   if (data.focus?.musicActive && data.focus.phase === 'focus') accessories.push('headphones');
+  // Folga, férias, feriado ou doente: pijama (Fase 15).
+  const today = data.today;
+  if (today && ['off', 'vacation', 'holiday', 'sick'].includes(today.kind) && !ui.debug.accessories) accessories.push('pajama', 'nightcap');
   const finalState = ui.debug.state ?? state;
   if (finalState === 'working' && !ui.debug.accessories) accessories.push('coffee');
   if (finalState === 'dancing' && !accessories.includes('headphones')) accessories.push('headphones');

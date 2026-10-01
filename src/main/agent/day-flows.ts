@@ -2,15 +2,16 @@
 import { ipcMain } from 'electron';
 import { emit } from '../bus';
 import { showCard } from '../cards';
+import { isAbsent } from '../db/repos/days';
 import { getProfile } from '../db/repos/profile';
 import { focusHooks } from '../focus/session';
 import { dayFlag, every, setDayFlag } from '../scheduler';
-import { hmToMin, minutesOfDay } from '../time';
+import { dayKey, hmToMin, minutesOfDay } from '../time';
 import { agentAvailable, proposeSubtasks } from './service';
 
 function isWorkday(d = new Date()): boolean {
   const p = getProfile();
-  return !!p && p.workDays.includes(d.getDay() as (typeof p.workDays)[number]);
+  return !!p && p.workDays.includes(d.getDay() as (typeof p.workDays)[number]) && !isAbsent(dayKey(d));
 }
 
 async function openDay(): Promise<void> {

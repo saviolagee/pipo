@@ -4,6 +4,7 @@ import type { StreakInfo, UnlockableAccessory, Weekday } from '@shared/types';
 import { emit } from '../bus';
 import { showCard } from '../cards';
 import { db } from '../db';
+import { isNeutral } from '../db/repos/days';
 import { getProfile } from '../db/repos/profile';
 import { focusMinutes, statsFor } from '../stats';
 import { addDays, dayKey, dayRange } from '../time';
@@ -79,7 +80,8 @@ export async function refreshStreak(now = new Date()): Promise<StreakInfo> {
   const days: DayResult[] = [];
   for (let i = 0; i < 90; i++) {
     const d = addDays(now, -i);
-    const workday = !!p && p.workDays.includes(d.getDay() as Weekday);
+    // Ausências e dias sem registro não quebram nem contam (como um dia de folga).
+    const workday = !!p && p.workDays.includes(d.getDay() as Weekday) && !isNeutral(dayKey(d));
     const { start, end } = dayRange(d);
     const st = statsFor(d);
     days.push({ date: dayKey(d), workday, qualifies: workday && qualifies(st.workedMin, st.goalMin, focusMinutes(start, end).completed) });

@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import type { AgentErrorCode, Attachment, ChatMessage } from '@shared/types';
 import { isFocusNextIntent } from '@shared/intents';
 import { api } from '../lib/api';
+import { matchCommand } from '../lib/commands';
 import { focusNext } from '../lib/focus';
 import { play } from '../sound/sfx';
 import { useUi } from './ui';
@@ -38,6 +39,12 @@ export const useChat = create<ChatState>((set, get) => ({
   send: async (text) => {
     const t = text.trim();
     if (!t || get().busy) return;
+    // Comandos com "/" (ex.: /ferias 10 a 20 de dez) rodam no app.
+    const slash = matchCommand(t);
+    if (slash) {
+      await slash.cmd.run(slash.args);
+      return;
+    }
     // "foca na próxima": o app resolve na hora, sem esperar o agente.
     if (isFocusNextIntent(t) && !get().pending.length) {
       await focusNext();

@@ -4,9 +4,10 @@ import type { MascotState } from '@shared/types';
 import { emit } from '../bus';
 import { showCard, type CardInput } from '../cards';
 import { db } from '../db';
+import { isAbsent } from '../db/repos/days';
 import { getProfile } from '../db/repos/profile';
 import { getKV, getSettings, setKV } from '../db/repos/settings';
-import { hmToMin } from '../time';
+import { dayKey, hmToMin } from '../time';
 import { decide, pickNext, shouldSilence, SILENCE_MS, type BudgetState, type InterruptionType } from './budget';
 
 export type { InterruptionType } from './budget';
@@ -60,7 +61,8 @@ export function budgetState(now = Date.now()): BudgetState {
     budget: getProfile()?.interruptBudget ?? 5,
     spentToday: r?.n ?? 0,
     lastShownAt: r?.last ? Date.parse(r.last) : null,
-    paused: getSettings().paused,
+    // Em folga/férias/feriado o Pipo não interrompe (só reage com expressão).
+    paused: getSettings().paused || isAbsent(dayKey(new Date(now))),
     inMeeting,
     silencedUntil: silenced(),
   };

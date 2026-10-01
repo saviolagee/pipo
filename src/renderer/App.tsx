@@ -141,6 +141,7 @@ export function App(): React.JSX.Element {
       api.on('meeting:active', (inMeeting) => useData.getState().set({ inMeeting })),
       api.on('integrations:changed', (integrations) => useData.getState().set({ integrations })),
       api.on('music:nowPlaying', (nowPlaying) => useData.getState().set({ nowPlaying })),
+      api.on('day:today', (today) => useData.getState().set({ today })),
       api.on('mood:changed', (mood) => useData.getState().set({ mood })),
       api.on('streak:changed', (streak) => useData.getState().set({ streak })),
       api.on('files:progress', (p) => setIngest(p.done && !p.error ? null : p)),

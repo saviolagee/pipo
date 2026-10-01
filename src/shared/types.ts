@@ -222,7 +222,8 @@ export type Accessory =
   | 'cool_glasses'
   | 'hat'
   | 'crown'
-  | 'cape';
+  | 'cape'
+  | 'pajama';
 
 export type UnlockableAccessory = 'scarf' | 'cool_glasses' | 'hat' | 'crown' | 'cape';
 
@@ -395,7 +396,23 @@ export interface Settings {
   reactions: ReactionSettings;
 }
 
+/** Dia não trabalhado (ou trabalhado fora do PC). Seção 4.4 do plano V2. */
+export type DayKind = 'off' | 'vacation' | 'holiday' | 'sick' | 'half' | 'offline_work' | 'no_record';
+
+export interface DayStatus {
+  /** AAAA-MM-DD */
+  date: string;
+  kind: DayKind;
+  /** Horas trabalhadas fora do PC (offline_work), em minutos. */
+  minutes: number | null;
+  note: string | null;
+  /** user | holiday | ask */
+  source: string;
+}
+
 export interface Bootstrap {
+  /** Status de hoje (folga, férias, feriado…), se houver. */
+  today?: DayStatus | null;
   profile: Profile | null;
   settings: Settings;
   rituals: Ritual[];

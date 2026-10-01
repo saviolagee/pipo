@@ -2,9 +2,10 @@
 import type { MoodComponents, MoodInfo, Tone } from '@shared/types';
 import { emit } from '../bus';
 import { db } from '../db';
+import { isNeutral } from '../db/repos/days';
 import { getProfile } from '../db/repos/profile';
 import { focusMinutes, statsFor } from '../stats';
-import { addDays, dayRange } from '../time';
+import { addDays, dayKey, dayRange } from '../time';
 
 export interface DayInputs {
   plannedTasks: number;
@@ -91,6 +92,8 @@ function last7DayMoods(today: Date): number[] {
   const out: number[] = [];
   for (let i = 1; i <= 7; i++) {
     const d = addDays(today, -i);
+    // Folga, férias, feriado e "sem registro" ficam fora da média.
+    if (isNeutral(dayKey(d))) continue;
     const { start, end } = dayRange(d);
     const r = db().get<{ mood: number }>('SELECT mood FROM mood_snapshots WHERE at >= ? AND at < ? ORDER BY at DESC LIMIT 1', start, end);
     if (r) out.push(r.mood);
