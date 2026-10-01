@@ -27,6 +27,7 @@ import { registerBuilder } from './pipos/builder';
 import { registerTriggers } from './pipos/triggers';
 import { registerPipoChat } from './pipos/pipo-chat';
 import { registerLinks } from './pipos/links';
+import { openDashboard, registerDashboard } from './dashboard';
 import { registerContextReactions } from './insights/context-reactions';
 import { startMcpBridge } from './mcp/server';
 import { registerSystemIpc, setAutostart } from './system';
@@ -99,11 +100,14 @@ app.whenReady().then(() => {
   registerTriggers();
   registerPipoChat();
   registerLinks();
+  registerDashboard();
   startScheduler();
   createNotchWindow();
   createTray();
   // Painel de debug do mascote (Ctrl+Alt+D).
   setFixedShortcuts({
+    // Dashboards (Fase 22).
+    'CommandOrControl+Shift+A': () => openDashboard(),
     'CommandOrControl+Alt+D': () => {
       showNotch(true);
       emit('ui:openDebug', null);

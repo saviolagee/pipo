@@ -4,12 +4,13 @@ import '@fontsource-variable/inter';
 import '@fontsource-variable/jetbrains-mono';
 import './styles/tokens.css';
 import { App } from './App';
+import { DashboardApp } from './dashboard/DashboardApp';
 
-createRoot(document.getElementById('root') as HTMLElement).render(
-  <StrictMode>
-    <App />
-  </StrictMode>,
-);
+// A mesma página serve o notch e a janela de dashboards (?view=dashboard).
+const isDashboard = new URLSearchParams(location.search).get('view') === 'dashboard';
+if (isDashboard) document.documentElement.classList.add('dashboard');
+
+createRoot(document.getElementById('root') as HTMLElement).render(<StrictMode>{isDashboard ? <DashboardApp /> : <App />}</StrictMode>);
 
 // Acesso aos stores para o painel de debug e scripts de validação visual.
 import { useUi } from './store/ui';

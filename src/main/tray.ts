@@ -3,6 +3,7 @@ import { APP_NAME } from '@shared/config';
 import { bus, emit } from './bus';
 import { focusState, startFocus } from './focus/session';
 import { nextSuggested } from './tasks/ipc';
+import { openDashboard } from './dashboard';
 import { getSettings, patchSettings } from './db/repos/settings';
 import { renderFace } from './icons';
 import { showNotch } from './window';
@@ -44,6 +45,7 @@ function rebuildMenu(): void {
           },
         },
     { type: 'separator' },
+    { label: 'Dashboards', accelerator: 'CommandOrControl+Shift+A', click: () => openDashboard() },
     {
       label: `Abrir ${APP_NAME}`,
       click: () => {

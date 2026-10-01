@@ -1,5 +1,5 @@
 import { motion } from 'motion/react';
-import { IconChat, IconCheckCircle, IconGear, IconHome, IconPlus, IconSpeaker, IconTeam } from '../components/Icons';
+import { IconChart, IconChat, IconCheckCircle, IconGear, IconHome, IconPlus, IconSpeaker, IconTeam } from '../components/Icons';
 import { t } from '../i18n/pt-BR';
 import { api } from '../lib/api';
 import { useData } from '../store/data';
@@ -50,6 +50,9 @@ export function TopBar(): React.JSX.Element {
         ))}
       </div>
       <div className="flex items-center gap-[2px]">
+        <TabButton active={false} label={t.tabs.dashboards} onClick={() => void api.invoke('dash:open', null)}>
+          <IconChart size={15} />
+        </TabButton>
         <TabButton active={tab === 'settings'} label={t.tabs.settings} onClick={() => setTab('settings')}>
           <IconGear size={16} />
         </TabButton>

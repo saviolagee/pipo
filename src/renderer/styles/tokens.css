@@ -57,6 +57,17 @@ body,
   color: var(--text-primary);
 }
 
+/* Janela de dashboards: página normal, rolável e com texto selecionável. */
+html.dashboard,
+html.dashboard body,
+html.dashboard #root {
+  height: auto;
+  min-height: 100%;
+  overflow: auto;
+  background: #0b0b0d;
+  user-select: text;
+}
+
 input,
 textarea,
 button,

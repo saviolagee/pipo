@@ -153,3 +153,9 @@ export const IconTeam = ({ size = 16, ...p }: P): React.JSX.Element => (
     <path d="M6.2 12.2v.6M9.8 12.2v.6" strokeWidth="2" />
   </svg>
 );
+
+export const IconChart = ({ size = 16, ...p }: P): React.JSX.Element => (
+  <svg {...base(size, p)}>
+    <path d="M4 20V10M10 20V4M16 20v-7M21 20H3" />
+  </svg>
+);

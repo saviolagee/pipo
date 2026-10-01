@@ -1,4 +1,5 @@
 // Contrato de IPC tipado. Main implementa `InvokeHandlers`; o renderer chama via `window.pipo.invoke`.
+import type { DashData, DashRange } from './dashboard';
 import type { HolidayPrefs } from './holidays';
 import type { DraftInfo, Pipo, PipoLive, PipoMemoryRule, PipoModel, PipoPlaybook, PipoRun, PipoRunStep, PipoSummary, PipoTrigger, PipoVersion } from './pipos';
 import type {
@@ -130,6 +131,12 @@ export interface InvokeHandlers {
   'music:test': () => void;
 
   'debug:simulate': (what: 'meeting' | 'pomodoro_end' | 'distraction' | 'deadline' | 'goal' | 'pattern' | 'unlock' | 'seed4weeks' | 'absence' | 'vacationBack') => void;
+  'dash:open': (tab?: string | null) => void;
+  'dash:data': (range: DashRange) => DashData;
+  'dash:setClientEcon': (clientId: number, econ: { hourlyRate?: number | null; monthlyValue?: number | null }) => void;
+  'dash:exportCsv': (name: string, csv: string) => string | null;
+  'dash:exportPdf': (name: string) => string | null;
+  'dash:ask': (question: string, range: DashRange) => string;
   'stripe:connect': (key: string) => string;
   'stripe:income': () => StripeIncome | null;
   'days:list': (start: string, end: string) => DayStatus[];
@@ -200,6 +207,7 @@ export interface MainEvents {
   /** Abre o chat e envia uma mensagem (ex.: "Planejar meu dia" a partir de um card). */
   'chat:send': { text: string };
   'day:today': DayStatus | null;
+  'dash:tab': string;
   'stripe:income': StripeIncome | null;
   'stripe:payment': { amount: number; currency: string; description: string | null };
   'pipos:changed': PipoSummary[];
