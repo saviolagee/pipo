@@ -3,7 +3,9 @@ import { useEffect, useRef, useState } from 'react';
 import { usePinOnFocus } from '../components/Form';
 import { IconArrowUp, IconMic } from '../components/Icons';
 import { t } from '../i18n/pt-BR';
+import { isFocusNextIntent } from '@shared/intents';
 import { api } from '../lib/api';
+import { focusNext } from '../lib/focus';
 import { Mascot } from '../mascot/Mascot';
 import { play } from '../sound/sfx';
 import { useChat } from '../store/chat';
@@ -22,6 +24,12 @@ export function QuickCapture({ autoVoice }: { autoVoice?: boolean }): React.JSX.
   const submit = async (value: string, source: 'manual' | 'voice'): Promise<void> => {
     const v = value.trim();
     if (!v || busy) return;
+    // Voz/texto "foca na próxima" começa o foco em vez de virar tarefa.
+    if (isFocusNextIntent(v)) {
+      useUi.setState({ captureMode: false, voiceRequested: false });
+      await focusNext();
+      return;
+    }
     if (useUi.getState().capturePurpose === 'meeting') {
       // Anotações da reunião: o agente transforma em tarefas (cada uma pede confirmação).
       useUi.setState({ captureMode: false, capturePurpose: null });

@@ -1,6 +1,8 @@
 import { create } from 'zustand';
 import type { AgentErrorCode, Attachment, ChatMessage } from '@shared/types';
+import { isFocusNextIntent } from '@shared/intents';
 import { api } from '../lib/api';
+import { focusNext } from '../lib/focus';
 import { play } from '../sound/sfx';
 import { useUi } from './ui';
 
@@ -34,6 +36,11 @@ export const useChat = create<ChatState>((set, get) => ({
   send: async (text) => {
     const t = text.trim();
     if (!t || get().busy) return;
+    // "foca na próxima": o app resolve na hora, sem esperar o agente.
+    if (isFocusNextIntent(t) && !get().pending.length) {
+      await focusNext();
+      return;
+    }
     const atts = get().pending;
     const optimistic: ChatMessage = { id: tempId--, conversationId: get().conversationId ?? 0, role: 'user', text: t, attachments: atts, createdAt: new Date().toISOString() };
     set((s) => ({ messages: [...s.messages, optimistic], pending: [], busy: true, streaming: '', error: null, tool: null, lastPrompt: t }));

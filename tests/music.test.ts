@@ -36,3 +36,11 @@ describe('Pipo dança com música', () => {
     expect(deriveMascotState({ ...base, music: false })).toBe('idle');
   });
 });
+
+describe('foca na próxima', () => {
+  it('reconhece o pedido curto e ignora o resto', async () => {
+    const { isFocusNextIntent } = await import('../src/shared/intents');
+    for (const ok of ['foca na próxima', 'Foca na proxima tarefa!', 'começar foco na próxima', 'bora focar na próxima', 'pipo, foca na próxima', 'iniciar o foco na próxima']) expect(isFocusNextIntent(ok)).toBe(true);
+    for (const no of ['foca na próxima reunião', 'focar no relatório', 'próxima', 'qual a próxima tarefa?']) expect(isFocusNextIntent(no)).toBe(false);
+  });
+});

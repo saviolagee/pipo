@@ -274,6 +274,9 @@ async function completeSession(): Promise<void> {
     if (next === 'go' && s.taskId) await startFocus({ taskId: s.taskId, skipRituals: true });
     return;
   }
+  const p = getProfile();
+  const nextTask = pickNextTask(listTasks('open').filter((x) => x.id !== s.taskId), new Date(), p?.energyPeak ?? 'varies');
+  const nextLabel = nextTask ? `Próxima: ${nextTask.title.length > 28 ? `${nextTask.title.slice(0, 27)}…` : nextTask.title} ▶` : null;
   const answer = await showCard({
     kind: 'done',
     glow: 'done',
@@ -282,16 +285,12 @@ async function completeSession(): Promise<void> {
     title: total ? `${s.taskTitle} · ${done}/${total}` : s.taskTitle,
     body: `${fmtDuration(s.focusedSec)} focado`,
     buttons: [
-      { id: 'next', label: 'Próxima tarefa', kbd: 'Y', variant: 'primary' },
-      { id: 'ok', label: 'OK', variant: 'secondary' },
+      ...(nextLabel ? [{ id: 'next', label: nextLabel, kbd: 'Y' as const, variant: 'primary' as const }] : []),
+      { id: 'ok', label: 'OK', variant: nextLabel ? ('secondary' as const) : ('primary' as const) },
     ],
     autoDismissMs: 6000,
   });
-  if (answer === 'next') {
-    const p = getProfile();
-    const next = pickNextTask(listTasks('open').filter((x) => x.id !== s.taskId), new Date(), p?.energyPeak ?? 'varies');
-    if (next) await startFocus({ taskId: next.id });
-  }
+  if (answer === 'next' && nextTask) await startFocus({ taskId: nextTask.id });
 }
 
 async function endSession(completed: boolean): Promise<void> {

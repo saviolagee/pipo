@@ -40,6 +40,14 @@ export const t = {
     review: 'Revisão do dia',
     closeDay: 'Fechar o dia',
   },
+  focusNext: {
+    prefix: 'Focar:',
+    labelWith: (title: string, min: number) => `Focar em ${title} por ${min} minutos`,
+    choose: 'Escolher outra tarefa ou duração',
+    duration: 'Duração (min)',
+    suggested: 'sugerida',
+    pill: 'Focar na próxima tarefa',
+  },
   tasks: {
     today: 'Hoje',
     upcoming: 'Próximas',
@@ -48,6 +56,8 @@ export const t = {
     notes: 'Notas…',
     addSubtask: '+ subtarefa',
     focusThis: 'Focar nisso',
+    focusRow: (title: string) => `Focar em ${title}`,
+    focusNextHeader: (title: string) => `Focar na próxima: ${title}`,
     breakDown: 'Quebrar em passos',
     needsClaude: 'Precisa do Claude conectado',
     moveToday: 'Mover pra hoje',

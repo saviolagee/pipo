@@ -3,6 +3,9 @@ import type { Accessory, MascotState } from '@shared/types';
 import { INTEGRATION_COLORS, MiniFace } from '../components/MiniFace';
 import { useIntegrationFlags } from '../components/IntegrationGrid';
 import { fmtHM, fmtTimer } from '../lib/api';
+import { focusNext } from '../lib/focus';
+import { t } from '../i18n/pt-BR';
+import { IconPlay } from '../components/Icons';
 import { Mascot, type Badge } from '../mascot/Mascot';
 import { useData } from '../store/data';
 import { GoalRing } from './GoalRing';
@@ -25,11 +28,26 @@ export function Pill({ state, badge, mood, accessories, clipboardCandidate }: Pr
 
   return (
     <div className="flex h-full w-full items-center justify-between px-[12px]">
-      <div className="relative flex h-full w-[48px] items-center">
+      <div className="relative flex h-full w-[64px] items-center gap-[2px]">
         <div className="relative -my-2">
           <Mascot state={state} mood={mood} size={22} accessories={accessories.filter((a) => a !== 'coffee')} glow={false} still={state === 'idle'} />
           {statusDot && <span className="absolute left-[2px] top-[5px] h-[6px] w-[6px] rounded-full" style={{ background: statusDot, boxShadow: '0 0 0 1.5px #000' }} />}
         </div>
+        {!focus && (
+          // ▶ discreto: um clique começa o foco na próxima tarefa sem abrir nada antes.
+          <button
+            type="button"
+            aria-label={t.focusNext.pill}
+            title={t.focusNext.pill}
+            onClick={(e) => {
+              e.stopPropagation();
+              void focusNext();
+            }}
+            className="flex h-[18px] w-[18px] items-center justify-center rounded-full text-white/45 transition-colors hover:bg-white/15 hover:text-white"
+          >
+            <IconPlay size={8} />
+          </button>
+        )}
       </div>
 
       <div className="flex flex-1 items-center justify-center">
@@ -53,7 +71,7 @@ export function Pill({ state, badge, mood, accessories, clipboardCandidate }: Pr
         </AnimatePresence>
       </div>
 
-      <div className="flex w-[48px] items-center justify-end gap-[8px]">
+      <div className="flex w-[64px] items-center justify-end gap-[8px]">
         <GoalRing progress={progress} size={16} title={stats ? `${fmtHM(stats.workedMin)} de ${fmtHM(stats.goalMin)}` : undefined} />
         <div className="grid grid-cols-2 gap-[2px]">
           <MiniFace color={INTEGRATION_COLORS.google_calendar} size={9} dim={!flags.google_calendar} />

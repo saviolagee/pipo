@@ -1,7 +1,7 @@
 import { AnimatePresence, motion, useMotionValue, useTransform } from 'motion/react';
 import { useEffect, useState } from 'react';
 import type { Accessory, MascotState } from '@shared/types';
-import { Button } from '../components/Button';
+import { FocusNextButton } from '../components/FocusNext';
 import { t } from '../i18n/pt-BR';
 import { fmtHM, fmtTime } from '../lib/api';
 import { Mascot, type Badge } from '../mascot/Mascot';
@@ -17,7 +17,6 @@ interface Props {
   look: { x: number; y: number } | null;
   bump: number;
   onMascotClick: (e: React.MouseEvent) => void;
-  onStartFocus: () => void;
   entrance: React.ReactNode;
 }
 
@@ -63,10 +62,12 @@ export function Speech(): React.JSX.Element {
 }
 
 /** Início sem foco ativo [Ref 1]. */
-export function Home({ state, badge, mood, accessories, look, bump, onMascotClick, onStartFocus, entrance }: Props): React.JSX.Element {
+export function Home({ state, badge, mood, accessories, look, bump, onMascotClick, entrance }: Props): React.JSX.Element {
   const stats = useData((s) => s.stats);
   const phrase = useData((s) => s.mood.phrase);
   const paused = useData((s) => s.settings?.paused ?? false);
+  const nowPlaying = useData((s) => s.nowPlaying);
+  const song = state === 'dancing' && nowPlaying ? `♪ ${nowPlaying.track}${nowPlaying.artist ? ` — ${nowPlaying.artist}` : ''}` : null;
 
   const parts: string[] = [];
   if (stats) {
@@ -88,17 +89,15 @@ export function Home({ state, badge, mood, accessories, look, bump, onMascotClic
             <Speech />
           </div>
         </div>
-        <motion.p key={paused ? 'p' : phrase} initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }} className="relative mt-[2px] h-[18px] text-[13px] text-fg">
-          {paused ? t.home.paused : phrase}
+        <motion.p key={paused ? 'p' : (song ?? phrase)} initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }} className="relative mt-[2px] h-[18px] max-w-[90%] truncate text-[13px] text-fg">
+          {paused ? t.home.paused : (song ?? phrase)}
         </motion.p>
       </div>
       <div className="mt-[10px] flex items-center justify-between gap-3 px-[4px]">
         <button type="button" onClick={() => useUi.getState().setTab('review')} className="truncate text-left text-[12px] text-fg-2 hover:text-fg" title={t.home.review}>
           {parts.join(' · ')}
         </button>
-        <Button variant="primary" onClick={onStartFocus} aria-label={t.home.startFocus}>
-          {t.home.startFocus}
-        </Button>
+        <FocusNextButton />
       </div>
     </div>
   );

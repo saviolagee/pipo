@@ -100,7 +100,7 @@ export function Notch({ glow, pill, topBar, children, fixedHeight, onHoverChange
 
   return (
     <div className="pointer-events-none relative flex h-full w-full justify-center">
-      <Glow kind={glow} width={width} height={height} />
+      <Glow kind={glow} width={width} height={height} expanded={expanded} />
       <motion.div
         role="region"
         aria-label="Pipo"

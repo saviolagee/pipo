@@ -240,17 +240,6 @@ export function App(): React.JSX.Element {
   const finishEntrance = useCallback(() => setEntering(false), []);
   const focus = useData((s) => s.focus);
 
-  /** "Começar foco": próxima tarefa sugerida; sem tarefa, abre a captura. */
-  const startFocus = useCallback(async () => {
-    const next = await api.invoke('tasks:nextSuggested');
-    if (!next) {
-      useUi.getState().setTab('add');
-      useUi.setState({ captureMode: true });
-      return;
-    }
-    await api.invoke('focus:start', { taskId: next.id });
-  }, []);
-
   useEffect(() => {
     if (ui.entranceKey > 0) setEntering(true);
   }, [ui.entranceKey]);
@@ -292,7 +281,6 @@ export function App(): React.JSX.Element {
             look={look}
             bump={bump}
             onMascotClick={onMascotClick}
-            onStartFocus={() => void startFocus()}
             entrance={entering && ui.expanded ? <Entrance key={ui.entranceKey} size={76} onDone={finishEntrance} /> : null}
           />
         );
