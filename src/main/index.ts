@@ -1,6 +1,6 @@
 import { mkdirSync } from 'node:fs';
 import { join } from 'node:path';
-import { app, ipcMain } from 'electron';
+import { app, ipcMain, session } from 'electron';
 import { APP_ID, APP_NAME } from '@shared/config';
 import { emit } from './bus';
 import { registerBootstrapIpc } from './bootstrap';
@@ -23,7 +23,8 @@ import { registerIntegrations } from './integrations/ipc';
 import { registerInsights } from './insights';
 import { registerContextReactions } from './insights/context-reactions';
 import { startMcpBridge } from './mcp/server';
-import { registerSystemIpc } from './system';
+import { registerSystemIpc, setAutostart } from './system';
+import { getProfile } from './db/repos/profile';
 import { nextSuggested, registerTasksIpc } from './tasks/ipc';
 import { startFocus } from './focus/session';
 import { createTray, setPaused } from './tray';
@@ -33,6 +34,10 @@ app.setName(APP_NAME);
 if (process.platform === 'win32') app.setAppUserModelId(APP_ID);
 // App todo em pt-BR: força o locale do Chromium (inputs de hora em 24h, datas, etc.).
 app.commandLine.appendSwitch('lang', 'pt-BR');
+// Nenhuma rede além de Claude, Google e Spotify (seção 17): sem atualizações de componentes nem
+// download de dicionários do Chromium.
+app.commandLine.appendSwitch('disable-component-update');
+app.commandLine.appendSwitch('disable-features', 'SpellcheckService,MediaRouter,OptimizationHints,AutofillServerCommunication');
 if (process.platform === 'linux') {
   // Janelas transparentes no Linux (útil para desenvolvimento).
   app.commandLine.appendSwitch('enable-transparent-visuals');
@@ -62,6 +67,8 @@ app.whenReady().then(() => {
   mkdirSync(paths.files, { recursive: true });
   mkdirSync(paths.workspace, { recursive: true });
   openDb(join(paths.userData, 'pipo.db'));
+  session.defaultSession.setSpellCheckerEnabled(false);
+  session.defaultSession.setSpellCheckerDictionaryDownloadURL('http://127.0.0.1:0/');
 
   if (process.platform === 'darwin') app.dock?.hide();
 
@@ -105,6 +112,8 @@ app.whenReady().then(() => {
   });
   maybeDevCapture();
   void quickCheckClaude(paths.workspace);
+  const profile = getProfile();
+  if (profile) setAutostart(profile.autostart);
 });
 
 app.on('second-instance', () => showNotch(true));

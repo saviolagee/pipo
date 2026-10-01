@@ -6,7 +6,7 @@ import { getWindow } from './bus';
 
 export function maybeDevCapture(): void {
   const out = process.env.PIPO_CAPTURE;
-  if (!out || app.isPackaged) return;
+  if (!out || (app.isPackaged && process.env.PIPO_E2E !== '1')) return;
   const delay = Number(process.env.PIPO_CAPTURE_DELAY ?? 2500);
   const steps = (process.env.PIPO_CAPTURE_SCRIPT ?? '').split('\n@@\n').filter(Boolean);
   const win = getWindow();

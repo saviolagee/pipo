@@ -1,0 +1,58 @@
+appId: app.pipo.desktop
+productName: Pipo
+copyright: Pipo
+directories:
+  buildResources: build
+  output: dist
+files:
+  - out/**
+  - package.json
+  - '!**/*.map'
+# O shim MCP e o binário do get-windows (macOS) rodam fora do asar.
+asarUnpack:
+  - out/main/mcp-stdio.js
+  - out/main/chunks/**
+  - node_modules/get-windows/**
+extraMetadata:
+  main: out/main/index.js
+
+win:
+  target:
+    - target: nsis
+      arch: [x64]
+  icon: build/icon.png
+  executableName: Pipo
+nsis:
+  oneClick: false
+  perMachine: false
+  allowToChangeInstallationDirectory: true
+  createDesktopShortcut: true
+  shortcutName: Pipo
+  artifactName: Pipo-Setup-${version}.${ext}
+
+mac:
+  target:
+    - target: dmg
+      arch: [arm64, x64]
+  icon: build/icon.png
+  category: public.app-category.productivity
+  hardenedRuntime: true
+  entitlements: build/entitlements.mac.plist
+  entitlementsInherit: build/entitlements.mac.plist
+  extendInfo:
+    # Sem ícone no Dock: o Pipo vive no notch e na barra de menus.
+    LSUIElement: true
+    NSMicrophoneUsageDescription: O Pipo usa o microfone só quando você fala uma captura rápida. O áudio é transcrito no seu computador.
+    NSAppleEventsUsageDescription: O Pipo lê o nome da janela em foco para registrar seu tempo. Nada sai do seu computador.
+dmg:
+  artifactName: Pipo-${version}-${arch}.${ext}
+
+linux:
+  target: [AppImage]
+  icon: build/icons
+  category: Office
+
+publish: null
+# Sem módulos nativos para recompilar: SQLite é o node:sqlite do Electron e o get-windows usa
+# binário pré-compilado (N-API no Windows, executável Swift no macOS).
+npmRebuild: false

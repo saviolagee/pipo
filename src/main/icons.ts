@@ -79,12 +79,13 @@ export function renderFace(opts: FaceOptions): Buffer {
   const cy = size / 2;
   const scale = opts.background ? size * 0.62 : size * 0.94;
   const hw = scale / 2;
-  const hh = (scale / 1.15) / 2;
-  const r = hh * 0.62;
-  const eyeRx = scale * 0.075;
+  // Mesma proporção do mascote (corpo 64×48, olhos 4.4×7.6 a ±11 do centro).
+  const hh = scale / 1.33 / 2;
+  const r = hh * 0.66;
+  const eyeRx = scale * 0.07;
   const eyeRy = scale * 0.12;
-  const eyeDx = scale * 0.2;
-  const eyeY = scale * 0.06;
+  const eyeDx = scale * 0.175;
+  const eyeY = scale * 0.02;
   const bgR = size * 0.22;
 
   for (let y = 0; y < size; y++) {

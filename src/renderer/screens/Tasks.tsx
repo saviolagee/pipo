@@ -16,10 +16,13 @@ function errText(e: unknown): string {
   return e instanceof Error ? e.message.replace(/^Error invoking remote method '[^']+': (Error: )?/, '') : String(e);
 }
 
+const CHEERS = ['Boa! Uma a menos.', 'Mandou bem!', 'Feito ✓', 'Isso aí!'];
+
 export function celebrateTask(): void {
   const ui = useUi.getState();
   ui.react('happy', 900);
   ui.confetti(8);
+  ui.say(CHEERS[Math.floor(Math.random() * CHEERS.length)], 2500);
   play('chime');
 }
 

@@ -12,9 +12,11 @@
     "preview": "electron-vite preview",
     "typecheck": "tsc --noEmit -p tsconfig.node.json && tsc --noEmit -p tsconfig.web.json",
     "test": "vitest run",
-    "postinstall": "electron-builder install-app-deps",
     "dist:win": "npm run build && electron-builder --win",
-    "dist:mac": "npm run build && electron-builder --mac"
+    "dist:mac": "npm run build && electron-builder --mac",
+    "icons": "node --experimental-strip-types scripts/gen-icons.mts",
+    "dist:linux": "npm run build && electron-builder --linux",
+    "dist:dir": "npm run build && electron-builder --dir"
   },
   "devDependencies": {
     "@anthropic-ai/sdk": "^0.131.0",
@@ -43,5 +45,7 @@
   },
   "dependencies": {
     "get-windows": "^9.3.0"
-  }
+  },
+  "productName": "Pipo",
+  "homepage": "https://github.com/saviolagee/pipo"
 }
