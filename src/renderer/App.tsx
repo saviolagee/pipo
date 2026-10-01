@@ -17,6 +17,7 @@ import { SettingsScreen } from './screens/Settings';
 import { FocusCard } from './screens/FocusCard';
 import { RitualCheck } from './screens/RitualCheck';
 import { TasksScreen } from './screens/Tasks';
+import { DayReview } from './screens/DayReview';
 import { LocalAudio } from './components/LocalAudio';
 import { configureSfx, play } from './sound/sfx';
 import { useData } from './store/data';
@@ -117,6 +118,7 @@ export function App(): React.JSX.Element {
       }),
       api.on('tasks:changed', () => void useData.getState().refreshTasks()),
       api.on('stats:changed', (stats) => useData.getState().set({ stats })),
+      api.on('activity:current', (activity) => useData.getState().set({ activity })),
     ];
     const onKey = (e: KeyboardEvent): void => {
       if (e.ctrlKey && e.altKey && e.key.toLowerCase() === 'd') useUi.setState((s) => ({ debugOpen: !s.debugOpen }));
@@ -189,6 +191,8 @@ export function App(): React.JSX.Element {
         return <SettingsScreen />;
       case 'tasks':
         return <TasksScreen />;
+      case 'review':
+        return <DayReview />;
       default:
         if (focus?.phase === 'ritual') return <RitualCheck />;
         if (focus) return <FocusCard focus={focus} state={mascot.state} badge={mascot.badge} mood={mascot.mood} accessories={mascot.accessories} onMascotClick={onMascotClick} bump={bump} />;

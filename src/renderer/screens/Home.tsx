@@ -93,7 +93,9 @@ export function Home({ state, badge, mood, accessories, look, bump, onMascotClic
         </motion.p>
       </div>
       <div className="mt-[10px] flex items-center justify-between gap-3 px-[4px]">
-        <span className="truncate text-[12px] text-fg-2">{parts.join(' · ')}</span>
+        <button type="button" onClick={() => useUi.getState().setTab('review')} className="truncate text-left text-[12px] text-fg-2 hover:text-fg" title={t.home.review}>
+          {parts.join(' · ')}
+        </button>
         <Button variant="primary" onClick={onStartFocus} aria-label={t.home.startFocus}>
           {t.home.startFocus}
         </Button>

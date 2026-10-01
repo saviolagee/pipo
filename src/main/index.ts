@@ -13,6 +13,8 @@ import { handle } from './ipc';
 import { registerShortcuts, setFixedShortcuts, unregisterShortcuts } from './shortcuts';
 import { registerCardsIpc } from './cards';
 import { handleMediaProtocol, registerMediaScheme } from './music/fallback';
+import { registerActivity } from './activity/ipc';
+import { startScheduler } from './scheduler';
 import { registerSystemIpc } from './system';
 import { nextSuggested, registerTasksIpc } from './tasks/ipc';
 import { startFocus } from './focus/session';
@@ -62,6 +64,8 @@ app.whenReady().then(() => {
   registerCardsIpc();
   registerTasksIpc();
   handleMediaProtocol();
+  registerActivity();
+  startScheduler();
   createNotchWindow();
   createTray();
   // Painel de debug do mascote (Ctrl+Alt+D).
