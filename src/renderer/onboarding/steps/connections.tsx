@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Button } from '../../components/Button';
+import { TextField } from '../../components/Form';
 import { t } from '../../i18n/pt-BR';
 import { api } from '../../lib/api';
 import { useData } from '../../store/data';
@@ -37,6 +38,43 @@ export function GoogleStep(): React.JSX.Element {
         {google?.detail && google.status === 'connected' && <span className="text-[12px] text-fg-2">{google.detail}</span>}
       </div>
       {err && <p className="text-[12px] text-attention">{err}</p>}
+      <GoogleCredentials />
+    </div>
+  );
+}
+
+/** O usuário cria o próprio app OAuth "para computador" no Google Cloud (docs/integracoes.md). */
+function GoogleCredentials(): React.JSX.Element {
+  const [open, setOpen] = useState(false);
+  const [id, setId] = useState('');
+  const [secret, setSecret] = useState('');
+  const [saved, setSaved] = useState(false);
+  return (
+    <div>
+      <button type="button" className="text-[11px] text-fg-3 hover:text-fg" onClick={() => setOpen((v) => !v)}>
+        {open ? '▾' : '▸'} {o.googleCreds}
+      </button>
+      {open && (
+        <div className="mt-[6px] flex flex-col gap-[6px]">
+          <p className="text-[11px] text-fg-3">{o.googleCredsHint}</p>
+          <TextField value={id} onChange={setId} placeholder="Client ID" className="w-full text-[12px]" pinKey="gid" />
+          <TextField value={secret} onChange={setSecret} placeholder="Client Secret" className="w-full text-[12px]" pinKey="gsecret" />
+          <div>
+            <Button
+              size="sm"
+              disabled={!id.trim() || !secret.trim()}
+              onClick={async () => {
+                await api.invoke('integrations:setGoogleClient', { clientId: id, clientSecret: secret });
+                setSaved(true);
+                setId('');
+                setSecret('');
+              }}
+            >
+              {saved ? `✓ ${t.settings.saved}` : t.common.save}
+            </Button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

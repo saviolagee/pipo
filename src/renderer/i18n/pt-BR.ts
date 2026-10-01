@@ -237,6 +237,8 @@ export const t = {
     googleSay: 'Quer conectar sua agenda e seu e-mail?',
     googleHint: 'Leio sua agenda pra te avisar das reuniões e só leio e-mails quando você pedir.',
     googleConnect: 'Conectar Google',
+    googleCreds: 'Credenciais do app Google',
+    googleCredsHint: 'Crie um ID do cliente OAuth do tipo "App para computador" no Google Cloud e cole aqui (passo a passo em docs/integracoes.md).',
     claudeSay: 'Agora meu cérebro: o Claude da sua assinatura.',
     claudeOk: 'Conectado à sua conta Claude',
     claudeNotLogged: 'Instalado mas não logado',

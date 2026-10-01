@@ -58,8 +58,4 @@ export function registerBootstrapIpc(): void {
   handle('clients:list', () => listClients());
   handle('clients:save', (items) => saveClients(items));
   handle('claude:status', (recheck) => (recheck ? checkClaude(workspaceDir(), true) : claudeStatus()));
-  handle('integrations:list', () => []);
-  handle('integrations:connect', () => {
-    throw new Error('Integração ainda não configurada.');
-  });
 }

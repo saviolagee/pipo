@@ -132,12 +132,15 @@ export function App(): React.JSX.Element {
         useData.getState().set({ focus });
         // Foco começou: abre o notch no Início (ritual ou card da sessão).
         if (focus && !prev) useUi.getState().setTab('home');
+        if (!focus) useData.getState().set({ nowPlaying: null });
       }),
       api.on('tasks:changed', () => void useData.getState().refreshTasks()),
       api.on('stats:changed', (stats) => useData.getState().set({ stats })),
       api.on('activity:current', (activity) => useData.getState().set({ activity })),
       api.on('toast:show', (toast) => useUi.getState().pushToast(toast)),
       api.on('meeting:active', (inMeeting) => useData.getState().set({ inMeeting })),
+      api.on('integrations:changed', (integrations) => useData.getState().set({ integrations })),
+      api.on('music:nowPlaying', (nowPlaying) => useData.getState().set({ nowPlaying })),
       api.on('files:progress', (p) => setIngest(p.done && !p.error ? null : p)),
       api.on('clipboard:candidate', ({ text }) => {
         // Carinha curiosa + botão "virar tarefa?" na pill por 5s (sem expandir).
