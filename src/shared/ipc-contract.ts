@@ -104,6 +104,8 @@ export interface InvokeHandlers {
   'agent:conversations': () => Conversation[];
   'agent:messages': (conversationId: number) => ChatMessage[];
   'agent:newConversation': () => Conversation;
+  'agent:getProvider': () => { provider: 'claude-code' | 'anthropic-api'; hasKey: boolean };
+  'agent:setProvider': (opts: { provider: 'claude-code' | 'anthropic-api'; apiKey?: string }) => void;
 
   'capture:submit': (opts: { text: string; source: 'manual' | 'voice' | 'clipboard' }) => Task | null;
   'capture:clipboardToTask': (text: string) => Task | null;
@@ -156,6 +158,8 @@ export interface MainEvents {
   'activity:current': CurrentActivity | null;
   'meeting:active': boolean;
   'sfx:play': SfxName;
+  /** Abre o chat e envia uma mensagem (ex.: "Planejar meu dia" a partir de um card). */
+  'chat:send': { text: string };
 }
 
 export type MainEventName = keyof MainEvents;

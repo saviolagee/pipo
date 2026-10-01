@@ -18,6 +18,8 @@ import { FocusCard } from './screens/FocusCard';
 import { RitualCheck } from './screens/RitualCheck';
 import { TasksScreen } from './screens/Tasks';
 import { DayReview } from './screens/DayReview';
+import { ChatScreen } from './screens/Chat';
+import { bindAgentEvents, useChat } from './store/chat';
 import { LocalAudio } from './components/LocalAudio';
 import { configureSfx, play } from './sound/sfx';
 import { useData } from './store/data';
@@ -69,7 +71,9 @@ export function App(): React.JSX.Element {
   const look = useLook(hovered);
   const mascot = useMascot(hovered);
   const clicks = useRef<number[]>([]);
-  const topCard = ui.cards[ui.cards.length - 1] ?? null;
+  // No chat, cards de ação aparecem inline na conversa (seção 8.7).
+  const overlayCards = ui.tab === 'chat' ? ui.cards.filter((c) => c.kind !== 'action') : ui.cards;
+  const topCard = overlayCards[overlayCards.length - 1] ?? null;
 
   useEffect(() => {
     if (settings) configureSfx(settings.volume, settings.muted);
@@ -86,6 +90,7 @@ export function App(): React.JSX.Element {
         setTimeout(() => useUi.getState().pin('entrance', false), 3500);
       });
     const offs = [
+      bindAgentEvents(),
       api.on('ui:toggle', () => useUi.setState((s) => ({ expanded: !s.expanded }))),
       api.on('ui:collapse', () => useUi.getState().setExpanded(false)),
       api.on('ui:navigate', (p) => {
@@ -110,6 +115,11 @@ export function App(): React.JSX.Element {
       api.on('mascot:say', ({ text, ms }) => useUi.getState().say(text, ms)),
       api.on('sfx:play', (name) => play(name)),
       api.on('claude:status', (claude) => useData.getState().set({ claude })),
+      api.on('chat:send', ({ text }) => {
+        useUi.getState().setTab('chat');
+        useChat.getState().newConversation();
+        void useChat.getState().send(text);
+      }),
       api.on('focus:state', (focus) => {
         const prev = useData.getState().focus;
         useData.getState().set({ focus });
@@ -181,6 +191,7 @@ export function App(): React.JSX.Element {
           onDone={(planNow) => {
             useData.getState().set({ firstRun: false });
             useUi.getState().setTab(planNow ? 'chat' : 'home');
+            if (planNow) void useChat.getState().send('Planejar meu dia');
             void useData.getState().refreshStats();
           }}
         />
@@ -193,6 +204,8 @@ export function App(): React.JSX.Element {
         return <TasksScreen />;
       case 'review':
         return <DayReview />;
+      case 'chat':
+        return <ChatScreen mood={mascot.mood} accessories={mascot.accessories} state={mascot.state} />;
       default:
         if (focus?.phase === 'ritual') return <RitualCheck />;
         if (focus) return <FocusCard focus={focus} state={mascot.state} badge={mascot.badge} mood={mascot.mood} accessories={mascot.accessories} onMascotClick={onMascotClick} bump={bump} />;
@@ -220,6 +233,7 @@ export function App(): React.JSX.Element {
         glow={mascot.glow}
         onHoverChange={setHovered}
         topBar={onboarding ? null : <TopBar />}
+        fixedHeight={!onboarding && !topCard && ui.tab === 'chat' ? 384 : null}
         pill={<Pill state={mascot.state} badge={mascot.badge} mood={mascot.mood} accessories={mascot.accessories} clipboardCandidate={null} />}
       >
         <div className="relative">

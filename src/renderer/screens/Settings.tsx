@@ -126,6 +126,7 @@ export function SettingsScreen(): React.JSX.Element {
             </Block>
             <Block title="Claude">
               <ClaudeStep />
+              <ApiKeyBlock />
             </Block>
             {useData.getState().platform === 'darwin' && (
               <Block title="macOS">
@@ -253,6 +254,46 @@ function SpotifyBlock(): React.JSX.Element {
         </Button>
       </div>
       {err && <p className="text-[12px] text-attention">{err}</p>}
+    </div>
+  );
+}
+
+/** Avançado: provedor por chave de API (desativado por padrão; o padrão é a assinatura via Claude Code). */
+function ApiKeyBlock(): React.JSX.Element {
+  const [info, setInfo] = useState<{ provider: 'claude-code' | 'anthropic-api'; hasKey: boolean } | null>(null);
+  const [key, setKey] = useState('');
+  const [open, setOpen] = useState(false);
+  useEffect(() => {
+    void api.invoke('agent:getProvider').then(setInfo);
+  }, []);
+  if (!info) return <></>;
+  const set = async (provider: 'claude-code' | 'anthropic-api', apiKey?: string): Promise<void> => {
+    await api.invoke('agent:setProvider', { provider, apiKey });
+    setInfo(await api.invoke('agent:getProvider'));
+    setKey('');
+  };
+  return (
+    <div className="mt-[10px]">
+      <button type="button" className="text-[11px] text-fg-3 hover:text-fg" onClick={() => setOpen((v) => !v)}>
+        {open ? '▾' : '▸'} {s.apiAdvanced}
+      </button>
+      {open && (
+        <div className="mt-[6px] flex flex-col gap-[8px]">
+          <p className="text-[11px] text-fg-3">{s.apiHint}</p>
+          <YesNo value={info.provider === 'anthropic-api'} onChange={(on) => void set(on ? 'anthropic-api' : 'claude-code')} yes={s.apiUseKey} no={s.apiUseSubscription} />
+          <div className="flex items-center gap-[8px]">
+            <TextField value={key} onChange={setKey} placeholder={info.hasKey ? '••••••••••••' : 'sk-ant-…'} className="w-[240px] text-[12px]" pinKey="apikey" ariaLabel="API key" />
+            <Button size="sm" disabled={!key.trim()} onClick={() => void set(info.provider, key.trim())}>
+              {t.common.save}
+            </Button>
+            {info.hasKey && (
+              <Button size="sm" variant="tertiary" onClick={() => void set('claude-code', '')}>
+                {t.common.remove}
+              </Button>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

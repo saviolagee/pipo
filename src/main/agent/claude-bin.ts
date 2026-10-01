@@ -46,7 +46,11 @@ export function claudeEnv(): NodeJS.ProcessEnv {
   const env: NodeJS.ProcessEnv = { ...process.env, PATH: augmentedPath() };
   // Evita que o CLI se ache dentro de outra sessão do Claude Code (ex.: rodando o Pipo pelo terminal do Claude).
   delete env.CLAUDECODE;
+  delete env.CLAUDE_CODE_SESSION_ID;
+  delete env.CLAUDE_CODE_REMOTE_SESSION_ID;
   delete env.ELECTRON_RUN_AS_NODE;
+  // O Pipo usa a assinatura logada no Claude Code: uma chave de API no ambiente teria precedência.
+  delete env.ANTHROPIC_API_KEY;
   return env;
 }
 

@@ -257,6 +257,23 @@ async function completeSession(): Promise<void> {
   bus.emit('focus:completed', { sessionId: s.sessionId, taskId: s.taskId });
   const done = task ? task.subtasks.filter((x) => x.done).length : 0;
   const total = task?.subtasks.length ?? 0;
+  if (s.microStep) {
+    // Destravar (9.6): terminou o passo de 2 minutos → continua num foco normal?
+    const next = await showCard({
+      kind: 'done',
+      glow: 'done',
+      mascot: 'happy',
+      label: 'primeiro passo feito',
+      title: s.microStep,
+      body: 'Continua num foco normal?',
+      buttons: [
+        { id: 'no', label: 'Por hoje chega', kbd: 'N', variant: 'secondary' },
+        { id: 'go', label: 'Continuar', kbd: 'Y', variant: 'primary' },
+      ],
+    });
+    if (next === 'go' && s.taskId) await startFocus({ taskId: s.taskId, skipRituals: true });
+    return;
+  }
   const answer = await showCard({
     kind: 'done',
     glow: 'done',
