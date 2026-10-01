@@ -62,6 +62,15 @@ describe('núcleo de Pipos', () => {
 });
 
 describe('rascunho e versões', () => {
+  it('apagar um Pipo em rascunho encerra o rascunho (o próximo /criarpipo começa do zero)', async () => {
+    openDb(':memory:');
+    const drafts = await import('../src/main/pipos/drafts');
+    const p = repo.createPipo({ name: 'Meio Feito', color: 'blue', personality: { mission: '', tone: '', never: [] } });
+    drafts.createDraft(null, { pipoId: p.id });
+    expect(drafts.openDrafts()).toHaveLength(1);
+    repo.deletePipo(p.id);
+    expect(drafts.openDrafts()).toHaveLength(0);
+  });
   it('@nome acompanha o nome enquanto é rascunho; depois de contratado fica fixo', () => {
     openDb(':memory:');
     const p = repo.createPipo({ name: 'Resumo', color: 'green', personality: { mission: '', tone: '', never: [] } });

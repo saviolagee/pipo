@@ -1,6 +1,6 @@
 import { mkdirSync } from 'node:fs';
 import { join } from 'node:path';
-import { app, ipcMain, session } from 'electron';
+import { app, ipcMain, safeStorage, session } from 'electron';
 import { APP_ID, APP_NAME } from '@shared/config';
 import { emit } from './bus';
 import { registerBootstrapIpc } from './bootstrap';
@@ -75,6 +75,9 @@ function registerCoreIpc(): void {
 }
 
 app.whenReady().then(() => {
+  // Só em desenvolvimento, num Linux sem chaveiro (contêiner de testes): cofre com chave em memória.
+  // Nunca no app empacotado; os segredos não sobrevivem a reiniciar.
+  if (!app.isPackaged && process.platform === 'linux' && process.env.PIPO_DEV_MEMORY_VAULT === '1') safeStorage.setUsePlainTextEncryption(true);
   mkdirSync(paths.files, { recursive: true });
   mkdirSync(paths.workspace, { recursive: true });
   openDb(join(paths.userData, 'pipo.db'));

@@ -156,6 +156,8 @@ export function deletePipo(id: number): void {
   const p = getPipo(id);
   if (!p) return;
   db().run('DELETE FROM pipos WHERE id = ?', id);
+  // Apagar um Pipo ainda em rascunho encerra o rascunho: o próximo /criarpipo começa do zero.
+  db().run('UPDATE pipo_drafts SET closed_at = ? WHERE pipo_id = ? AND closed_at IS NULL', new Date().toISOString(), id);
   rmSync(pipoDir(p.slug), { recursive: true, force: true });
 }
 

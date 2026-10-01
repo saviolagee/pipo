@@ -51,7 +51,7 @@ export function registerBuilder(): void {
     }
     if (!opts.fresh && !opts.fromModelId) {
       // Rascunho persistente: continua o último que ficou pela metade.
-      const open = openDrafts().find((d) => !d.data.editing && d.conversationId && getConversation(d.conversationId));
+      const open = openDrafts().find((d) => !d.data.editing && d.conversationId && getConversation(d.conversationId) && (!d.data.pipoId || getPipo(d.data.pipoId)));
       if (open) {
         const p = open.data.pipoId ? getPipo(open.data.pipoId) : null;
         return { conversationId: open.conversationId as number, draftId: open.id, resumed: true, name: p?.name ?? null };
