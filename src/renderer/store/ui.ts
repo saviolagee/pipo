@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import type { Card, GlowKind, MascotState, Toast } from '@shared/types';
+import type { Accessory, Card, GlowKind, MascotState, Toast } from '@shared/types';
 
 export type Tab = 'home' | 'tasks' | 'chat' | 'add' | 'settings' | 'review';
 
@@ -22,6 +22,8 @@ interface UiState {
   confettiKey: number;
   confettiCount: number;
   agentBusy: boolean;
+  /** Overrides do painel de debug (Ctrl+Alt+D). */
+  debug: { state: MascotState | null; mood: number | null; accessories: Accessory[] | null };
   setExpanded: (v: boolean) => void;
   setTab: (tab: Tab, expand?: boolean) => void;
   pin: (key: string, on: boolean) => void;
@@ -52,6 +54,7 @@ export const useUi = create<UiState>((set) => ({
   confettiKey: 0,
   confettiCount: 0,
   agentBusy: false,
+  debug: { state: null, mood: null, accessories: null },
   setExpanded: (expanded) => set({ expanded }),
   setTab: (tab, expand = true) => set((s) => ({ tab, expanded: expand ? true : s.expanded, captureMode: tab === 'add' ? s.captureMode : false })),
   pin: (key, on) =>

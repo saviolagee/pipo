@@ -94,15 +94,16 @@ export function useMascot(hovered: boolean): { state: MascotState; accessories: 
     overGoalRatio: stats && stats.goalMin > 0 ? stats.workedMin / stats.goalMin : 0,
   });
 
-  const accessories: Accessory[] = [...data.streak.equipped];
+  const accessories: Accessory[] = ui.debug.accessories ? [...ui.debug.accessories] : [...data.streak.equipped];
   if (data.focus?.musicActive && data.focus.phase === 'focus') accessories.push('headphones');
-  if (state === 'working') accessories.push('coffee');
+  if ((ui.debug.state ?? state) === 'working' && !ui.debug.accessories) accessories.push('coffee');
 
+  const finalState = ui.debug.state ?? state;
   return {
-    state,
+    state: finalState,
     accessories,
-    badge: badgeFor(state, data.focus),
-    glow: ui.glowOverride ?? glowFor(state, data.focus, topCard?.glow ?? null),
-    mood: data.mood.mood,
+    badge: badgeFor(finalState, data.focus),
+    glow: ui.glowOverride ?? glowFor(finalState, data.focus, topCard?.glow ?? null),
+    mood: ui.debug.mood ?? data.mood.mood,
   };
 }

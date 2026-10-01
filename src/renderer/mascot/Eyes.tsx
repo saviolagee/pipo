@@ -18,7 +18,7 @@ interface Oval {
 const OVAL: Partial<Record<MascotState, Oval>> = {
   idle: { dx: 0, dy: 0, rx: 2.2, ry: 3.8 },
   looking: { dx: 0, dy: 0, rx: 2.2, ry: 3.8 },
-  thinking: { dx: 2, dy: -2.4, rx: 2.4, ry: 3.8 },
+  thinking: { dx: 2.8, dy: -3.2, rx: 2.2, ry: 3.6 },
   attention: { dx: 0, dy: -0.5, rx: 3, ry: 5 },
   sad: { dx: 0, dy: 1.6, rx: 2.3, ry: 3.4 },
   listening: { dx: 0, dy: -0.4, rx: 3, ry: 4.9 },
@@ -45,7 +45,19 @@ function shapeFor(state: MascotState): Shape {
   }
 }
 
-const SPIRAL = 'M0 0 a1 1 0 0 1 1.6 .9 a2 2 0 0 1 -2.6 2 a3 3 0 0 1 -2.4 -3.6 a4 4 0 0 1 4.6 -2.9';
+// Espiral de Arquimedes (olhos tontos).
+const SPIRAL = (() => {
+  const pts: string[] = [];
+  const turns = 2.25;
+  const maxR = 3.6;
+  const steps = 48;
+  for (let i = 0; i <= steps; i++) {
+    const th = (i / steps) * turns * Math.PI * 2;
+    const r = (i / steps) * maxR;
+    pts.push(`${(Math.cos(th) * r).toFixed(2)} ${(Math.sin(th) * r).toFixed(2)}`);
+  }
+  return `M${pts.join(' L')}`;
+})();
 
 function useBlink(enabled: boolean, mood: number): boolean {
   const [closed, setClosed] = useState(false);
@@ -121,7 +133,7 @@ export function Eyes({ state, mood, look, blink }: EyesProps): React.JSX.Element
           if (shape === 'spiral') {
             return (
               <motion.g key={side} animate={{ rotate: side * 360 }} transition={{ duration: 1.2, repeat: Infinity, ease: 'linear' }} style={{ transformOrigin: `${cx}px ${EYE_Y}px` }}>
-                <path d={SPIRAL} transform={`translate(${cx} ${EYE_Y})`} stroke="#0A0A0B" strokeWidth={1.5} fill="none" strokeLinecap="round" />
+                <path d={SPIRAL} transform={`translate(${cx} ${EYE_Y})`} stroke="#0A0A0B" strokeWidth={1.3} fill="none" strokeLinecap="round" strokeLinejoin="round" />
               </motion.g>
             );
           }

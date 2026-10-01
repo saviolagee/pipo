@@ -11,6 +11,7 @@ export function maybeDevCapture(): void {
   const steps = (process.env.PIPO_CAPTURE_SCRIPT ?? '').split('\n@@\n').filter(Boolean);
   const win = getWindow();
   if (!win) return;
+  win.webContents.on('console-message', (e) => console.log(`[renderer:${e.level}] ${e.message}`));
   win.webContents.once('did-finish-load', async () => {
     // Fundo tipo papel de parede para avaliar glow e transparência.
     await win.webContents.executeJavaScript(

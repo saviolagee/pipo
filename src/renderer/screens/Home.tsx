@@ -1,10 +1,12 @@
-import { motion } from 'motion/react';
+import { AnimatePresence, motion, useMotionValue, useTransform } from 'motion/react';
+import { useEffect, useState } from 'react';
 import type { Accessory, MascotState } from '@shared/types';
 import { Button } from '../components/Button';
 import { t } from '../i18n/pt-BR';
 import { fmtHM, fmtTime } from '../lib/api';
 import { Mascot, type Badge } from '../mascot/Mascot';
 import { useData } from '../store/data';
+import { useUi } from '../store/ui';
 import { Stars } from '../notch/Stars';
 
 interface Props {
@@ -17,6 +19,47 @@ interface Props {
   onMascotClick: (e: React.MouseEvent) => void;
   onStartFocus: () => void;
   entrance: React.ReactNode;
+}
+
+/** Arrastar o mascote: ele estica na direção do arraste e volta com mola (seção 6.7). */
+function DraggableMascot(props: React.ComponentProps<typeof Mascot>): React.JSX.Element {
+  const x = useMotionValue(0);
+  const y = useMotionValue(0);
+  const scaleX = useTransform([x, y], ([vx, vy]: number[]) => 1 + Math.min(0.35, Math.abs(vx) / 160) - Math.min(0.15, Math.abs(vy) / 300));
+  const scaleY = useTransform([x, y], ([vx, vy]: number[]) => 1 + Math.min(0.35, Math.abs(vy) / 160) - Math.min(0.15, Math.abs(vx) / 300));
+  return (
+    <motion.div
+      drag
+      dragSnapToOrigin
+      dragElastic={0.18}
+      dragConstraints={{ left: 0, right: 0, top: 0, bottom: 0 }}
+      dragTransition={{ bounceStiffness: 500, bounceDamping: 14 }}
+      style={{ x, y, scaleX, scaleY }}
+    >
+      <Mascot {...props} />
+    </motion.div>
+  );
+}
+
+/** Fala do Pipo: uma linha, sem balão (seção 6.7). */
+export function Speech(): React.JSX.Element {
+  const speech = useUi((s) => s.speech);
+  const [, force] = useState(0);
+  useEffect(() => {
+    if (!speech) return;
+    const id = setTimeout(() => force((n) => n + 1), Math.max(0, speech.until - Date.now()) + 20);
+    return () => clearTimeout(id);
+  }, [speech]);
+  const visible = speech && speech.until > Date.now();
+  return (
+    <AnimatePresence>
+      {visible && (
+        <motion.span key={speech.text} initial={{ opacity: 0, x: -4 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0 }} className="max-w-[220px] truncate whitespace-nowrap text-[12px] text-fg">
+          {speech.text}
+        </motion.span>
+      )}
+    </AnimatePresence>
+  );
 }
 
 /** Início sem foco ativo [Ref 1]. */
@@ -40,15 +83,14 @@ export function Home({ state, badge, mood, accessories, look, bump, onMascotClic
       >
         <Stars />
         <div className="relative flex h-[110px] items-center justify-center">
-          {entrance ?? (
-            <Mascot state={state} badge={badge} mood={mood} accessories={accessories} size={76} look={look} bump={bump} onClick={onMascotClick} />
-          )}
+          {entrance ?? <DraggableMascot state={state} badge={badge} mood={mood} accessories={accessories} size={76} look={look} bump={bump} onClick={onMascotClick} />}
+          <div className="absolute left-[calc(100%+12px)] top-1/2 -translate-y-1/2">
+            <Speech />
+          </div>
         </div>
-        {phrase && (
-          <motion.p initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }} className="relative mt-[2px] text-[13px] text-fg">
-            {paused ? t.home.paused : phrase}
-          </motion.p>
-        )}
+        <motion.p key={paused ? 'p' : phrase} initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }} className="relative mt-[2px] h-[18px] text-[13px] text-fg">
+          {paused ? t.home.paused : phrase}
+        </motion.p>
       </div>
       <div className="mt-[10px] flex items-center justify-between gap-3 px-[4px]">
         <span className="truncate text-[12px] text-fg-2">{parts.join(' · ')}</span>

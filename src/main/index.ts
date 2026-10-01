@@ -8,7 +8,7 @@ import { openDb } from './db';
 import { getSettings, patchSettings } from './db/repos/settings';
 import { maybeDevCapture } from './dev-capture';
 import { handle } from './ipc';
-import { registerShortcuts, unregisterShortcuts } from './shortcuts';
+import { registerShortcuts, setFixedShortcuts, unregisterShortcuts } from './shortcuts';
 import { createTray, setPaused } from './tray';
 import { createNotchWindow, setInteractive, showNotch, toggleNotch } from './window';
 
@@ -46,6 +46,8 @@ function registerCoreIpc(): void {
     if (patch.paused !== undefined) setPaused(patch.paused);
     return next;
   });
+  handle('cards:respond', () => undefined);
+  handle('debug:simulate', () => undefined);
   ipcMain.on('ui:ready', () => undefined);
 }
 
@@ -60,6 +62,13 @@ app.whenReady().then(() => {
   registerBootstrapIpc();
   createNotchWindow();
   createTray();
+  // Painel de debug do mascote (Ctrl+Alt+D).
+  setFixedShortcuts({
+    'CommandOrControl+Alt+D': () => {
+      showNotch(true);
+      emit('ui:openDebug', null);
+    },
+  });
   registerShortcuts({
     toggle: toggleNotch,
     quickCapture: () => {
