@@ -51,12 +51,12 @@ interface AttRow {
 
 export const toAttachment = (r: AttRow): Attachment => ({ id: r.id, conversationId: r.conversation_id, filename: r.filename, mime: r.mime, path: r.path, createdAt: r.created_at });
 
-export function addMessage(conversationId: number, role: 'user' | 'assistant', text: string, attachmentIds: number[] = []): ChatMessage {
+export function addMessage(conversationId: number, role: 'user' | 'assistant', text: string, attachmentIds: number[] = [], model: string | null = null): ChatMessage {
   const { lastId } = db().run(
     'INSERT INTO messages (conversation_id, role, content_json, created_at) VALUES (?, ?, ?, ?)',
     conversationId,
     role,
-    JSON.stringify({ text, attachments: attachmentIds }),
+    JSON.stringify(model ? { text, attachments: attachmentIds, model } : { text, attachments: attachmentIds }),
     new Date().toISOString(),
   );
   for (const a of attachmentIds) db().run('UPDATE attachments SET conversation_id = ? WHERE id = ?', conversationId, a);
@@ -66,9 +66,9 @@ export function addMessage(conversationId: number, role: 'user' | 'assistant', t
 export function listMessages(conversationId: number): ChatMessage[] {
   const rows = db().all<MsgRow>('SELECT * FROM messages WHERE conversation_id = ? ORDER BY id', conversationId);
   return rows.map((r) => {
-    const c = JSON.parse(r.content_json) as { text: string; attachments?: number[] };
+    const c = JSON.parse(r.content_json) as { text: string; attachments?: number[]; model?: string };
     const atts = (c.attachments ?? []).map((id) => db().get<AttRow>('SELECT * FROM attachments WHERE id = ?', id)).filter((x): x is AttRow => !!x).map(toAttachment);
-    return { id: r.id, conversationId: r.conversation_id, role: r.role, text: c.text, attachments: atts, createdAt: r.created_at };
+    return { id: r.id, conversationId: r.conversation_id, role: r.role, text: c.text, attachments: atts, createdAt: r.created_at, model: c.model ?? null };
   });
 }
 

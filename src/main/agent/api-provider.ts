@@ -5,11 +5,13 @@ import { readFileSync } from 'node:fs';
 import { resolve, sep } from 'node:path';
 import Anthropic from '@anthropic-ai/sdk';
 import type { BetaMessageParam, BetaTool, BetaToolResultBlockParam, BetaToolUnion } from '@anthropic-ai/sdk/resources/beta/messages/messages';
+import { API_MODEL_IDS } from '@shared/models';
 import { callTool, toolDescriptors, type ToolCtx } from '../mcp/tools';
 import { paths } from '../paths';
 import type { AgentProvider, ProviderEvent, SendOptions } from './provider';
 
-export const API_MODEL = 'claude-opus-5-5';
+/** Modelo padrão do provedor por chave (seção 1 do plano V2). */
+export const API_MODEL = API_MODEL_IDS.sonnet;
 const MAX_TOOL_ROUNDS = 12;
 
 /** Histórico por sessão (a API é sem estado). Mantido em memória enquanto o app está aberto. */
@@ -45,17 +47,21 @@ export class AnthropicApiProvider implements AgentProvider {
     ] as BetaToolUnion[];
     const ctx = this.ctxFor(opts.mcpContext);
     let finalText = '';
+    const model = opts.model === 'default' ? API_MODEL : API_MODEL_IDS[opts.model];
+    // O Haiku não aceita effort.
+    const effort = opts.model === 'haiku' ? undefined : { effort: opts.effort };
+    yield { type: 'model', model };
 
     try {
       for (let round = 0; round < MAX_TOOL_ROUNDS; round++) {
         const stream = client.beta.messages.stream(
           {
-            model: API_MODEL,
+            model,
             max_tokens: 16000,
             system: opts.systemPrompt,
             messages: history,
             tools,
-            output_config: { effort: 'low' },
+            ...(effort ? { output_config: effort } : {}),
             // Recusas de segurança caem automaticamente num modelo de reserva.
             betas: ['server-side-fallback-2026-07-01'],
             fallbacks: 'default',

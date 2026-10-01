@@ -100,7 +100,7 @@ export interface InvokeHandlers {
   'streak:equip': (equipped: UnlockableAccessory[]) => StreakInfo;
 
   'claude:status': (recheck: boolean) => ClaudeStatus;
-  'agent:send': (opts: { conversationId: number | null; text: string; attachmentIds?: number[] }) => { conversationId: number };
+  'agent:send': (opts: { conversationId: number | null; text: string; attachmentIds?: number[]; thinkMore?: boolean }) => { conversationId: number };
   'agent:cancel': (conversationId: number) => void;
   'agent:conversations': () => Conversation[];
   'agent:messages': (conversationId: number) => ChatMessage[];

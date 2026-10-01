@@ -1,5 +1,5 @@
 // Orquestra as conversas com o agente: provedor, prompt de sistema, contexto MCP, streaming e persistência.
-import type { AgentEvent, Task } from '@shared/types';
+import type { AgentEffort, AgentEvent, AgentModel, Task } from '@shared/types';
 import { parseCapture } from '@shared/parse-capture';
 import { emit } from '../bus';
 import { listClients } from '../db/repos/clients';
@@ -15,7 +15,7 @@ import {
 } from '../db/repos/conversations';
 import { goalForDate, getProfile } from '../db/repos/profile';
 import { listRituals } from '../db/repos/rituals';
-import { getKV, setKV } from '../db/repos/settings';
+import { getKV, getSettings, setKV } from '../db/repos/settings';
 import { createTask, listTasks } from '../db/repos/tasks';
 import { handle } from '../ipc';
 import { closeContext, openContext } from '../mcp/server';
@@ -62,13 +62,33 @@ function systemPrompt(mode: 'chat' | 'capture'): string {
 }
 
 /** Roda uma chamada ao provedor e repassa os eventos. */
-async function run(opts: { conversationId: number | null; prompt: string; mode: 'chat' | 'capture'; sessionId: string | null; signal: AbortSignal; onEvent: (e: ProviderEvent) => void }): Promise<ProviderEvent & ({ type: 'done' } | { type: 'error' })> {
+async function run(opts: {
+  conversationId: number | null;
+  prompt: string;
+  mode: 'chat' | 'capture';
+  sessionId: string | null;
+  signal: AbortSignal;
+  onEvent: (e: ProviderEvent) => void;
+  /** Sobrescreve o modelo/effort das Configurações (ex.: "Pensar mais", tarefas mecânicas). */
+  model?: AgentModel;
+  effort?: AgentEffort;
+}): Promise<ProviderEvent & ({ type: 'done' } | { type: 'error' })> {
+  const agent = getSettings().agent;
   const ctx: ToolCtx = { mode: opts.mode, conversationId: opts.conversationId };
   const ctxId = openContext(ctx);
   contextsById.set(ctxId, ctx);
   let last: (ProviderEvent & ({ type: 'done' } | { type: 'error' })) | null = null;
   try {
-    for await (const e of provider().send({ prompt: opts.prompt, systemPrompt: systemPrompt(opts.mode), sessionId: opts.sessionId, mcpContext: ctxId, readDirs: [paths.files], signal: opts.signal })) {
+    for await (const e of provider().send({
+      prompt: opts.prompt,
+      systemPrompt: systemPrompt(opts.mode),
+      sessionId: opts.sessionId,
+      mcpContext: ctxId,
+      readDirs: [paths.files],
+      signal: opts.signal,
+      model: opts.model ?? agent.model,
+      effort: opts.effort ?? agent.effort,
+    })) {
       opts.onEvent(e);
       if (e.type === 'done' || e.type === 'error') last = e;
     }
@@ -90,11 +110,16 @@ function promptWithAttachments(text: string, attachmentIds: number[]): string {
   return `${text}\n\nArquivos anexados (leia com a ferramenta Read):\n${list}`;
 }
 
-export async function sendMessage(opts: { conversationId: number | null; text: string; attachmentIds?: number[] }): Promise<{ conversationId: number }> {
+/** "Pensar mais": refaz a última resposta com o modelo mais capaz e effort alto. */
+export const THINK_MORE_PROMPT = 'Refaça sua última resposta com mais cuidado: revise o raciocínio, confira os dados com as ferramentas se precisar e responda de novo, completa.';
+
+export async function sendMessage(opts: { conversationId: number | null; text: string; attachmentIds?: number[]; thinkMore?: boolean }): Promise<{ conversationId: number }> {
   const conv = opts.conversationId ? (getConversation(opts.conversationId) ?? createConversation()) : createConversation();
   const atts = opts.attachmentIds ?? [];
-  addMessage(conv.id, 'user', opts.text, atts);
-  setConversationTitle(conv.id, opts.text.split('\n')[0]);
+  if (!opts.thinkMore) {
+    addMessage(conv.id, 'user', opts.text, atts);
+    setConversationTitle(conv.id, opts.text.split('\n')[0]);
+  }
   const ac = new AbortController();
   running.get(conv.id)?.abort();
   running.set(conv.id, ac);
@@ -110,14 +135,17 @@ export async function sendMessage(opts: { conversationId: number | null; text: s
 
   void (async () => {
     let text = '';
+    let model: string | null = null;
     const result = await run({
       conversationId: conv.id,
-      prompt: promptWithAttachments(opts.text, atts),
+      prompt: opts.thinkMore ? THINK_MORE_PROMPT : promptWithAttachments(opts.text, atts),
       mode: 'chat',
       sessionId: conv.claudeSessionId,
       signal: ac.signal,
+      ...(opts.thinkMore ? { model: 'opus' as const, effort: 'high' as const } : {}),
       onEvent: (e) => {
-        if (e.type === 'delta') {
+        if (e.type === 'model') model = e.model;
+        else if (e.type === 'delta') {
           text += e.text;
           send({ type: 'delta', conversationId: conv.id, text: e.text });
         } else if (e.type === 'tool') {
@@ -131,8 +159,8 @@ export async function sendMessage(opts: { conversationId: number | null; text: s
     if (result.type === 'done') {
       const finalText = text || result.text;
       if (result.sessionId) setConversationSession(conv.id, result.sessionId);
-      if (finalText.trim()) addMessage(conv.id, 'assistant', finalText.trim());
-      send({ type: 'done', conversationId: conv.id, text: finalText });
+      if (finalText.trim()) addMessage(conv.id, 'assistant', finalText.trim(), [], model);
+      send({ type: 'done', conversationId: conv.id, text: finalText, model });
     } else {
       if (ac.signal.aborted) return;
       send({ type: 'error', conversationId: conv.id, code: result.code, message: result.message });
@@ -175,6 +203,8 @@ export async function proposeSubtasks(task: Task): Promise<void> {
     mode: 'chat',
     sessionId: null,
     signal: ac.signal,
+    // Tarefa mecânica: o modelo rápido basta.
+    model: getSettings().agent.model === 'default' ? undefined : 'haiku',
     onEvent: () => undefined,
   });
   clearTimeout(timer);

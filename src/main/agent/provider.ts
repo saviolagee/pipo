@@ -1,8 +1,11 @@
 // Abstração de provedor do agente (seção 3.3).
+import type { AgentEffort, AgentModel } from '@shared/types';
 
 export type ProviderEvent =
   | { type: 'delta'; text: string }
   | { type: 'tool'; name: string }
+  /** Modelo que está respondendo (do `system/init` e de cada mensagem). */
+  | { type: 'model'; model: string }
   | { type: 'done'; text: string; sessionId: string | null }
   | { type: 'error'; code: 'not_installed' | 'not_logged' | 'rate_limited' | 'failed'; message: string };
 
@@ -17,6 +20,8 @@ export interface SendOptions {
   /** Pastas extras que o agente pode ler (anexos). */
   readDirs: string[];
   signal: AbortSignal;
+  model: AgentModel;
+  effort: AgentEffort;
 }
 
 export interface AgentProvider {

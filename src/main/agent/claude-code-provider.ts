@@ -1,6 +1,8 @@
 // Provedor padrão: Claude Code instalado e logado com a assinatura do usuário (seção 3.1). Sem chave de API.
 import { writeFileSync } from 'node:fs';
 import { join } from 'node:path';
+import { modelArgs } from '@shared/models';
+import type { AgentEffort, AgentModel } from '@shared/types';
 import { mcpConfigPath } from '../mcp/server';
 import { paths } from '../paths';
 import { claudeEnv, findClaude, spawnClaude } from './claude-bin';
@@ -9,7 +11,7 @@ import type { AgentProvider, ProviderEvent, SendOptions } from './provider';
 /** Ferramentas embutidas bloqueadas: o agente só usa as ferramentas do Pipo e lê anexos. */
 const DISALLOWED = ['Bash', 'Edit', 'Write', 'MultiEdit', 'NotebookEdit', 'WebFetch', 'WebSearch', 'Task', 'Agent', 'Glob', 'Grep', 'PowerShell'];
 
-export function buildArgs(opts: { systemPromptFile: string; sessionId: string | null; readDirs: string[]; mcpConfig: string }): string[] {
+export function buildArgs(opts: { systemPromptFile: string; sessionId: string | null; readDirs: string[]; mcpConfig: string; model?: AgentModel; effort?: AgentEffort }): string[] {
   const args = [
     '-p',
     '--output-format',
@@ -30,6 +32,7 @@ export function buildArgs(opts: { systemPromptFile: string; sessionId: string | 
     '--permission-mode',
     'dontAsk',
   ];
+  args.push(...modelArgs(opts.model ?? 'default', opts.effort ?? 'medium'));
   for (const d of opts.readDirs) args.push('--add-dir', d);
   if (opts.sessionId) args.push('--resume', opts.sessionId);
   return args;
@@ -48,10 +51,11 @@ interface StreamLine {
   type: string;
   subtype?: string;
   session_id?: string;
+  model?: string;
   is_error?: boolean;
   result?: string;
   event?: { type: string; delta?: { type: string; text?: string }; content_block?: { type: string; name?: string } };
-  message?: { content?: Array<{ type: string; name?: string; text?: string }> };
+  message?: { model?: string; content?: Array<{ type: string; name?: string; text?: string }> };
 }
 
 /** Converte uma linha NDJSON do `stream-json` em eventos do Pipo. Exportado para testes. */
@@ -67,6 +71,9 @@ export function parseStreamLine(line: string): ProviderEvent[] {
     if (j.event.type === 'content_block_start' && j.event.content_block?.type === 'tool_use' && j.event.content_block.name) return [{ type: 'tool', name: j.event.content_block.name }];
     return [];
   }
+  if (j.type === 'system' && j.subtype === 'init' && j.model) return [{ type: 'model', model: j.model }];
+  // Cada mensagem traz o modelo que de fato respondeu (inclusive depois de um fallback).
+  if (j.type === 'assistant' && j.message?.model) return [{ type: 'model', model: j.message.model }];
   if (j.type === 'result') {
     if (j.is_error || (j.subtype && j.subtype !== 'success')) return [classifyError(j.result ?? j.subtype ?? '')];
     return [{ type: 'done', text: j.result ?? '', sessionId: j.session_id ?? null }];
@@ -85,7 +92,7 @@ export class ClaudeCodeProvider implements AgentProvider {
     }
     const spFile = join(paths.workspace, `.system-prompt-${opts.mcpContext}.md`);
     writeFileSync(spFile, opts.systemPrompt);
-    const args = buildArgs({ systemPromptFile: spFile, sessionId: opts.sessionId, readDirs: opts.readDirs, mcpConfig: mcpConfigPath() });
+    const args = buildArgs({ systemPromptFile: spFile, sessionId: opts.sessionId, readDirs: opts.readDirs, mcpConfig: mcpConfigPath(), model: opts.model, effort: opts.effort });
     // O shim MCP herda esta variável e informa ao app de qual conversa veio a chamada.
     const env: NodeJS.ProcessEnv = { ...claudeEnv(), PIPO_MCP_CONTEXT: opts.mcpContext };
 

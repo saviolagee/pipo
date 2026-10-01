@@ -16,6 +16,8 @@ interface ChatState {
   lastPrompt: string | null;
   pending: Attachment[];
   send: (text: string) => Promise<void>;
+  /** Refaz a última resposta com o Opus e effort alto. */
+  thinkMore: () => Promise<void>;
   newConversation: () => void;
   addAttachments: (a: Attachment[]) => void;
   removeAttachment: (id: number) => void;
@@ -48,6 +50,18 @@ export const useChat = create<ChatState>((set, get) => ({
     try {
       const r = await api.invoke('agent:send', { conversationId: get().conversationId, text: t, attachmentIds: atts.map((a) => a.id) });
       set({ conversationId: r.conversationId });
+    } catch (e) {
+      set({ busy: false, error: { code: 'failed', message: e instanceof Error ? e.message : String(e) } });
+      useUi.setState({ agentBusy: false });
+    }
+  },
+  thinkMore: async () => {
+    const id = get().conversationId;
+    if (!id || get().busy) return;
+    set({ busy: true, streaming: '', error: null, tool: null });
+    useUi.setState({ agentBusy: true });
+    try {
+      await api.invoke('agent:send', { conversationId: id, text: '', thinkMore: true });
     } catch (e) {
       set({ busy: false, error: { code: 'failed', message: e instanceof Error ? e.message : String(e) } });
       useUi.setState({ agentBusy: false });

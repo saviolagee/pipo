@@ -3,8 +3,9 @@ import { Fragment, useEffect, useRef, useState } from 'react';
 import type { Accessory, Attachment, MascotState } from '@shared/types';
 import { Button } from '../components/Button';
 import { usePinOnFocus } from '../components/Form';
-import { IconArrowUp, IconFile, IconMic, IconPlus, IconX } from '../components/Icons';
+import { IconArrowUp, IconFile, IconMic, IconPlus, IconSpark, IconX } from '../components/Icons';
 import { t } from '../i18n/pt-BR';
+import { prettyModel } from '@shared/models';
 import { api } from '../lib/api';
 import { Mascot } from '../mascot/Mascot';
 import { useChat } from '../store/chat';
@@ -114,7 +115,7 @@ export function ChatScreen({ mood, accessories, state }: { mood: number; accesso
           </div>
         )}
         <div className="flex flex-col gap-[12px] py-[8px]">
-          {chat.messages.map((m) =>
+          {chat.messages.map((m, i) =>
             m.role === 'user' ? (
               <motion.div key={m.id} initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} className="flex justify-end">
                 <span className="max-w-[78%] whitespace-pre-wrap rounded-[16px] px-[14px] py-[7px] text-[13px] text-fg" style={{ background: '#26262B' }}>
@@ -122,8 +123,16 @@ export function ChatScreen({ mood, accessories, state }: { mood: number; accesso
                 </span>
               </motion.div>
             ) : (
-              <motion.div key={m.id} initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="max-w-[90%] select-text text-[13px] leading-[1.5] text-fg">
+              <motion.div key={m.id} initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="group max-w-[90%] select-text text-[13px] leading-[1.5] text-fg">
                 <Rich text={m.text} />
+                <div className="mt-[3px] flex h-[16px] items-center gap-[10px] text-[10.5px] text-fg-3">
+                  {m.model && <span title={m.model}>{prettyModel(m.model)}</span>}
+                  {i === chat.messages.length - 1 && !chat.busy && (
+                    <button type="button" onClick={() => void chat.thinkMore()} className="flex items-center gap-[4px] text-fg-3 transition-colors hover:text-fg" title={c.thinkMoreHint}>
+                      <IconSpark size={9} /> {c.thinkMore}
+                    </button>
+                  )}
+                </div>
               </motion.div>
             ),
           )}

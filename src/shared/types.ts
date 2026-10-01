@@ -347,6 +347,8 @@ export interface ChatMessage {
   text: string;
   attachments: Attachment[];
   createdAt: string;
+  /** Modelo que respondeu (id reportado pelo Claude, ex.: claude-sonnet-5-5). */
+  model?: string | null;
 }
 
 export interface Conversation {
@@ -360,7 +362,7 @@ export type AgentEvent =
   | { type: 'start'; conversationId: number }
   | { type: 'delta'; conversationId: number; text: string }
   | { type: 'tool'; conversationId: number; name: string }
-  | { type: 'done'; conversationId: number; text: string }
+  | { type: 'done'; conversationId: number; text: string; model: string | null }
   | { type: 'error'; conversationId: number; code: AgentErrorCode; message: string };
 
 export type AgentErrorCode = 'not_installed' | 'not_logged' | 'rate_limited' | 'failed' | 'unavailable';
@@ -373,7 +375,17 @@ export interface IngestProgress {
   error?: string;
 }
 
+export type AgentModel = 'sonnet' | 'opus' | 'haiku' | 'default';
+export type AgentEffort = 'low' | 'medium' | 'high';
+
+export interface AgentSettings {
+  /** Alias do Claude Code. "default" = o mesmo modelo do terminal. */
+  model: AgentModel;
+  effort: AgentEffort;
+}
+
 export interface Settings {
+  agent: AgentSettings;
   volume: number;
   muted: boolean;
   paused: boolean;

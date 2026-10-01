@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import type { Settings as SettingsT, UnlockableAccessory } from '@shared/types';
 import { Button } from '../components/Button';
-import { Chip, Label, Slider, TagInput, TextField, YesNo } from '../components/Form';
+import { Chip, Label, Option, Slider, TagInput, TextField, YesNo } from '../components/Form';
 import { t } from '../i18n/pt-BR';
 import { api } from '../lib/api';
 import { Mascot } from '../mascot/Mascot';
@@ -17,7 +17,7 @@ import { useUi } from '../store/ui';
 
 const s = t.settings;
 type SectionId = keyof typeof s.sections;
-const SECTIONS: SectionId[] = ['profile', 'goal', 'focus', 'rituals', 'distractions', 'clients', 'integrations', 'personality', 'privacy', 'shortcuts', 'data'];
+const SECTIONS: SectionId[] = ['profile', 'goal', 'focus', 'rituals', 'distractions', 'clients', 'integrations', 'agent', 'personality', 'privacy', 'shortcuts', 'data'];
 const DRAFT_SECTIONS: SectionId[] = ['profile', 'goal', 'focus', 'rituals', 'distractions', 'clients', 'personality'];
 
 function errText(e: unknown): string {
@@ -135,6 +135,8 @@ export function SettingsScreen(): React.JSX.Element {
             )}
           </>
         );
+      case 'agent':
+        return settings ? <AgentBlock settings={settings} onPatch={patchSettings} /> : null;
       case 'personality':
         return (
           <>
@@ -259,6 +261,36 @@ function SpotifyBlock(): React.JSX.Element {
 }
 
 /** Avançado: provedor por chave de API (desativado por padrão; o padrão é a assinatura via Claude Code). */
+function AgentBlock({ settings, onPatch }: { settings: SettingsT; onPatch: (p: Partial<SettingsT>) => Promise<void> }): React.JSX.Element {
+  const a = settings.agent;
+  const models = ['sonnet', 'opus', 'haiku', 'default'] as const;
+  return (
+    <>
+      <Block title={s.agentModel}>
+        <div className="grid grid-cols-2 gap-[8px]">
+          {models.map((m) => (
+            <Option key={m} on={a.model === m} onClick={() => void onPatch({ agent: { ...a, model: m } })} title={s.agentModels[m][0]} desc={s.agentModels[m][1]} />
+          ))}
+        </div>
+      </Block>
+      <Block title={s.agentEffort}>
+        {a.model === 'haiku' ? (
+          <p className="text-[12px] text-fg-3">{s.agentEffortHaiku}</p>
+        ) : (
+          <div className="flex gap-[6px]">
+            {(['low', 'medium', 'high'] as const).map((e) => (
+              <Chip key={e} on={a.effort === e} onClick={() => void onPatch({ agent: { ...a, effort: e } })}>
+                {s.agentEfforts[e]}
+              </Chip>
+            ))}
+          </div>
+        )}
+        <p className="mt-[8px] text-[11px] text-fg-3">{s.agentThinkHint}</p>
+      </Block>
+    </>
+  );
+}
+
 function ApiKeyBlock(): React.JSX.Element {
   const [info, setInfo] = useState<{ provider: 'claude-code' | 'anthropic-api'; hasKey: boolean } | null>(null);
   const [key, setKey] = useState('');
