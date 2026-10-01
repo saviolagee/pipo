@@ -96,7 +96,8 @@ describe('executor de processos', () => {
     expect(d.confirms).toEqual(['Enviar 2 e-mails?']);
     expect(got[0].auth).toBe('Bearer segredo-super-123');
     expect(JSON.parse(got[0].body)).toEqual({ assunto: 'Oi Ana', leads: [{ email: 'ana@x.com', nome: 'Ana' }, { email: 'bia@x.com', nome: 'Bia' }] });
-    expect(d.notes).toEqual(['Avisar', run.summary]);
+    // O plano já avisou: o resumo final não se repete.
+    expect(d.notes).toEqual(['Avisar']);
     // O segredo nunca fica nos logs da execução (saída do script vazou o token de propósito).
     const steps = repo.runSteps(run.id);
     expect(steps.map((s) => s.status)).toEqual(['done', 'done', 'done', 'done', 'done', 'done']);

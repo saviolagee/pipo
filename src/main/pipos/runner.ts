@@ -167,6 +167,7 @@ export async function execute(req: RunRequest, deps: RunnerDeps, onStart: (runId
   };
   const env: StepEnv = { pipoDir, runDir, ctx, secrets, dryRun, signal: ac.signal, input: req.input ?? null };
   const rules = listMemory(pipo.id).map((m) => m.rule);
+  let notified = false;
   const timeout = setTimeout(() => ac.abort(), Math.max(1, playbook.limits.maxRunMinutes) * 60_000);
   const startedAt = Date.now();
   let approvedInRun = false;
@@ -234,7 +235,10 @@ export async function execute(req: RunRequest, deps: RunnerDeps, onStart: (runId
       case 'notify': {
         const title = renderText(step.title, ctx);
         const body = step.body ? renderText(step.body, ctx) : null;
-        if (!dryRun) await deps.notify({ pipo, title, body, final: false, run: null, trigger: req.trigger });
+        if (!dryRun) {
+          await deps.notify({ pipo, title, body, final: false, run: null, trigger: req.trigger });
+          notified = true;
+        }
         return { output: { aviso: title, texto: body, seco: dryRun || undefined } };
       }
       case 'handoff': {
@@ -339,7 +343,8 @@ export async function execute(req: RunRequest, deps: RunnerDeps, onStart: (runId
   setTimeout(() => finished.delete(run.id), 60_000).unref?.();
 
   if (!dryRun) {
-    await deps.notify({ pipo, title: summary, body: null, final: true, run: finished_, trigger: req.trigger });
+    // Se o próprio plano já avisou e deu tudo certo, o resumo final seria repetido.
+    if (status !== 'done' || !notified) await deps.notify({ pipo, title: summary, body: null, final: true, run: finished_, trigger: req.trigger });
     // 3 falhas seguidas pausam o Pipo.
     if (status === 'failed' && consecutiveFailures(pipo.id) >= 3) {
       updatePipo(pipo.id, { paused: true });
