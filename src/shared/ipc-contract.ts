@@ -75,7 +75,7 @@ export interface InvokeHandlers {
   'subtasks:delete': (subtaskId: number) => Task;
 
   'focus:start': (opts: { taskId: number | null; minutes?: number; microStep?: string | null; skipRituals?: boolean }) => FocusState;
-  'focus:ritualDone': () => FocusState | null;
+  'focus:ritualDone': (skipToday?: boolean) => FocusState | null;
   'focus:pause': () => FocusState | null;
   'focus:resume': () => FocusState | null;
   'focus:skipPhase': () => FocusState | null;

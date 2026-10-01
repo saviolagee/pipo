@@ -11,7 +11,11 @@ import { getSettings, patchSettings } from './db/repos/settings';
 import { maybeDevCapture } from './dev-capture';
 import { handle } from './ipc';
 import { registerShortcuts, setFixedShortcuts, unregisterShortcuts } from './shortcuts';
+import { registerCardsIpc } from './cards';
+import { handleMediaProtocol, registerMediaScheme } from './music/fallback';
 import { registerSystemIpc } from './system';
+import { nextSuggested, registerTasksIpc } from './tasks/ipc';
+import { startFocus } from './focus/session';
 import { createTray, setPaused } from './tray';
 import { createNotchWindow, setInteractive, showNotch, toggleNotch } from './window';
 
@@ -23,6 +27,8 @@ if (process.platform === 'linux') {
   // Janelas transparentes no Linux (útil para desenvolvimento).
   app.commandLine.appendSwitch('enable-transparent-visuals');
 }
+
+registerMediaScheme();
 
 if (!app.requestSingleInstanceLock()) {
   app.quit();
@@ -39,7 +45,6 @@ function registerCoreIpc(): void {
     if (patch.paused !== undefined) setPaused(patch.paused);
     return next;
   });
-  handle('cards:respond', () => undefined);
   handle('debug:simulate', () => undefined);
   ipcMain.on('ui:ready', () => undefined);
 }
@@ -54,6 +59,9 @@ app.whenReady().then(() => {
   registerCoreIpc();
   registerBootstrapIpc();
   registerSystemIpc();
+  registerCardsIpc();
+  registerTasksIpc();
+  handleMediaProtocol();
   createNotchWindow();
   createTray();
   // Painel de debug do mascote (Ctrl+Alt+D).
@@ -71,6 +79,8 @@ app.whenReady().then(() => {
     },
     focusNext: () => {
       showNotch(false);
+      const next = nextSuggested();
+      void startFocus({ taskId: next?.id ?? null });
       emit('ui:navigate', { tab: 'home', expand: true });
     },
   });

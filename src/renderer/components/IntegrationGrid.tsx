@@ -30,7 +30,7 @@ export function IntegrationGrid(): React.JSX.Element {
   const ids: ChipId[] = ['google_calendar', 'gmail', 'spotify', 'claude'];
 
   return (
-    <div className="grid h-full grid-cols-2 gap-[6px]">
+    <div className="grid h-full min-h-[76px] grid-cols-2 grid-rows-2 gap-[6px]">
       {ids.map((id) => {
         const on = flags[id];
         const playing = id === 'spotify' && nowPlaying;
@@ -41,7 +41,7 @@ export function IntegrationGrid(): React.JSX.Element {
             aria-label={`${t.integrations[id]}: ${on ? t.integrations.connected : t.integrations.disconnected}`}
             onClick={() => (on && playing ? void api.invoke('music:toggle') : setTab('settings'))}
             className="flex min-w-0 items-center gap-[9px] rounded-[10px] px-[10px] text-[12px] font-medium transition-colors hover:bg-white/[0.07]"
-            style={{ background: 'var(--bg-card-hover)', opacity: on ? 1 : 0.4, height: 34 }}
+            style={{ background: 'var(--bg-card-hover)', opacity: on ? 1 : 0.4 }}
           >
             <MiniFace color={INTEGRATION_COLORS[id]} size={20} />
             {playing ? (

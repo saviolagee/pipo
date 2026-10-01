@@ -14,6 +14,10 @@ import { DebugPanel } from './screens/DebugPanel';
 import { Home } from './screens/Home';
 import { Onboarding } from './onboarding/Onboarding';
 import { SettingsScreen } from './screens/Settings';
+import { FocusCard } from './screens/FocusCard';
+import { RitualCheck } from './screens/RitualCheck';
+import { TasksScreen } from './screens/Tasks';
+import { LocalAudio } from './components/LocalAudio';
 import { configureSfx, play } from './sound/sfx';
 import { useData } from './store/data';
 import { useUi } from './store/ui';
@@ -105,6 +109,14 @@ export function App(): React.JSX.Element {
       api.on('mascot:say', ({ text, ms }) => useUi.getState().say(text, ms)),
       api.on('sfx:play', (name) => play(name)),
       api.on('claude:status', (claude) => useData.getState().set({ claude })),
+      api.on('focus:state', (focus) => {
+        const prev = useData.getState().focus;
+        useData.getState().set({ focus });
+        // Foco começou: abre o notch no Início (ritual ou card da sessão).
+        if (focus && !prev) useUi.getState().setTab('home');
+      }),
+      api.on('tasks:changed', () => void useData.getState().refreshTasks()),
+      api.on('stats:changed', (stats) => useData.getState().set({ stats })),
     ];
     const onKey = (e: KeyboardEvent): void => {
       if (e.ctrlKey && e.altKey && e.key.toLowerCase() === 'd') useUi.setState((s) => ({ debugOpen: !s.debugOpen }));
@@ -121,6 +133,10 @@ export function App(): React.JSX.Element {
   useEffect(() => {
     useUi.getState().pin('card', !!topCard);
   }, [topCard]);
+  const ritualPhase = useData((s) => s.focus?.phase === 'ritual');
+  useEffect(() => {
+    useUi.getState().pin('ritual', ritualPhase);
+  }, [ritualPhase]);
   useEffect(() => {
     useUi.getState().pin('onboarding', onboarding);
     if (onboarding) useUi.getState().setExpanded(true);
@@ -139,6 +155,18 @@ export function App(): React.JSX.Element {
   }, []);
 
   const finishEntrance = useCallback(() => setEntering(false), []);
+  const focus = useData((s) => s.focus);
+
+  /** "Começar foco": próxima tarefa sugerida; sem tarefa, abre a captura. */
+  const startFocus = useCallback(async () => {
+    const next = await api.invoke('tasks:nextSuggested');
+    if (!next) {
+      useUi.getState().setTab('add');
+      useUi.setState({ captureMode: true });
+      return;
+    }
+    await api.invoke('focus:start', { taskId: next.id });
+  }, []);
 
   useEffect(() => {
     if (ui.entranceKey > 0) setEntering(true);
@@ -159,7 +187,11 @@ export function App(): React.JSX.Element {
     switch (ui.tab) {
       case 'settings':
         return <SettingsScreen />;
+      case 'tasks':
+        return <TasksScreen />;
       default:
+        if (focus?.phase === 'ritual') return <RitualCheck />;
+        if (focus) return <FocusCard focus={focus} state={mascot.state} badge={mascot.badge} mood={mascot.mood} accessories={mascot.accessories} onMascotClick={onMascotClick} bump={bump} />;
         return (
           <Home
             state={mascot.state}
@@ -169,7 +201,7 @@ export function App(): React.JSX.Element {
             look={look}
             bump={bump}
             onMascotClick={onMascotClick}
-            onStartFocus={() => undefined}
+            onStartFocus={() => void startFocus()}
             entrance={entering && ui.expanded ? <Entrance key={ui.entranceKey} size={76} onDone={finishEntrance} /> : null}
           />
         );
@@ -192,6 +224,7 @@ export function App(): React.JSX.Element {
         </div>
       </Notch>
       <AnimatePresence>{ui.debugOpen && <DebugPanel />}</AnimatePresence>
+      <LocalAudio />
     </>
   );
 }
