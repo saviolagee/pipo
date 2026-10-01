@@ -28,6 +28,7 @@ function shapeFor(state: MascotState): Shape {
   switch (state) {
     case 'happy':
     case 'celebrating':
+    case 'dancing':
       return 'arc';
     case 'sleepy':
     case 'shh':

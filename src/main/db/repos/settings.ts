@@ -9,7 +9,7 @@ export const DEFAULT_SETTINGS: Settings = {
   shortcuts: { ...DEFAULT_SHORTCUTS },
   distractions: { items: [...DEFAULT_DISTRACTIONS], toleranceSec: 60, allowed: [] },
   privacy: { trackingPaused: false, ignoredApps: [...DEFAULT_IGNORED_APPS] },
-  reactions: { meeting: true, email: true, clipboard: true, unstuck: true },
+  reactions: { meeting: true, email: true, clipboard: true, unstuck: true, music: true },
 };
 
 export function getKV<T>(key: string, fallback: T): T {

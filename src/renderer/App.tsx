@@ -133,7 +133,6 @@ export function App(): React.JSX.Element {
         useData.getState().set({ focus });
         // Foco começou: abre o notch no Início (ritual ou card da sessão).
         if (focus && !prev) useUi.getState().setTab('home');
-        if (!focus) useData.getState().set({ nowPlaying: null });
       }),
       api.on('tasks:changed', () => void useData.getState().refreshTasks()),
       api.on('stats:changed', (stats) => useData.getState().set({ stats })),

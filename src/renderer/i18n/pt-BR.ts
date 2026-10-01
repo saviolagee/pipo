@@ -319,6 +319,7 @@ export const t = {
     reactionEmail: 'E-mail longo',
     reactionClipboard: 'Área de transferência',
     reactionUnstuck: 'Destravar sozinho',
+    reactionMusic: 'Dançar com música',
     volume: 'Volume',
     apiAdvanced: 'Avançado: usar chave de API',
     apiHint: 'Por padrão o Pipo usa o Claude Code logado com a sua assinatura. A chave de API é cobrada à parte.',

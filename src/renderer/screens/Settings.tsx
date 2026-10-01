@@ -359,6 +359,7 @@ function PrivacyBlock({ settings, onPatch, onMsg }: { settings: SettingsT; onPat
               ['email', s.reactionEmail],
               ['clipboard', s.reactionClipboard],
               ['unstuck', s.reactionUnstuck],
+              ['music', s.reactionMusic],
             ] as const
           ).map(([k, label]) => (
             <span key={k} className="flex items-center justify-between gap-2">

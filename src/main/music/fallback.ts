@@ -43,16 +43,26 @@ export function handleMediaProtocol(): void {
   });
 }
 
+let localTrack: string | null = null;
+
 export function playLocal(cfg: MusicConfig): void {
   if (!cfg.filePath) return;
   allowedFile = cfg.filePath;
+  localTrack = cfg.filePath.split(/[\\/]/).pop() ?? cfg.filePath;
   emit('music:local', { action: 'play', filePath: cfg.filePath });
 }
 
 export function pauseLocal(): void {
+  localTrack = null;
   emit('music:local', { action: 'pause' });
 }
 
 export function stopLocal(): void {
+  localTrack = null;
   emit('music:local', { action: 'stop' });
+}
+
+/** Nome do arquivo local tocando agora (ritual de foco), ou null. */
+export function localPlaying(): string | null {
+  return localTrack;
 }

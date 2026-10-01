@@ -6,7 +6,7 @@ import { Mascot } from '../mascot/Mascot';
 import { play } from '../sound/sfx';
 import { useUi } from '../store/ui';
 
-const STATES: MascotState[] = ['idle', 'looking', 'happy', 'working', 'thinking', 'attention', 'sleepy', 'eating', 'celebrating', 'dizzy', 'sad', 'tired', 'listening', 'shh'];
+const STATES: MascotState[] = ['idle', 'looking', 'happy', 'working', 'thinking', 'attention', 'sleepy', 'eating', 'celebrating', 'dizzy', 'sad', 'tired', 'listening', 'shh', 'dancing'];
 const ACCESSORIES: Accessory[] = ['headphones', 'glasses', 'coffee', 'nightcap', 'scarf', 'cool_glasses', 'hat', 'crown', 'cape'];
 const GLOWS: GlowKind[] = ['none', 'focus', 'attention', 'done', 'dizzy'];
 const SFX: SfxName[] = ['pop', 'chime', 'alert', 'gulp', 'boing', 'tick'];

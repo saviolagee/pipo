@@ -33,7 +33,8 @@ export function IntegrationGrid(): React.JSX.Element {
     <div className="grid h-full min-h-[76px] grid-cols-2 grid-rows-2 gap-[6px]">
       {ids.map((id) => {
         const on = flags[id];
-        const playing = id === 'spotify' && nowPlaying;
+        // Só a leitura da API tem controle de play/pause; título de janela e arquivo local não.
+        const playing = id === 'spotify' && on && nowPlaying?.source === 'spotify-api' ? nowPlaying : null;
         return (
           <button
             key={id}

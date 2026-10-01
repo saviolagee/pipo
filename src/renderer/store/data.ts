@@ -77,7 +77,7 @@ export const useData = create<DataState>((set, get) => ({
       integrations: b.integrations,
       claude: b.claude,
     });
-    await Promise.all([get().refreshTasks(), get().refreshStats()]);
+    await Promise.all([get().refreshTasks(), get().refreshStats(), api.invoke('music:nowPlaying').then((nowPlaying) => set({ nowPlaying }))]);
   },
   refreshTasks: async () => {
     set({ tasks: await api.invoke('tasks:all') });

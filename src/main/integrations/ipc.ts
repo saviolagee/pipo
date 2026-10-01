@@ -4,11 +4,11 @@ import { providers } from '../bootstrap';
 import { emit } from '../bus';
 import { showCard } from '../cards';
 import { getIntegration } from '../db/repos/integrations';
-import { focusState } from '../focus/session';
 import { meetingHooks } from '../insights/context-reactions';
 import { handle } from '../ipc';
 import { agentHooks } from '../mcp/tools';
 import { musicApi, setMusicApi, startMusic } from '../music';
+import { nowPlaying, refreshNowPlaying, startNowPlaying } from '../music/now-playing';
 import { connectSpotify, disconnectSpotify, setSpotifyClientId, spotifyApi } from '../music/spotify';
 import { every } from '../scheduler';
 import { statsHooks, todayStats } from '../stats';
@@ -96,11 +96,10 @@ export function registerIntegrations(): void {
   handle('integrations:setSpotifyClient', (cfg) => setSpotifyClientId(cfg.clientId));
   handle('calendar:upcoming', () => cachedEvents());
   handle('music:toggle', async () => {
-    const r = (await musicApi()?.toggle().catch(() => null)) ?? null;
-    emit('music:nowPlaying', r);
-    return r;
+    await musicApi()?.toggle().catch(() => null);
+    return refreshNowPlaying(true);
   });
-  handle('music:nowPlaying', async () => (musicApi()?.isConnected() ? ((await musicApi()?.nowPlaying().catch(() => null)) ?? null) : null));
+  handle('music:nowPlaying', () => nowPlaying());
   handle('music:test', async () => {
     await startMusic();
   });
@@ -111,10 +110,7 @@ export function registerIntegrations(): void {
     emit('stats:changed', todayStats());
   });
   every('meetingReminder', 30_000, remindMeetings);
-  // Faixa atual: só durante o foco (CPU/rede em idle).
-  every('nowPlaying', 10_000, async () => {
-    if (!focusState() || !musicApi()?.isConnected()) return;
-    emit('music:nowPlaying', (await musicApi()?.nowPlaying().catch(() => null)) ?? null);
-  });
+  // Faixa atual (Spotify/arquivo local): alimenta o chip do Spotify e a dança do Pipo.
+  startNowPlaying();
   void syncCalendar().catch(() => undefined);
 }

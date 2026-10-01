@@ -69,6 +69,18 @@ function bodyMotion(state: MascotState, mood: number, still: boolean): { animate
       return { animate: { scale: [1, 1.03, 1], y: 0, rotate: 0, x: 0 }, transition: { duration: 1.2, repeat: Infinity } };
     case 'thinking':
       return { animate: { y: [0, -1.5, 0], rotate: [0, -3, 0], x: 0, scaleX: 1, scaleY: 1 }, transition: { duration: 2, repeat: Infinity, ease: 'easeInOut' } };
+    case 'dancing':
+      // Balanço lado a lado com quique a cada batida (~120 bpm): amassa ao pousar, estica no ar.
+      return {
+        animate: {
+          y: [0, -4, 0, -4, 0],
+          x: [-1.5, 0, 1.5, 0, -1.5],
+          rotate: [-7, 0, 7, 0, -7],
+          scaleX: [1.04, 0.97, 1.04, 0.97, 1.04],
+          scaleY: [0.95, 1.04, 0.95, 1.04, 0.95],
+        },
+        transition: { duration: 1, repeat: Infinity, ease: 'easeInOut' },
+      };
     default: {
       // idle / looking / shh: flutuação ±2px em 3s, ajustada pelo humor (seção 6.3).
       if (band === 'high') return { animate: { y: [0, -3, 0], scaleY: [1, 1.02, 1], rotate: 0, x: 0, scaleX: 1 }, transition: { duration: 2.2, repeat: Infinity, ease: 'easeInOut' } };
@@ -105,6 +117,25 @@ function useSpontaneousHop(active: boolean): number {
   return n;
 }
 
+/** Colcheia (♪) ou duas colcheias ligadas (♫), desenhadas em vetor (não depende da fonte). */
+function MusicNote({ x, y, double = false }: { x: number; y: number; double?: boolean }): React.JSX.Element {
+  return (
+    <g transform={`translate(${x} ${y})`}>
+      <ellipse cx={0} cy={0} rx={2.6} ry={1.9} transform="rotate(-20)" />
+      <rect x={1.6} y={-9} width={1.1} height={9} rx={0.5} />
+      {double ? (
+        <>
+          <ellipse cx={7} cy={-1.5} rx={2.6} ry={1.9} transform="rotate(-20 7 -1.5)" />
+          <rect x={8.6} y={-10.5} width={1.1} height={9} rx={0.5} />
+          <path d="M1.6 -9 L9.7 -10.5 L9.7 -8.4 L1.6 -6.9 Z" />
+        </>
+      ) : (
+        <path d="M2.2 -9 q 4.2 1.6 3.4 6.2 q -0.6 -3 -3.4 -3.6 z" />
+      )}
+    </g>
+  );
+}
+
 export function Mascot({
   state,
   mood = 60,
@@ -134,6 +165,7 @@ export function Mascot({
   const bodyBottom = band === 'veryLow' ? '#D4D4D8' : '#E9E9EE';
   const cheeks = state === 'celebrating' || state === 'dizzy' || (state === 'happy' && band === 'high');
   const typing = state === 'working' && !still;
+  const dancing = state === 'dancing' && !still;
 
   return (
     <svg
@@ -174,6 +206,22 @@ export function Mascot({
           )}
 
           <AccessoriesFront items={auto} sipping={sipping} />
+
+          {dancing && (
+            // Mãozinhas para cima, alternadas no ritmo.
+            <g fill="#FFFFFF">
+              {[-1, 1].map((side) => (
+                <motion.circle
+                  key={side}
+                  cx={50 + side * 37}
+                  cy={58}
+                  r={4.2}
+                  animate={{ y: side < 0 ? [0, -12, 0, 0, 0] : [0, 0, 0, -12, 0] }}
+                  transition={{ duration: 1, repeat: Infinity, ease: 'easeInOut' }}
+                />
+              ))}
+            </g>
+          )}
 
           {state === 'shh' && (
             <g>
@@ -229,6 +277,19 @@ export function Mascot({
         <g fill="#FFFFFF">
           {[0, 1, 2].map((i) => (
             <motion.circle key={i} cx={78 + i * 6} cy={24 - i * 6} r={1.8 + i * 0.5} animate={{ opacity: [0.2, 1, 0.2] }} transition={{ duration: 1.2, repeat: Infinity, delay: i * 0.2 }} />
+          ))}
+        </g>
+      )}
+
+      {dancing && size >= 30 && (
+        <g fill="#FFFFFF">
+          {[
+            { x: 82, y: 34, dx: 8, delay: 0 },
+            { x: 14, y: 30, dx: -8, delay: 0.9 },
+          ].map((n, i) => (
+            <motion.g key={i} initial={{ opacity: 0 }} animate={{ opacity: [0, 1, 0], x: [0, n.dx * 0.5, n.dx], y: [0, -9, -18] }} transition={{ duration: 1.8, repeat: Infinity, delay: n.delay }}>
+              <MusicNote x={n.x} y={n.y} double={i === 1} />
+            </motion.g>
           ))}
         </g>
       )}

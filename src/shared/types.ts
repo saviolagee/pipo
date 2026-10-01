@@ -83,6 +83,8 @@ export interface ReactionSettings {
   email: boolean;
   clipboard: boolean;
   unstuck: boolean;
+  /** Dançar quando estiver tocando música. */
+  music: boolean;
 }
 
 export type TaskStatus = 'todo' | 'doing' | 'done' | 'snoozed';
@@ -208,7 +210,8 @@ export type MascotState =
   | 'sad'
   | 'tired'
   | 'listening'
-  | 'shh';
+  | 'shh'
+  | 'dancing';
 
 export type Accessory =
   | 'headphones'
@@ -324,6 +327,8 @@ export interface NowPlaying {
   track: string;
   artist: string;
   playing: boolean;
+  /** De onde veio a leitura: API do Spotify, título da janela do app do Spotify ou o arquivo do ritual. */
+  source?: 'spotify-api' | 'spotify-window' | 'local';
 }
 
 export interface Attachment {

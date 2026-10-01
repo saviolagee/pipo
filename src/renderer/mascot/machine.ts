@@ -1,41 +1,11 @@
 // Máquina de expressões do mascote (seção 6.2): deriva a expressão atual a partir do estado do app.
 import { useEffect, useState } from 'react';
+import { deriveMascotState } from '@shared/mascot-state';
 import type { Accessory, FocusState, GlowKind, MascotState, Profile } from '@shared/types';
 import type { Badge } from './Mascot';
 import { useData } from '../store/data';
 import { useUi } from '../store/ui';
 
-export interface MascotInputs {
-  now: number;
-  transient: { state: MascotState; until: number } | null;
-  cardMascot: MascotState | null;
-  agentBusy: boolean;
-  dragOver: boolean;
-  listening: boolean;
-  inMeeting: boolean;
-  paused: boolean;
-  focus: FocusState | null;
-  hovered: boolean;
-  outsideWorkHours: boolean;
-  idleLong: boolean;
-  overGoalRatio: number;
-}
-
-/** Ordem de prioridade: reação temporária > card > agente > drop > voz > reunião > pausado > foco > cansado > sono > hover > idle. */
-export function deriveMascotState(i: MascotInputs): MascotState {
-  if (i.transient && i.transient.until > i.now) return i.transient.state;
-  if (i.cardMascot) return i.cardMascot;
-  if (i.agentBusy) return 'thinking';
-  if (i.dragOver) return 'eating';
-  if (i.listening) return 'listening';
-  if (i.inMeeting) return 'shh';
-  if (i.paused) return 'sleepy';
-  if (i.focus && !i.focus.paused && i.focus.phase === 'focus') return 'working';
-  if (i.overGoalRatio >= 1.25) return 'tired';
-  if (i.outsideWorkHours || i.idleLong) return 'sleepy';
-  if (i.hovered) return 'looking';
-  return 'idle';
-}
 
 export function isWorkTime(profile: Profile | null, d = new Date()): boolean {
   if (!profile) return true;
@@ -87,6 +57,7 @@ export function useMascot(hovered: boolean): { state: MascotState; accessories: 
     listening: ui.voiceRequested,
     inMeeting: data.inMeeting,
     paused: data.settings?.paused ?? false,
+    music: (data.settings?.reactions.music ?? true) && data.nowPlaying?.playing === true,
     focus: data.focus,
     hovered,
     outsideWorkHours: !isWorkTime(data.profile),
@@ -96,9 +67,9 @@ export function useMascot(hovered: boolean): { state: MascotState; accessories: 
 
   const accessories: Accessory[] = ui.debug.accessories ? [...ui.debug.accessories] : [...data.streak.equipped];
   if (data.focus?.musicActive && data.focus.phase === 'focus') accessories.push('headphones');
-  if ((ui.debug.state ?? state) === 'working' && !ui.debug.accessories) accessories.push('coffee');
-
   const finalState = ui.debug.state ?? state;
+  if (finalState === 'working' && !ui.debug.accessories) accessories.push('coffee');
+  if (finalState === 'dancing' && !accessories.includes('headphones')) accessories.push('headphones');
   return {
     state: finalState,
     accessories,
