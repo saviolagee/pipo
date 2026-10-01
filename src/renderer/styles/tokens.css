@@ -41,6 +41,7 @@
   --radius-chip: 10px;
 }
 
+@layer base {
 html,
 body,
 #root {
@@ -94,3 +95,5 @@ textarea {
   outline: 1.5px solid rgba(255, 255, 255, 0.5);
   outline-offset: 2px;
 }
+}
+

@@ -11,7 +11,7 @@ export const WINDOW = {
 export const NOTCH = {
   pillWidth: 340,
   pillHeight: 32,
-  expandedWidth: 720,
+  expandedWidth: 680,
   topBarHeight: 36,
   chatHeight: 420,
   hoverExpandMs: 300,

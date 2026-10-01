@@ -12,6 +12,11 @@ export function maybeDevCapture(): void {
   const win = getWindow();
   if (!win) return;
   win.webContents.once('did-finish-load', async () => {
+    // Fundo tipo papel de parede para avaliar glow e transparência.
+    await win.webContents.executeJavaScript(
+      "document.documentElement.style.background='radial-gradient(120% 90% at 70% 100%, #2b4bd8 0%, #10164a 45%, #0b0d1c 100%)'",
+      true,
+    );
     await new Promise((r) => setTimeout(r, delay));
     let i = 0;
     for (const step of steps) {

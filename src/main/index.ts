@@ -3,6 +3,7 @@ import { join } from 'node:path';
 import { app, ipcMain } from 'electron';
 import { APP_ID, APP_NAME } from '@shared/config';
 import { emit } from './bus';
+import { registerBootstrapIpc } from './bootstrap';
 import { openDb } from './db';
 import { getSettings, patchSettings } from './db/repos/settings';
 import { maybeDevCapture } from './dev-capture';
@@ -56,6 +57,7 @@ app.whenReady().then(() => {
   if (process.platform === 'darwin') app.dock?.hide();
 
   registerCoreIpc();
+  registerBootstrapIpc();
   createNotchWindow();
   createTray();
   registerShortcuts({
