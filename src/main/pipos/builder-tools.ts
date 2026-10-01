@@ -18,6 +18,7 @@ import { activePlaybook, addVersion, createPipo, ensurePipoDirs, getPipo, listPi
 import { runDone } from './runner';
 import { forgetSecretCard, trackSecretCard } from './secret-cards';
 import { secretNames, validSecretName } from './secrets';
+import { VAULT_UNAVAILABLE, vaultAvailable } from '../secrets';
 
 type Args = Record<string, unknown>;
 const str = (v: unknown): string | undefined => (typeof v === 'string' && v.trim() ? v.trim() : undefined);
@@ -336,6 +337,10 @@ const TOOLS: ToolDef[] = [
       const p = pipoOf(d);
       const name = String(a.name ?? '').toUpperCase();
       if (!validSecretName(name)) throw new Error('Nome inválido: use MAIÚSCULAS, números e _ (ex.: APIFY_TOKEN).');
+      if (!vaultAvailable())
+        return {
+          erro: `${VAULT_UNAVAILABLE} Explique isso ao usuário com essas palavras: o Pipo só guarda chaves no cofre do sistema. Não existe outro lugar no app para cadastrar chaves; nunca peça a chave pelo chat nem invente alternativas.`,
+        };
       updateDraft(d.id, { stage: stageAtLeast(d, 'connections') });
       emitDraft(getDraft(d.id) as Draft);
       const cardId = `secret:${d.id}:${name}:${Date.now()}`;

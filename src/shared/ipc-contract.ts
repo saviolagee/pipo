@@ -160,7 +160,7 @@ export interface InvokeHandlers {
   'pipos:saveVersion': (id: number, playbook: PipoPlaybook, changelog: string) => PipoVersion;
   'pipos:startDraft': (opts: { editSlug?: string; fromModelId?: number; fresh?: boolean }) => { conversationId: number; draftId: number; resumed: boolean; name: string | null };
   'pipos:draftFor': (conversationId: number) => DraftInfo | null;
-  'pipos:submitSecret': (cardId: string, value: string) => boolean;
+  'pipos:submitSecret': (cardId: string, value: string) => { ok: boolean; error: string | null };
   'pipos:saveModel': (id: number) => PipoModel;
   'pipos:models': () => PipoModel[];
   'pipos:deleteModel': (id: number) => void;

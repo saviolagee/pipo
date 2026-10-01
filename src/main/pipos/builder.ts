@@ -18,6 +18,7 @@ import { setLive } from './live';
 import { activePlaybook, createPipo, getPipo, listPipos } from './repo';
 import { takeSecretCard } from './secret-cards';
 import { setPipoSecret } from './secrets';
+import { VAULT_UNAVAILABLE, vaultAvailable } from '../secrets';
 
 export function registerBuilder(): void {
   registerBuilderTools();
@@ -84,14 +85,16 @@ export function registerBuilder(): void {
 
   // O valor vem do campo seguro do card direto para o cofre; nunca passa pelo agente.
   handle('pipos:submitSecret', (cardId, value) => {
-    if (!value.trim()) return false;
+    if (!value.trim()) return { ok: false, error: null };
+    // Valida antes de consumir o pedido: se o cofre falhar, o campo continua aberto mostrando o erro.
+    if (!vaultAvailable()) return { ok: false, error: VAULT_UNAVAILABLE };
     const s = takeSecretCard(cardId);
     const p = s ? getPipo(s.pipoId) : null;
-    if (!s || !p) return false;
+    if (!s || !p) return { ok: false, error: 'Esse pedido de chave já expirou.' };
     setPipoSecret(p.slug, s.name, value.trim());
     dismissCard(cardId, 'saved');
     pipesChanged();
-    return true;
+    return { ok: true, error: null };
   });
 
   handle('pipos:saveModel', (id) => insertModel(modelFromPipo(id)));

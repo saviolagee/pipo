@@ -122,34 +122,45 @@ function BatchCarousel({ card }: { card: Card }): React.JSX.Element {
 function SecretField({ card }: { card: Card }): React.JSX.Element {
   const [value, setValue] = useState('');
   const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const save = async (): Promise<void> => {
     if (!value.trim()) return;
     setBusy(true);
-    const ok = await api.invoke('pipos:submitSecret', card.id, value);
-    setValue('');
+    const r = await api.invoke('pipos:submitSecret', card.id, value);
     setBusy(false);
-    if (ok) useUi.getState().dropCard(card.id);
+    setError(r.error);
+    if (r.ok) {
+      setValue('');
+      useUi.getState().dropCard(card.id);
+    }
   };
   return (
-    <div className="mt-[8px] flex items-center gap-[6px]">
-      <input
-        type="password"
-        autoFocus
-        value={value}
-        onChange={(e) => setValue(e.target.value)}
-        onKeyDown={(e) => e.key === 'Enter' && void save()}
-        onFocus={() => useUi.getState().pin('secret', true)}
-        onBlur={() => useUi.getState().pin('secret', false)}
-        placeholder={t.team.secretPlaceholder}
-        aria-label={card.secret?.name}
-        autoComplete="off"
-        spellCheck={false}
-        className="mono h-[30px] min-w-0 flex-1 rounded-[8px] px-[10px] text-[12px] text-fg outline-none placeholder:text-fg-3"
-        style={{ background: 'var(--bg-input)' }}
-      />
-      <Button size="sm" variant="primary" disabled={!value.trim() || busy} onClick={() => void save()}>
-        {t.team.secretSave}
-      </Button>
+    <div className="mt-[8px]">
+      <div className="flex items-center gap-[6px]">
+        <input
+          type="password"
+          autoFocus
+          value={value}
+          onChange={(e) => setValue(e.target.value)}
+          onKeyDown={(e) => e.key === 'Enter' && void save()}
+          onFocus={() => useUi.getState().pin('secret', true)}
+          onBlur={() => useUi.getState().pin('secret', false)}
+          placeholder={t.team.secretPlaceholder}
+          aria-label={card.secret?.name}
+          autoComplete="off"
+          spellCheck={false}
+          className="mono h-[30px] min-w-0 flex-1 rounded-[8px] px-[10px] text-[12px] text-fg outline-none placeholder:text-fg-3"
+          style={{ background: 'var(--bg-input)' }}
+        />
+        <Button size="sm" variant="primary" disabled={!value.trim() || busy} onClick={() => void save()}>
+          {t.team.secretSave}
+        </Button>
+      </div>
+      {error && (
+        <div role="alert" className="mt-[6px] text-[12px] text-attention">
+          {error}
+        </div>
+      )}
     </div>
   );
 }

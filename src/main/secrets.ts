@@ -2,8 +2,15 @@
 import { safeStorage } from 'electron';
 import { getKV, setKV } from './db/repos/settings';
 
+export const VAULT_UNAVAILABLE = 'O cofre do sistema (Keychain no macOS, DPAPI no Windows, chaveiro no Linux) não está disponível; não dá para guardar a chave com segurança.';
+
+/** O cofre do sistema está disponível? No Linux, depende de um chaveiro (GNOME Keyring/KWallet) ativo. */
+export function vaultAvailable(): boolean {
+  return safeStorage.isEncryptionAvailable();
+}
+
 export function encrypt(plain: string): string {
-  if (!safeStorage.isEncryptionAvailable()) throw new Error('Criptografia do sistema indisponível; não dá para guardar o segredo com segurança.');
+  if (!vaultAvailable()) throw new Error(VAULT_UNAVAILABLE);
   return safeStorage.encryptString(plain).toString('base64');
 }
 
