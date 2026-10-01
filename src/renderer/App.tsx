@@ -12,6 +12,8 @@ import { TopBar } from './notch/TopBar';
 import { AttentionCard, localHandlers } from './screens/AttentionCard';
 import { DebugPanel } from './screens/DebugPanel';
 import { Home } from './screens/Home';
+import { Onboarding } from './onboarding/Onboarding';
+import { SettingsScreen } from './screens/Settings';
 import { configureSfx, play } from './sound/sfx';
 import { useData } from './store/data';
 import { useUi } from './store/ui';
@@ -54,6 +56,7 @@ function triggerDizzy(): void {
 export function App(): React.JSX.Element {
   const ui = useUi();
   const loaded = useData((s) => s.loaded);
+  const onboarding = useData((s) => s.loaded && s.firstRun);
   const settings = useData((s) => s.settings);
   const [hovered, setHovered] = useState(false);
   const [bump, setBump] = useState(0);
@@ -101,6 +104,7 @@ export function App(): React.JSX.Element {
       api.on('mascot:react', ({ state, ms }) => useUi.getState().react(state, ms)),
       api.on('mascot:say', ({ text, ms }) => useUi.getState().say(text, ms)),
       api.on('sfx:play', (name) => play(name)),
+      api.on('claude:status', (claude) => useData.getState().set({ claude })),
     ];
     const onKey = (e: KeyboardEvent): void => {
       if (e.ctrlKey && e.altKey && e.key.toLowerCase() === 'd') useUi.setState((s) => ({ debugOpen: !s.debugOpen }));
@@ -113,10 +117,14 @@ export function App(): React.JSX.Element {
     };
   }, []);
 
-  // Cards prendem o notch aberto.
+  // Cards e onboarding prendem o notch aberto.
   useEffect(() => {
     useUi.getState().pin('card', !!topCard);
   }, [topCard]);
+  useEffect(() => {
+    useUi.getState().pin('onboarding', onboarding);
+    if (onboarding) useUi.getState().setExpanded(true);
+  }, [onboarding]);
 
   const onMascotClick = useCallback((e: React.MouseEvent): void => {
     e.stopPropagation();
@@ -137,8 +145,20 @@ export function App(): React.JSX.Element {
   }, [ui.entranceKey]);
 
   const screen = (() => {
+    if (onboarding)
+      return (
+        <Onboarding
+          onDone={(planNow) => {
+            useData.getState().set({ firstRun: false });
+            useUi.getState().setTab(planNow ? 'chat' : 'home');
+            void useData.getState().refreshStats();
+          }}
+        />
+      );
     if (topCard) return <AttentionCard key={topCard.id} card={topCard} mood={mascot.mood} accessories={mascot.accessories} />;
     switch (ui.tab) {
+      case 'settings':
+        return <SettingsScreen />;
       default:
         return (
           <Home
@@ -163,7 +183,7 @@ export function App(): React.JSX.Element {
       <Notch
         glow={mascot.glow}
         onHoverChange={setHovered}
-        topBar={<TopBar />}
+        topBar={onboarding ? null : <TopBar />}
         pill={<Pill state={mascot.state} badge={mascot.badge} mood={mascot.mood} accessories={mascot.accessories} clipboardCandidate={null} />}
       >
         <div className="relative">

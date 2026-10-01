@@ -4,16 +4,21 @@ import { app, ipcMain } from 'electron';
 import { APP_ID, APP_NAME } from '@shared/config';
 import { emit } from './bus';
 import { registerBootstrapIpc } from './bootstrap';
+import { quickCheckClaude } from './agent/detect-claude';
 import { openDb } from './db';
+import { paths } from './paths';
 import { getSettings, patchSettings } from './db/repos/settings';
 import { maybeDevCapture } from './dev-capture';
 import { handle } from './ipc';
 import { registerShortcuts, setFixedShortcuts, unregisterShortcuts } from './shortcuts';
+import { registerSystemIpc } from './system';
 import { createTray, setPaused } from './tray';
 import { createNotchWindow, setInteractive, showNotch, toggleNotch } from './window';
 
 app.setName(APP_NAME);
 if (process.platform === 'win32') app.setAppUserModelId(APP_ID);
+// App todo em pt-BR: força o locale do Chromium (inputs de hora em 24h, datas, etc.).
+app.commandLine.appendSwitch('lang', 'pt-BR');
 if (process.platform === 'linux') {
   // Janelas transparentes no Linux (útil para desenvolvimento).
   app.commandLine.appendSwitch('enable-transparent-visuals');
@@ -22,18 +27,6 @@ if (process.platform === 'linux') {
 if (!app.requestSingleInstanceLock()) {
   app.quit();
 }
-
-export const paths = {
-  get userData(): string {
-    return app.getPath('userData');
-  },
-  get files(): string {
-    return join(app.getPath('userData'), 'files');
-  },
-  get workspace(): string {
-    return join(app.getPath('userData'), 'agent-workspace');
-  },
-};
 
 function registerCoreIpc(): void {
   handle('window:setInteractive', (on) => setInteractive(on));
@@ -60,6 +53,7 @@ app.whenReady().then(() => {
 
   registerCoreIpc();
   registerBootstrapIpc();
+  registerSystemIpc();
   createNotchWindow();
   createTray();
   // Painel de debug do mascote (Ctrl+Alt+D).
@@ -81,6 +75,7 @@ app.whenReady().then(() => {
     },
   });
   maybeDevCapture();
+  void quickCheckClaude(paths.workspace);
 });
 
 app.on('second-instance', () => showNotch(true));

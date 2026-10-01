@@ -97,3 +97,21 @@ textarea {
 }
 }
 
+
+.pipo-range {
+  -webkit-appearance: none;
+  appearance: none;
+  height: 4px;
+  border-radius: 999px;
+  background: linear-gradient(90deg, #fff var(--pct), rgba(255, 255, 255, 0.14) var(--pct));
+  outline: none;
+}
+.pipo-range::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 0 0 4px rgba(255, 255, 255, 0.12);
+  cursor: default;
+}

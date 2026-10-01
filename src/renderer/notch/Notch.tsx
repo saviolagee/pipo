@@ -11,7 +11,7 @@ const SPRING = { type: 'spring', stiffness: 400, damping: 32 } as const;
 interface Props {
   glow: GlowKind;
   pill: React.ReactNode;
-  topBar: React.ReactNode;
+  topBar: React.ReactNode | null;
   children: React.ReactNode;
   /** Altura fixa do conteúdo expandido (ex.: chat ~420px); senão, mede o conteúdo. */
   fixedHeight?: number | null;
@@ -95,7 +95,7 @@ export function Notch({ glow, pill, topBar, children, fixedHeight, onHoverChange
   };
 
   const width = expanded ? NOTCH.expandedWidth : NOTCH.pillWidth;
-  const height = expanded ? NOTCH.topBarHeight + (fixedHeight ?? contentH) : NOTCH.pillHeight;
+  const height = expanded ? (topBar ? NOTCH.topBarHeight : 0) + (fixedHeight ?? contentH) : NOTCH.pillHeight;
   const radius = expanded ? 24 : 14;
 
   return (
