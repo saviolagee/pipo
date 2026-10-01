@@ -22,8 +22,9 @@ Mesmas regras da V1:
 > "Pipo, cria um Pipo prospector: ele roda meu script que puxa e-mails do Apify, manda a sequência
 > pelo Resend, atualiza a planilha de leads e me avisa."
 
-1. **Montagem no chat.** O Pipo branco entrevista o usuário: onde está o script, qual actor do Apify,
-   qual template de e-mail, qual planilha e qual coluna marca "enviado".
+1. **Montagem no chat.** O usuário digita `/criarpipo` e escolhe o modelo pronto "Prospector". O Pipo
+   branco entrevista o usuário: onde está o script, qual actor do Apify, qual template de e-mail,
+   qual planilha e qual coluna marca "enviado".
 2. **Rascunho.** O Pipo propõe o **processo**, uma lista de passos.
 3. **Ensaio.** Ele roda cada passo em modo seco: puxa os leads, mostra 3 e-mails renderizados e simula
    a atualização da planilha.
@@ -121,6 +122,90 @@ o "processo fixo" se repita igual toda vez.
 - **Mudanças no processo.** Toda mudança mostra o diff e pede confirmação. O agente nunca altera o
   processo fixado sozinho.
 
+### 2.3 `/criarpipo` — nascer conversando
+
+Todo Pipo novo nasce numa conversa com o Pipo branco. A conversa define a **personalidade** (o que ele
+faz e como) e termina num **plano de execução** que ele vai repetir.
+
+Comandos no chat do branco (autocompletar ao digitar `/`):
+
+| Comando | Faz |
+|---|---|
+| `/criarpipo` | começa a criação de um Pipo novo |
+| `/editarpipo <nome>` | reabre a conversa de criação para mudar personalidade ou plano (gera nova versão) |
+| `/equipe` | lista a equipe com status |
+| `/rodar <nome>` | dispara uma execução (equivale a `@nome roda`) |
+| `/pausar <nome>` | pausa as execuções agendadas |
+
+**Etapas da criação.** Uma barra de progresso discreta no topo do chat mostra a etapa atual.
+
+1. **Ponto de partida.**
+   - O branco mostra a galeria de modelos prontos (seção 2.4) como cartões coloridos, mais a opção
+     "Do zero".
+   - O usuário também pode só descrever ("quero um Pipo que cobra cliente atrasado"). Nesse caso o
+     branco sugere o modelo mais próximo.
+2. **Personalidade.**
+   - Nome, cor, acessório e a missão em uma frase ("Eu encontro leads e faço o primeiro contato").
+   - Tom: como ele escreve para terceiros e como fala com o usuário.
+   - O que ele **nunca** faz.
+   - O mini-Pipo já aparece na pill, em "rascunho" (contorno tracejado), e vai ganhando a cor e o
+     acessório conforme o usuário escolhe.
+3. **Entrevista.**
+   - O modelo pronto traz as perguntas obrigatórias: de onde vêm os dados, o que fazer com eles, para
+     onde vai o resultado, limites, quando avisar e quando pedir permissão.
+   - O branco pergunta **uma coisa por vez** e aceita respostas soltas.
+   - Arquivos podem ser arrastados para a conversa: script existente, planilha modelo, exemplo de
+     e-mail.
+4. **Conexões.**
+   - O branco pede os segredos e logins que faltam.
+   - Segredos entram por um campo seguro no notch (`request_secret`), nunca pelo texto do chat.
+   - Logins OAuth (Google etc.) abrem o fluxo já existente da V1.
+5. **Plano de execução.**
+   - O branco mostra o plano como um card legível, com os passos numerados, o tipo de cada um, o que
+     precisa de confirmação, os limites e os gatilhos.
+   - O usuário ajusta conversando ("tira o passo 3", "manda no máximo 30").
+6. **Ensaio.**
+   - Execução completa em modo seco, com prévia de tudo que seria enviado ou escrito.
+   - Se algo falhar, o branco corrige junto com o usuário e ensaia de novo.
+7. **Contratar.**
+   - Botão "Contratar Pipo" (ou Y).
+   - O plano vira a **v1**, o Pipo ganha cor cheia e cai na pill com uma animação de entrada.
+   - Ele entra na aba Equipe e se apresenta no próprio chat ("Oi, sou o Prospector. Rodo seg–sex às
+     9h. Me chama com @prospector").
+
+**Rascunho persistente.** Se a conversa parar no meio, o rascunho fica salvo. `/criarpipo` pergunta
+"continuar o Prospector que começamos ontem?".
+
+**Plano de execução como contrato.** O que o Pipo repete é **só** o plano fixado. A personalidade
+orienta os passos `agent` (tom, critérios), mas não adiciona passos novos. Qualquer mudança passa por
+`/editarpipo` e vira uma nova versão.
+
+### 2.4 Modelos prontos
+
+Cada modelo pronto é um arquivo em `src/main/pipos/templates/<slug>.ts`. Um modelo traz:
+
+- **personalidade base:** missão, tom e regras "nunca";
+- **perguntas da entrevista:** obrigatórias e opcionais, com validação;
+- **esqueleto do plano:** passos com lacunas preenchidas pela entrevista;
+- **conectores necessários e segredos esperados;**
+- **ensaio padrão:** o que mostrar como prévia;
+- **cor e acessório sugeridos;**
+- **métricas** que alimentam os dashboards.
+
+| Modelo | Cor | Faz |
+|---|---|---|
+| Prospector | laranja | puxa leads (Apify/script), envia 1º contato (Resend), atualiza planilha |
+| Follow-up | amarelo | retoma leads/clientes sem resposta após N dias, com mensagem nova |
+| Relatório para cliente | azul | horas e entregas da semana por cliente → PDF → e-mail para aprovação |
+| Triagem de e-mail | verde | lê a caixa de entrada, etiqueta, resume e cria tarefas do que pede ação |
+| Cobrança | vermelho | acha faturas vencidas na planilha e manda lembrete educado |
+| Pesquisador | ciano | pesquisa um tema/empresa na web e entrega um resumo com fontes |
+| Investidor | roxo | cotações e notícias da carteira, alertas de preço (só informa) |
+| Conteúdo | rosa | rascunha posts a partir do que foi feito na semana |
+| Do zero | à escolha | entrevista genérica: gatilho → dados → ação → destino → aviso |
+
+**Galeria aberta.** Um Pipo contratado pode ser salvo como modelo próprio ("Salvar como modelo").
+
 ---
 
 ## 3. Visual
@@ -157,14 +242,15 @@ o "processo fixo" se repita igual toda vez.
 
 ---
 
-## 4. Análises
+## 4. Análises e dashboards
 
-Duas frentes.
+Três frentes: suas ações, as ações dos Pipos e os dias em que você não trabalhou. Tudo aparece na
+janela de dashboards (seção 4.4).
 
 ### 4.1 Análise das suas ações (produtividade, aprofunda a V1)
 
-- **Painel "Análises"** com semana e mês: horas por cliente e tipo de tarefa, foco vs. distração, metas
-  batidas, tarefas adiadas e tendência do humor.
+- **Visão de semana e mês:** horas por cliente e tipo de tarefa, foco vs. distração, metas batidas,
+  tarefas adiadas e tendência do humor.
 - **Pergunta livre:** "onde foi meu tempo em setembro?" O agente consulta só agregados. Títulos crus
   continuam exigindo confirmação.
 - **Rentabilidade por cliente:** horas × valor/hora cadastrado vs. valor do contrato.
@@ -188,16 +274,93 @@ Duas frentes.
 - **Alertas:** de preço configuráveis.
 - **Postura:** só informa. Não executa ordens e mostra o aviso "não é recomendação".
 
+### 4.4 Janela de dashboards
+
+O notch é pequeno demais para gráficos. Os dashboards abrem numa **janela normal** (redimensionável,
+tema escuro do Pipo).
+
+- **Como abrir:**
+  - "Ver dashboard" no notch;
+  - atalho `Ctrl/Cmd+Shift+A`;
+  - item "Dashboards" na bandeja;
+  - links dos cards ("ver detalhes").
+- **Hoje:** horas vs. meta (anel grande), linha do tempo do dia por app/cliente, focos concluídos,
+  tarefas feitas e o que os Pipos fizeram hoje.
+- **Semana / Mês:**
+  - horas por dia (barras, com a meta como linha e as ausências marcadas);
+  - foco vs. distração;
+  - top distrações;
+  - tarefas concluídas vs. criadas;
+  - humor ao longo do tempo.
+- **Ano:** mapa de calor estilo GitHub com as horas trabalhadas por dia.
+  - Folgas, férias e feriados aparecem com cor própria (não como "zero").
+  - A sequência atual e o recorde ficam visíveis.
+- **Ritmo:** mapa de calor dia da semana × hora do dia, para mostrar quando você rende mais. Alimenta o
+  "melhor horário" da V1.
+- **Clientes:**
+  - horas por cliente no período;
+  - comparação com o contratado;
+  - valor/hora efetivo;
+  - tendência.
+- **Equipe:** execuções por Pipo, taxa de sucesso, tempo economizado acumulado e as últimas falhas.
+- **Prospecção:** funil do Prospector, comparação de versões do e-mail e respostas por dia.
+- **Exportar:** CSV de qualquer visão e PDF do relatório (usado também pelo Pipo Relatório para
+  cliente).
+- **Pergunte ao dashboard:** um campo "pergunte sobre esses dados". O agente responde com base nos
+  agregados da visão aberta e pode destacar um ponto no gráfico.
+
+### 4.5 Dias não trabalhados
+
+Hoje um dia útil sem atividade conta como dia ruim: derruba o humor e quebra a sequência. A V2 entende
+ausências.
+
+- **Tipos:**
+  - folga;
+  - férias;
+  - feriado;
+  - doente;
+  - meio período (meta pela metade);
+  - "trabalhei fora do PC" (horas informadas manualmente).
+- **Feriados automáticos:**
+  - nacionais do Brasil, calculados localmente (Páscoa, Carnaval e Corpus Christi incluídos);
+  - estaduais e municipais opcionais, escolhidos pela cidade no perfil;
+  - o usuário marca quais costuma trabalhar mesmo assim.
+- **Detecção:** um dia útil sem atividade gera, no dia seguinte, uma pergunta leve:
+
+  > "Ontem não te vi. Foi folga?"
+
+  Opções: [Folga] [Doente] [Trabalhei fora do PC] [Esqueci de abrir o Pipo].
+
+  É **uma** pergunta, que conta como expressão, não como interrupção. Se a pergunta não for respondida,
+  o dia fica "sem registro".
+- **Efeitos de uma ausência:**
+  - não quebra a sequência;
+  - não entra nas médias de humor nem de horas;
+  - a meta do dia é zero;
+  - o Pipo não interrompe.
+  - O mascote fica de "pijama", com um acessório de folga, se o usuário abrir o PC.
+- **Férias planejadas:**
+  - `/ferias 10 a 20 de dez` ou um seletor no dashboard;
+  - 3 dias antes, o branco sugere fechar pendências e mostra o que vence no período;
+  - durante as férias, os Pipos seguem a regra de cada um ("rodar também nas férias?", perguntado na
+    criação);
+  - na volta, um card "enquanto você estava fora" com o que os Pipos fizeram, os e-mails importantes e
+    o que vence esta semana.
+- **Trabalho em dia de folga:**
+  - as horas contam como extra, com marcação própria no dashboard;
+  - não aumentam a meta nem "compensam" outro dia;
+  - se virar padrão (3 fins de semana seguidos), o Pipo comenta uma vez, com carinho.
+- **Saldo:** no dashboard Ano aparecem os dias trabalhados, as folgas, as férias usadas e as horas
+  extras do ano.
+
 ---
 
 ## 5. O que mais pode ter (backlog priorizado)
 
 **Alta — entram na V2:**
 
-- **Templates prontos:** Prospector, Follow-up (lembra/escreve para leads sem resposta após N dias),
-  Relatório para cliente (horas da semana → PDF → e-mail), Triagem da caixa de entrada.
 - **Encadeamento:** quando o Prospector termina, o Follow-up é agendado para +3 dias com os mesmos
-  leads.
+  leads. O encadeamento é configurado no `/criarpipo` do segundo Pipo ("depois de qual Pipo eu rodo?").
 - **Gatilhos por evento:**
   - e-mail novo com marcador X;
   - arquivo novo numa pasta;
@@ -209,6 +372,10 @@ Duas frentes.
 
 **Média:**
 
+- **Ata de reunião local:**
+  - O Whisper da V1 transcreve a reunião, só com consentimento explícito e um aviso visível enquanto
+    grava.
+  - No fim, o branco gera a ata e as tarefas, e pergunta antes de criar.
 - **Avisos no celular:** notificação via Telegram (bot próprio) ou ntfy quando o usuário está longe do
   PC. Responder pelo Telegram dispara o Pipo ("/prospector rodar").
 - **Exportar/importar Pipo** (`.pipo`, sem segredos) para compartilhar com outras pessoas.
@@ -217,12 +384,17 @@ Duas frentes.
 - **Autoconserto:** quando um script falha, o Pipo lê o erro, propõe um patch (diff) e só aplica com
   Y. Isso gera uma nova versão.
 - **Horário comercial por Pipo** e fila: execuções fora da janela esperam.
+- **Projetos com marcos:** metas maiores que tarefas ("lançar site até 30/11"), com progresso no
+  dashboard. O "Planejar meu dia" puxa o próximo marco.
+- **Check-in de energia:** 1 clique no fim do foco (😴 / 🙂 / 🔥). O dashboard Ritmo cruza energia com
+  o horário.
 
 **Baixa / V3:**
 
-- Pipo Conteúdo (rascunha posts a partir do que foi feito na semana).
-- Pipo Financeiro (cobra faturas vencidas e concilia o extrato).
+- Pipo Financeiro (concilia o extrato).
 - Pipo Monitor (site fora do ar, preço de concorrente).
+- Integrações Notion, Trello e ClickUp.
+- Níveis por Pipo (ganha experiência por execução bem-sucedida e desbloqueia acessórios).
 - Execução na nuvem para Pipos que precisam rodar com o PC desligado.
 
 ---
@@ -230,20 +402,25 @@ Duas frentes.
 ## 6. Dados (migração 002)
 
 ```
-pipos(id, slug, name, color, accessory, description, instructions, model, effort,
-      paused, active_version, created_at)
+pipos(id, slug, name, color, accessory, mission, personality_json, model, effort,
+      paused, run_on_days_off, active_version, template, created_at)
+pipo_drafts(id, template, stage, transcript_session_id, draft_json, updated_at)
 pipo_versions(id, pipo_id, version, playbook_json, changelog, created_at, approved_at)
-pipo_triggers(id, pipo_id, kind[manual|schedule|event], spec_json, enabled, last_fired_at)
+pipo_triggers(id, pipo_id, kind[manual|schedule|event|after_pipo], spec_json, enabled, last_fired_at)
 pipo_runs(id, pipo_id, version, trigger, status[queued|running|waiting|done|failed|cancelled],
           dry_run, started_at, finished_at, summary, metrics_json)
 pipo_run_steps(id, run_id, step_key, status, started_at, finished_at, output_path, error)
 pipo_memory(id, pipo_id, rule, source, created_at)
 pipo_permissions(pipo_id, step_key, always_allow, limit_n)
+day_status(date, kind[off|vacation|holiday|sick|half|offline_work|no_record], minutes, note, source)
+holiday_prefs(region, worked_holidays_json)
 ```
 
 - **Segredos:** em `secrets` (já existe), com a chave `pipo:<slug>:<NOME>`.
 - **Arquivos de cada Pipo:** `userData/pipos/<slug>/` com `scripts/`, `templates/` e
   `runs/<run_id>/`. Execuções com mais de 90 dias são apagadas (configurável).
+- **Ausências no cálculo:** `insights/mood.ts`, `insights/streak.ts` e as médias passam a ignorar os
+  dias com `day_status` de ausência.
 
 ---
 
@@ -263,20 +440,38 @@ pipo_permissions(pipo_id, step_key, always_allow, limit_n)
   - "Pensar mais" refaz a última resposta com opus/high;
   - testes do provider cobrem os args.
 
-### Fase 14 — Núcleo de Pipos
+### Fase 14 — Dias não trabalhados
+
+Vem cedo porque é independente e corrige o humor e a sequência da V1.
 
 - **Implementar:**
-  - migração 002;
+  - tabela `day_status`;
+  - feriados BR calculados localmente;
+  - pergunta "ontem não te vi";
+  - `/ferias`;
+  - efeitos no humor, na sequência e nas interrupções;
+  - mascote de pijama;
+  - card "enquanto você estava fora" (versão simples, sem os Pipos ainda).
+- **Aceite:**
+  - simular 4 semanas com uma folga e um feriado → a sequência não quebra e as médias ignoram esses
+    dias;
+  - feriados de 2026 e 2027 batem com o calendário oficial;
+  - um dia útil vazio gera exatamente uma pergunta.
+
+### Fase 15 — Núcleo de Pipos
+
+- **Implementar:**
+  - migração 002 (tabelas de Pipos);
   - repositórios;
   - pasta por Pipo;
   - cofre de segredos por Pipo;
   - IPC tipado `pipos:*`;
-  - CRUD básico na aba Equipe (sem execução ainda).
+  - aba Equipe com CRUD básico (sem execução ainda).
 - **Aceite:**
   - criar, editar, pausar e apagar um Pipo pela interface;
   - segredo salvo não aparece em nenhum log nem no banco em texto claro.
 
-### Fase 15 — Executor de processos
+### Fase 16 — Executor de processos
 
 - **Implementar:**
   - `src/main/pipos/runner.ts` com os passos `script`, `http`, `agent`, `confirm`, `branch` e `notify`;
@@ -294,39 +489,56 @@ pipo_permissions(pipo_id, step_key, always_allow, limit_n)
   - recusar o `confirm` encerra como "cancelled";
   - testes de unidade do executor passam.
 
-### Fase 16 — Montagem conversacional
+### Fase 17 — `/criarpipo` e modelos prontos
 
-- **Implementar:**
-  - modo "criar Pipo" no chat do branco;
-  - ferramentas MCP de construção: `draft_pipo`, `add_step`, `edit_step`, `test_step` (sempre seco),
-    `request_secret` (abre campo seguro no notch, o valor nunca passa pelo chat), `import_script`
-    (arrastar o script existente) e `propose_version` (diff + Y/N).
+- **Comandos com `/` no chat:**
+  - autocompletar;
+  - `/criarpipo`, `/editarpipo`, `/equipe`, `/rodar` e `/pausar`.
+- **Fluxo de criação em 7 etapas (seção 2.3):**
+  - barra de progresso;
+  - rascunho persistente;
+  - mini-Pipo tracejado na pill.
+- **Ferramentas MCP de construção:**
+  - `draft_pipo`, `set_personality`, `add_step`, `edit_step`;
+  - `test_step` (sempre seco);
+  - `request_secret`: abre campo seguro no notch, o valor nunca passa pelo chat;
+  - `import_script`: o usuário arrasta o script existente;
+  - `propose_plan` (card do plano) e `hire_pipo` (Y/N).
+- **Formato de modelo pronto e galeria:**
+  - formato do arquivo de modelo pronto;
+  - galeria com cartões coloridos;
+  - modelos "Do zero" e "Prospector" completos;
+  - os outros modelos ficam como esqueleto.
+  - "Salvar como modelo".
 - **Aceite:**
-  - descrever o Prospector em linguagem natural resulta em um processo com os passos certos;
-  - o ensaio seco roda inteiro;
-  - aprovar cria a v1;
-  - pedir uma mudança depois gera a v2 com diff.
+  - `/criarpipo` → Prospector → entrevista → plano → ensaio seco → contratar: o Pipo laranja entra na
+    Equipe e se apresenta;
+  - fechar o app no meio da criação e reabrir → retoma da mesma etapa;
+  - `/editarpipo prospector` gera a v2 com diff.
 
-### Fase 17 — Gatilhos
+### Fase 18 — Gatilhos
 
 - **Implementar:**
-  - gatilho manual: botão, `@slug` no chat e atalho opcional;
+  - gatilho manual: botão, `@slug` ou `/rodar` no chat e atalho opcional;
   - agenda em linguagem natural ("seg–sex 9h", "a cada 2h das 8 às 18") convertida em cron local, com
     prévia das próximas 3 execuções;
   - recuperação: se o PC estava desligado, pergunta "rodar a das 9h que perdeu?";
+  - respeito a folgas e férias, conforme `run_on_days_off`;
   - execuções agendadas não interrompem foco ou reunião (só o card final entra no orçamento de
     interrupções).
 - **Aceite:**
   - uma agenda de 2 min dispara 2 vezes;
   - durante um foco, o card final vai para a fila;
-  - `@prospector roda` no chat dispara a execução.
+  - `@prospector roda` no chat dispara a execução;
+  - num dia marcado como folga, um Pipo com `run_on_days_off=false` não roda.
 
-### Fase 18 — Pipos coloridos (visual)
+### Fase 19 — Pipos coloridos (visual)
 
 - **Implementar:**
   - paleta;
-  - mini-Pipos na pill com os 5 estados;
+  - mini-Pipos na pill com os 5 estados, mais "rascunho";
   - tooltip;
+  - animação de contratação;
   - aba Equipe com cartões;
   - tela de execução em linha do tempo;
   - chat por Pipo com a cor dele;
@@ -336,44 +548,49 @@ pipo_permissions(pipo_id, step_key, always_allow, limit_n)
   - 4 Pipos rodando juntos não pesam (CPU ociosa abaixo de 2%);
   - a transição de aceso para apagado é suave.
 
-### Fase 19 — Conectores do Prospector
+### Fase 20 — Conectores do Prospector
 
 - **Implementar:**
   - **Apify:** token; rodar o actor; aguardar; baixar o dataset.
   - **Resend:** API key; envio com template; idempotência por lead; consulta de status.
   - **Google Sheets:** escopo `spreadsheets` adicionado ao OAuth existente; ler, acrescentar e
     atualizar linhas por chave.
-  - **Template "Pipo Prospector"** pronto na galeria.
 - **Aceite:**
   - execução real com uma lista de teste de 3 e-mails próprios;
   - a planilha atualiza;
   - rodar de novo não reenvia (idempotência);
   - o card final traz os números certos.
 
-### Fase 20 — Análises
+### Fase 21 — Dashboards
 
 - **Implementar:**
-  - painel Análises (seção 4.1 e 4.2);
-  - funil do Prospector;
-  - métricas por Pipo;
-  - relatório semanal;
-  - ferramentas MCP de consulta agregada para o agente responder perguntas livres.
+  - janela de dashboards com as visões Hoje, Semana/Mês, Ano, Ritmo, Clientes, Equipe e Prospecção
+    (seção 4.4);
+  - ausências marcadas nas visões;
+  - exportação CSV/PDF;
+  - "pergunte ao dashboard";
+  - ferramentas MCP de consulta agregada;
+  - relatório semanal.
+  - gráficos com paleta própria validada para o tema escuro (contraste e daltonismo).
 - **Aceite:**
-  - com dados simulados de 4 semanas, o painel e o funil batem com o banco;
-  - "qual assunto teve mais resposta?" é respondido corretamente.
+  - com dados simulados de 4 semanas (incluindo folga, férias e trabalho no fim de semana), cada visão
+    bate com o banco;
+  - "qual assunto teve mais resposta?" e "em que horário eu rendo mais?" são respondidos corretamente;
+  - a janela abre em menos de 1s.
 
-### Fase 21 — Templates e extras
+### Fase 22 — Modelos restantes e extras
 
 - **Implementar:**
-  - templates Follow-up, Relatório para cliente, Triagem e Investidor;
+  - completar os modelos Follow-up, Relatório para cliente, Triagem, Cobrança, Pesquisador, Investidor
+    e Conteúdo;
   - encadeamento;
   - gatilho por e-mail e por pasta;
   - aprovação em lote;
   - memória por Pipo;
   - exportar/importar `.pipo`.
-- **Aceite:** cada template roda em modo seco a partir da galeria.
+- **Aceite:** cada modelo vai da galeria até o ensaio seco pelo `/criarpipo`.
 
-### Fase 22 — Polimento e empacotamento V2
+### Fase 23 — Polimento e empacotamento V2
 
 - **Implementar:**
   - migração de perfis da V1 sem perda;
