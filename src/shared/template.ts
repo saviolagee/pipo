@@ -27,8 +27,17 @@ export function getPath(obj: unknown, path: string): unknown {
   return cur;
 }
 
-function applyFilter(v: unknown, filter: string): unknown {
+/** Onde o runner põe o que os passos com onceBy já enviaram: {{lista | novos:<passo>}} filtra por isso. */
+export const SENT_KEY = '__jaEnviados';
+
+function applyFilter(v: unknown, filter: string, ctx: TemplateCtx): unknown {
   const f = filter.trim();
+  if (f.startsWith('novos:')) {
+    const sent = (ctx[SENT_KEY] as Record<string, { by: string; done: string[] }> | undefined)?.[f.slice(6).trim()];
+    if (!Array.isArray(v) || !sent) return v;
+    const done = new Set(sent.done);
+    return v.filter((item) => !done.has(renderText(sent.by, { ...ctx, item }).trim()));
+  }
   if (f === 'length' || f === 'count') return Array.isArray(v) || typeof v === 'string' ? v.length : v && typeof v === 'object' ? Object.keys(v).length : 0;
   if (f === 'json') return JSON.stringify(v);
   if (f === 'first') return Array.isArray(v) ? v[0] : v;
@@ -51,7 +60,7 @@ function resolveExpr(expr: string, ctx: TemplateCtx, opts: RenderOpts): unknown 
   const p = path.trim();
   if (/^segredo\./.test(p) && !opts.allowSecrets) throw new TemplateError('Segredos só podem ser usados em passos script, http e mcp.');
   let v = getPath(ctx, p);
-  for (const f of filters) v = applyFilter(v, f);
+  for (const f of filters) v = applyFilter(v, f, ctx);
   return v;
 }
 

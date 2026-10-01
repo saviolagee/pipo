@@ -1,10 +1,10 @@
 // Execução de cada tipo de passo determinístico (script, http, mcp, sheet). O agente, as confirmações
 // e os avisos ficam no runner, que injeta as dependências (testável sem Electron).
 import { spawn } from 'node:child_process';
-import { existsSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { isAbsolute, join, relative, resolve } from 'node:path';
 import type { HttpStep, McpStep, ScriptStep, SheetStep } from '@shared/pipos';
-import { renderJson, renderText, type TemplateCtx } from '@shared/template';
+import { render, renderJson, renderText, type TemplateCtx } from '@shared/template';
 import { augmentedPath } from '../agent/claude-bin';
 import { callMcpTool, readMcpConfig } from './mcp-client';
 
@@ -139,12 +139,20 @@ export async function runScript(step: ScriptStep, e: StepEnv): Promise<unknown> 
   });
 }
 
+const MAX_EACH = 500;
+
 export async function runHttp(step: HttpStep, e: StepEnv, fetchImpl: typeof fetch = fetch): Promise<unknown> {
-  const url = renderText(step.url, e.ctx, { allowSecrets: true });
-  const headers = Object.fromEntries(Object.entries(step.headers ?? {}).map(([k, v]) => [k, renderText(v, e.ctx, { allowSecrets: true })]));
+  if (step.each) return runHttpEach(step, e, fetchImpl);
+  return httpOnce(step, e.ctx, e, fetchImpl);
+}
+
+/** Uma requisição com o contexto dado (o `each` passa {{item}} e {{indice}}). */
+async function httpOnce(step: HttpStep, ctx: TemplateCtx, e: StepEnv, fetchImpl: typeof fetch): Promise<unknown> {
+  const url = renderText(step.url, ctx, { allowSecrets: true });
+  const headers = Object.fromEntries(Object.entries(step.headers ?? {}).map(([k, v]) => [k, renderText(v, ctx, { allowSecrets: true })]));
   let body: string | undefined;
   if (step.body?.trim()) {
-    const b = renderJson(step.body, e.ctx, { allowSecrets: true });
+    const b = renderJson(step.body, ctx, { allowSecrets: true });
     body = typeof b === 'string' ? b : JSON.stringify(b);
     if (typeof b !== 'string' && !Object.keys(headers).some((h) => h.toLowerCase() === 'content-type')) headers['Content-Type'] = 'application/json';
   }
@@ -168,6 +176,64 @@ export async function runHttp(step: HttpStep, e: StepEnv, fetchImpl: typeof fetc
     clearTimeout(timer);
     e.signal.removeEventListener('abort', onAbort);
   }
+}
+
+/** Itens já enviados por este passo (fica em state/ do Pipo; não vai junto no .pipo). */
+function onceFile(pipoDir: string, key: string): string {
+  return join(pipoDir, 'state', `once-${key.replace(/[^\w-]/g, '_')}.json`);
+}
+
+export function readOnce(pipoDir: string, stepKey: string): Set<string> {
+  const f = onceFile(pipoDir, stepKey);
+  try {
+    return new Set(JSON.parse(readFileSync(f, 'utf8')) as string[]);
+  } catch {
+    return new Set();
+  }
+}
+
+function saveOnce(e: StepEnv, stepKey: string, done: Set<string>): void {
+  const f = onceFile(e.pipoDir, stepKey);
+  mkdirSync(join(e.pipoDir, 'state'), { recursive: true });
+  writeFileSync(f, JSON.stringify([...done]));
+}
+
+/** Uma requisição por item da lista; com `onceBy`, quem já recebeu nunca recebe de novo. */
+async function runHttpEach(step: HttpStep, e: StepEnv, fetchImpl: typeof fetch): Promise<unknown> {
+  const list = render(step.each as string, e.ctx);
+  if (!Array.isArray(list)) throw new StepError(`"each" não é uma lista (${step.each}).`);
+  if (list.length > MAX_EACH) throw new StepError(`A lista tem ${list.length} itens; o máximo por execução é ${MAX_EACH}.`);
+  const done = step.onceBy ? readOnce(e.pipoDir, step.key) : new Set<string>();
+  const resultados: Array<{ indice: number; chave?: string; ok: boolean; pulado?: boolean; resposta?: unknown; erro?: string }> = [];
+  let enviados = 0;
+  let pulados = 0;
+  let falhas = 0;
+  for (let i = 0; i < list.length; i++) {
+    if (e.signal.aborted) throw new StepError('Cancelado.');
+    const ctx: TemplateCtx = { ...e.ctx, item: list[i], indice: i };
+    const chave = step.onceBy ? renderText(step.onceBy, ctx).trim() : undefined;
+    if (chave && done.has(chave)) {
+      pulados++;
+      resultados.push({ indice: i, chave, ok: true, pulado: true });
+      continue;
+    }
+    try {
+      const resposta = await httpOnce(step, ctx, e, fetchImpl);
+      enviados++;
+      resultados.push({ indice: i, chave, ok: true, resposta });
+      // Grava a cada envio: se cair no meio, rodar de novo não repete quem já recebeu.
+      if (chave && !e.dryRun) {
+        done.add(chave);
+        saveOnce(e, step.key, done);
+      }
+    } catch (x) {
+      falhas++;
+      const erro = (x as Error).message;
+      resultados.push({ indice: i, chave, ok: false, erro });
+      if (step.onError !== 'continue') throw new StepError(`Falhou no item ${i + 1} de ${list.length}${chave ? ` (${chave})` : ''}: ${erro}. ${enviados} já ${enviados === 1 ? 'foi' : 'foram'}.`);
+    }
+  }
+  return { enviados, pulados, falhas, resultados };
 }
 
 function safeParse(t: string): unknown {

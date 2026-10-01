@@ -233,4 +233,38 @@ describe('aprovação em lote', () => {
     expect(run.metrics.enviados).toBe(2);
     expect(sent[0]).toBe('2 aprovados');
   });
+
+  it('http por item (each) com onceBy: envia um por lead e não reenvia em outra execução', async () => {
+    openDb(':memory:');
+    const p = pipoWithScript(`console.log(JSON.stringify([{ email: 'a@x.test', nome: 'A' }, { email: 'b@x.test', nome: 'B' }]))`);
+    setPipoSecret(p.slug, 'MAIL_KEY', 'k-123');
+    const calls: Array<{ url: string; auth: string; body: string }> = [];
+    const fake = (async (url: string, init: RequestInit) => {
+      calls.push({ url, auth: String((init.headers as Record<string, string>).Authorization), body: String(init.body) });
+      return new Response(JSON.stringify({ id: calls.length }), { headers: { 'content-type': 'application/json' } });
+    }) as unknown as typeof fetch;
+    const playbook = {
+      limits: { maxRunMinutes: 1 },
+      metrics: [{ key: 'enviados', label: 'Enviados', from: '{{passos.enviar.saida.enviados}}' }],
+      steps: [
+        { kind: 'script' as const, key: 'leads', title: 'Leads', command: 'node', args: ['scripts/puxar.js'] },
+        { kind: 'branch' as const, key: 'nada', title: 'Nada novo?', if: '{{passos.leads.saida | novos:enviar | length}} == 0', then: 'end' },
+        { kind: 'http' as const, key: 'enviar', title: 'Enviar', external: true, method: 'POST' as const, url: 'http://mail.test/emails', headers: { Authorization: 'Bearer {{segredo.MAIL_KEY}}' }, body: '{"to":"{{item.email}}","n":"{{indice}}"}', each: '{{passos.leads.saida}}', onceBy: '{{item.email}}' },
+      ],
+    };
+    const first = await execute({ pipo: p, version: 1, dryRun: false, trigger: 'manual', playbook }, deps({ fetch: fake }));
+    expect(first.status).toBe('done');
+    expect(calls.map((c) => JSON.parse(c.body).to)).toEqual(['a@x.test', 'b@x.test']);
+    expect(calls[0].auth).toBe('Bearer k-123');
+    expect(first.metrics.enviados).toBe(2);
+
+    // A segunda execução real não repete ninguém.
+    const second = await execute({ pipo: p, version: 1, dryRun: false, trigger: 'manual', playbook }, deps({ fetch: fake }));
+    expect(second.status).toBe('done');
+    expect(calls).toHaveLength(2);
+    // Sem ninguém novo, o branch encerra antes do envio.
+    expect(repo.runSteps(second.id).find((s) => s.key === 'enviar')?.status).not.toBe('done');
+    const out = JSON.parse(readFileSync(join(repo.pipoDir(p.slug), 'state', 'once-enviar.json'), 'utf8')) as string[];
+    expect(out).toEqual(['a@x.test', 'b@x.test']);
+  });
 });

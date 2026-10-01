@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { evaluate, references, render, renderJson, renderText, TemplateError } from '../src/shared/template';
+import { evaluate, references, render, renderJson, renderText, SENT_KEY, TemplateError } from '../src/shared/template';
 
 const ctx = {
   entrada: { leads: [{ email: 'a@x.com' }, { email: 'b@x.com' }] },
@@ -37,5 +37,14 @@ describe('templates do plano', () => {
   });
   it('lista referências', () => {
     expect(references('a {{passos.x.saida | length}} b {{segredo.K}}')).toEqual(['passos.x.saida', 'segredo.K']);
+  });
+});
+
+describe('filtro novos', () => {
+  it('tira da lista quem o passo com onceBy já enviou', () => {
+    const ctx = { lista: [{ email: 'a@x' }, { email: 'b@x' }], [SENT_KEY]: { enviar: { by: '{{item.email}}', done: ['a@x'] } } };
+    expect(render('{{lista | novos:enviar}}', ctx)).toEqual([{ email: 'b@x' }]);
+    expect(render('{{lista | novos:enviar | length}}', ctx)).toBe(1);
+    expect(render('{{lista | novos:outro}}', ctx)).toEqual(ctx.lista);
   });
 });

@@ -53,6 +53,9 @@ if (process.platform === 'linux') {
 
 registerMediaScheme();
 
+// Teste de fumaça/E2E: perfil isolado, sem tocar nos dados do usuário.
+if (process.env.PIPO_USER_DATA && (!app.isPackaged || process.env.PIPO_E2E === '1')) app.setPath('userData', process.env.PIPO_USER_DATA);
+
 if (!app.requestSingleInstanceLock()) {
   app.quit();
 }

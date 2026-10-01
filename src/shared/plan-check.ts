@@ -31,7 +31,7 @@ function textsOf(s: PipoStep): string[] {
     case 'script':
       return [...s.args, ...Object.values(s.env ?? {})];
     case 'http':
-      return [s.url, s.body ?? '', ...Object.values(s.headers ?? {})];
+      return [s.url, s.body ?? '', ...Object.values(s.headers ?? {}), s.each ?? '', s.onceBy ?? ''];
     case 'mcp':
       return [s.args];
     case 'sheet':
@@ -62,6 +62,9 @@ export function validatePlaybook(p: PipoPlaybook, env: { secrets: string[]; scri
     if (!s.title?.trim()) issues.push({ level: 'error', step: at, message: 'Passo sem título.' });
     const earlier = new Set(p.steps.slice(0, i).map((x) => x.key));
     for (const t of textsOf(s)) {
+      for (const [, key] of t.matchAll(/\|\s*novos:\s*([a-z0-9_]+)/g))
+        if (!p.steps.some((x) => x.key === key && x.kind === 'http' && x.each && x.onceBy))
+          issues.push({ level: 'error', step: at, message: `"novos:${key}" precisa apontar para um passo http com "each" e "onceBy".` });
       for (const ref of references(t)) {
         const m = /^passos\.([a-z0-9_]+)/.exec(ref);
         if (m && !earlier.has(m[1])) issues.push({ level: 'error', step: at, message: `Usa {{${ref}}}, mas o passo "${m[1]}" não vem antes.` });
@@ -82,6 +85,8 @@ export function validatePlaybook(p: PipoPlaybook, env: { secrets: string[]; scri
       }
       case 'http':
         if (!/^https?:\/\//.test(s.url.replace(/\{\{[^}]+\}\}/g, 'x'))) issues.push({ level: 'error', step: at, message: 'URL inválida.' });
+        if (s.onceBy && !s.each) issues.push({ level: 'error', step: at, message: '"onceBy" só funciona junto com "each".' });
+        if (s.each && s.external && !s.onceBy) issues.push({ level: 'warn', step: at, message: 'Envio por item sem "onceBy": rodar de novo pode repetir o envio.' });
         break;
       case 'mcp':
         if (!env.mcpServers.includes(s.server)) issues.push({ level: 'warn', step: at, message: `Servidor MCP "${s.server}" ainda não foi adicionado (add_mcp_server).` });
@@ -134,7 +139,7 @@ function detailOf(s: PipoStep): string {
     case 'script':
       return `${s.command} ${s.args.join(' ')}`;
     case 'http':
-      return `${s.method} ${s.url.replace(/\{\{segredo\.[^}]+\}\}/g, '••••')}`;
+      return `${s.method} ${s.url.replace(/\{\{segredo\.[^}]+\}\}/g, '••••')}${s.each ? ` · um por item${s.onceBy ? ', sem repetir' : ''}` : ''}`;
     case 'mcp':
       return `${s.server} → ${s.tool}`;
     case 'sheet':

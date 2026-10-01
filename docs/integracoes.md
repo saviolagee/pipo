@@ -55,6 +55,17 @@ o Pipo cai no plano B: abre a playlist direto no app do Spotify (`spotify:playli
 Sem conectar nada, você também pode colar o link de uma playlist (Spotify/YouTube) ou escolher um
 arquivo de áudio local no ritual de música.
 
+## Stripe (opcional): dinheiro entrando
+
+1. Na Stripe, vá em **Developers → API keys → Create restricted key**.
+2. Dê permissão **Read** só em **Balance transactions** e crie a chave (`rk_live_…` ou `rk_test_…`).
+3. Cole em Configurações → Integrações → Stripe. A chave vai para o cofre do sistema
+   (`safeStorage`) e aparece só como `••••1234`.
+
+O Pipo só lê: soma cobranças menos reembolsos de hoje, da semana ou do mês e mostra o valor na pill
+(pisca quando entra dinheiro novo). Dá para esconder os valores ou tirar da pill. Os dashboards
+mostram a entrada por dia. O Pipo nunca cobra, reembolsa nem altera nada na Stripe.
+
 ## Voz
 
 A transcrição usa o Whisper (`onnx-community/whisper-base`) rodando localmente via

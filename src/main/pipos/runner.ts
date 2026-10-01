@@ -4,12 +4,12 @@
 import { mkdirSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import type { AgentStep, Pipo, PipoPlaybook, PipoRun, PipoStep } from '@shared/pipos';
-import { evaluate, render, renderText, type TemplateCtx } from '@shared/template';
+import { evaluate, render, renderText, SENT_KEY, type TemplateCtx } from '@shared/template';
 import type { AgentEffort, AgentModel } from '@shared/types';
 import { setLive } from './live';
 import { consecutiveFailures, createRun, ensurePipoDirs, finishRun, getPermission, listMemory, setPermission, setStep, updatePipo } from './repo';
 import { maskSecrets, pipoSecrets } from './secrets';
-import { runHttp, runMcp, runScript, runSheet, StepError, type StepEnv } from './steps';
+import { readOnce, runHttp, runMcp, runScript, runSheet, StepError, type StepEnv } from './steps';
 
 export type ConfirmAnswer = 'yes' | 'no' | 'always' | 'timeout';
 /** Aprovação em lote: os itens que ficaram (com as edições do usuário). */
@@ -160,6 +160,10 @@ export async function execute(req: RunRequest, deps: RunnerDeps, onStart: (runId
     execucao: { id: run.id, seco: dryRun },
     agora: { iso: now.toISOString(), data: now.toLocaleDateString('pt-BR'), hora: now.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }) },
     segredo: secrets,
+    // Quem já recebeu, por passo com onceBy: {{lista | novos:<passo>}} mostra só os novos.
+    [SENT_KEY]: Object.fromEntries(
+      playbook.steps.flatMap((s) => (s.kind === 'http' && s.each && s.onceBy ? [[s.key, { by: s.onceBy, done: [...readOnce(pipoDir, s.key)] }]] : [])),
+    ),
   };
   const env: StepEnv = { pipoDir, runDir, ctx, secrets, dryRun, signal: ac.signal, input: req.input ?? null };
   const rules = listMemory(pipo.id).map((m) => m.rule);

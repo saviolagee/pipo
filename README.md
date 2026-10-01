@@ -9,6 +9,17 @@ logado com a sua assinatura** — sem chave de API.
   tempo por cliente, proteger o foco e reagir ao contexto.
 - **Tem emoção:** o humor do Pipo acompanha seu dia e sua semana; acessórios desbloqueiam com a sequência.
 - **Interrompe pouco:** orçamento diário de interrupções (3/5/8). Fora dele, só muda de expressão.
+- **Equipe de Pipos coloridos:** crie ajudantes conversando (`/criarpipo`). Cada um tem personalidade,
+  cofre de segredos e um plano de execução fixo e versionado, que roda sob demanda, num horário, por
+  evento ou depois de outro Pipo. Na pill, os mini-Pipos acendem enquanto trabalham. Veja
+  [docs/pipos.md](docs/pipos.md).
+- **Dashboards:** horas vs meta, foco, distração, melhores horários, clientes (valor/hora), métricas
+  dos Pipos e dinheiro (Stripe), com exportação CSV/PDF e "pergunte ao dashboard".
+- **Dias não trabalhados:** folga, férias, doença e feriados (nacionais e estaduais) não quebram a
+  sequência nem contam contra a meta.
+- **Tempo de verdade:** só conta com movimento de mouse/teclado (vídeo parado na tela não conta;
+  reunião conta).
+- **Modelo configurável:** Sonnet por padrão, Opus/Haiku em Configurações e "Pensar mais" por resposta.
 
 ## Rodando
 
@@ -24,8 +35,9 @@ npm run dist:win     # instalador .exe (NSIS) — rodar no Windows
 npm run dist:mac     # .dmg — rodar no macOS
 ```
 
-Os instaladores também saem pelo workflow **build** do GitHub Actions (Actions → build → Run workflow,
-ou ao criar uma tag `v*`): testa, empacota no Windows e no macOS e publica os artefatos.
+O workflow **build** do GitHub Actions testa e compila a cada push. Os instaladores (Windows, macOS e
+Linux) saem ao criar uma tag `v*` ou em Actions → build → Run workflow, com um teste de fumaça que abre o
+app empacotado e confere que a janela renderiza (`node scripts/smoke.mjs dist`).
 
 Integrações (Google Agenda/Gmail, Spotify) e voz: veja [docs/integracoes.md](docs/integracoes.md).
 
@@ -35,7 +47,8 @@ Integrações (Google Agenda/Gmail, Spotify) e voz: veja [docs/integracoes.md](d
 |---|---|
 | `Ctrl/Cmd+Shift+Space` | Abrir/fechar o notch |
 | `Ctrl/Cmd+Shift+K` | Captura rápida (de novo com ela aberta: liga/desliga o microfone) |
-| `Ctrl/Cmd+Shift+F` | Começar foco na próxima tarefa sugerida |
+| `Ctrl/Cmd+Shift+F` | Começar foco na próxima tarefa sugerida (também no botão ▶ da pill) |
+| `Ctrl/Cmd+Shift+A` | Abrir os dashboards |
 | `Y` / `N` | Responder o card visível |
 | `Esc` | Fechar o notch |
 | `Ctrl+Alt+D` | Painel de debug do mascote (estados, humor, acessórios, simulações) |
@@ -56,7 +69,11 @@ src/
     interruptions/ orçamento, intervalo mínimo, fila, prioridades, silenciamento
     insights/      humor, sequência/acessórios, padrões semanais, reações ao contexto
     integrations/  OAuth loopback + PKCE, Google Agenda, Gmail
-    music/         Spotify Web API e fallback (link / arquivo local)
+    music/         Spotify Web API e fallback (link / arquivo local); o Pipo dança com música
+    days/          folgas, férias, feriados e as perguntas sobre dias sem registro
+    pipos/         Pipos coloridos: repositório, cofre, executor de planos, /criarpipo (builder),
+                   gatilhos (horário, eventos, webhook local), conexões, chat por Pipo, .pipo
+    dashboard/     janela de dashboards e dados agregados
     db/            SQLite (node:sqlite do Electron) com migrações versionadas
   preload/         ponte tipada (contextBridge)
   shared/          tipos, contrato de IPC, parser de linguagem natural, sugestão de tarefa
@@ -79,4 +96,5 @@ Tudo fica na máquina. Títulos de janela **não** vão para o Claude — só ag
 títulos crus apenas quando você pede explicitamente ("o que eu fiz ontem à tarde?"), com confirmação.
 Configurações → Privacidade: pausar o registro, apps ignorados, apagar histórico.
 
-A referência visual está em [docs/referencia-visual.md](docs/referencia-visual.md). Próximos passos: [docs/plano-v2.md](docs/plano-v2.md) (equipe de Pipos coloridos).
+A referência visual está em [docs/referencia-visual.md](docs/referencia-visual.md). O plano da V2 está em
+[docs/plano-v2.md](docs/plano-v2.md) e o guia dos Pipos coloridos em [docs/pipos.md](docs/pipos.md).

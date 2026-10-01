@@ -483,7 +483,11 @@ ausências.
 
 ---
 
-## 6. Dados (migração 002)
+## 6. Dados (migrações 002–004)
+
+Na implementação: `002_days` (dias não trabalhados), `003_pipos` (tabelas abaixo) e `004_pipo_files`
+(arquivos e gatilho nos modelos). O estado "já enviado" dos passos com `onceBy` fica em
+`pipos/<slug>/state/` (não vai junto no `.pipo`).
 
 ```
 pipos(id, slug, name, color, accessory, mission, personality_json, model, effort,
@@ -562,7 +566,7 @@ Vem primeiro porque são melhorias visíveis no app de hoje (seção 3.1).
 ### Fase 16 — Núcleo de Pipos
 
 - **Implementar:**
-  - migração 002 (tabelas de Pipos);
+  - migração 003 (tabelas de Pipos; a 002 ficou com os dias não trabalhados);
   - repositórios;
   - pasta por Pipo;
   - cofre de segredos por Pipo;

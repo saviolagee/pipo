@@ -79,9 +79,11 @@ describe('conexão entre Pipos', () => {
     writeFileSync(join(repo.pipoDir(a.slug), 'scripts', 's.js'), 'console.log(JSON.stringify({ok:true}))');
     const ok = await execute({ pipo: a, version: 1, dryRun: false, trigger: 'manual', playbook: play }, deps([]));
     expect(ok.status).toBe('done');
-    const ran: string[] = [];
-    await links.processInbox(new Date(Date.now() + 1000), async (p) => void ran.push(p.slug));
-    expect(ran).toEqual([b.slug]);
+    const ran: Array<{ slug: string; input: unknown }> = [];
+    await links.processInbox(new Date(Date.now() + 1000), async (p, input) => void ran.push({ slug: p.slug, input }));
+    expect(ran.map((r) => r.slug)).toEqual([b.slug]);
+    // O seguinte recebe as saídas completas de cada passo do anterior.
+    expect((ran[0].input as { saidas: Record<string, unknown> }).saidas.s).toEqual({ ok: true });
   });
 
   it('A → B → A é recusado com explicação', () => {

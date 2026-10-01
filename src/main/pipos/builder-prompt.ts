@@ -10,7 +10,7 @@ import { secretNames } from './secrets';
 
 const STEP_DOC = `Formato dos passos (JSON). Todo passo tem "kind", "key" (minúsculas_com_underscore, única), "title" (legível) e, se tiver efeito fora da máquina, "external": true. Opcional: "onError": "continue".
 - script: {"kind":"script","command":"node|python|powershell|bash","args":["scripts/arquivo.js", "..."],"env":{"X":"{{segredo.NOME}}"},"timeoutSec":300}. O script lê segredos das variáveis de ambiente (todos os segredos do Pipo já estão lá com o mesmo nome), lê a entrada em PIPO_INPUT, respeita PIPO_DRY_RUN=1 e imprime JSON no stdout.
-- http: {"kind":"http","method":"GET|POST|PUT|PATCH|DELETE","url":"https://...","headers":{"Authorization":"Bearer {{segredo.TOKEN}}"},"body":"{\\"a\\": \\"{{passos.x.saida.y}}\\"}"}. Resposta JSON vira a saída.
+- http: {"kind":"http","method":"GET|POST|PUT|PATCH|DELETE","url":"https://...","headers":{"Authorization":"Bearer {{segredo.TOKEN}}"},"body":"{\\"a\\": \\"{{passos.x.saida.y}}\\"}"}. Resposta JSON vira a saída. Para uma requisição POR ITEM de uma lista (ex.: um e-mail por lead), use "each":"{{passos.x.saida}}" e escreva {{item.campo}} e {{indice}} na url/corpo; com "onceBy":"{{item.email}}" o Pipo lembra quem já recebeu e nunca repete (use sempre em envios). A saída vira {enviados, pulados, falhas, resultados}. Para mostrar na confirmação e no agente só quem ainda não recebeu, use o filtro {{passos.x.saida | novos:<chave do passo de envio>}}; e um branch "{{passos.x.saida | novos:enviar | length}} == 0" → "end" encerra quando não há ninguém novo.
 - mcp: {"kind":"mcp","server":"nome no mcp.json","tool":"nome_da_ferramenta","args":"{\\"q\\": \\"{{entrada.busca}}\\"}"}.
 - sheet: {"kind":"sheet","action":"read|append|update","spreadsheetId":"id da URL","range":"Aba!A:F","rows":"{{passos.x.saida}}","keyColumn":"email"}. read devolve uma lista de objetos pelo cabeçalho.
 - agent: {"kind":"agent","prompt":"... {{passos.x.saida}} ...","json":true,"model":"haiku|sonnet|opus","askPipo":"slug opcional"}. Use só onde precisa de julgamento (escrever, classificar, resumir). Haiku para tarefas simples.
@@ -18,7 +18,7 @@ const STEP_DOC = `Formato dos passos (JSON). Todo passo tem "kind", "key" (minú
 - branch: {"kind":"branch","if":"{{passos.x.saida | length}} == 0","then":"end" | "goto:<key>"}.
 - notify: {"kind":"notify","title":"...","body":"..."}.
 - handoff: {"kind":"handoff","to":"slug de outro Pipo","payload":"{{passos.x.saida}}","run":true}.
-Templates: {{passos.<key>.saida}} (saída de um passo anterior), {{entrada}} (o que outro Pipo entregou), {{pipo.nome}}, {{agora.data}}, {{segredo.NOME}} (só em script/http/mcp). Filtros: | length, | json, | first, | last, | join:, | default:.
+Templates: {{passos.<key>.saida}} (saída de um passo anterior), {{entrada}} (o que outro Pipo entregou; quando roda "depois de" outro Pipo, {{entrada.saidas.<passo>}} traz a saída de cada passo dele, mais {{entrada.resumo}} e {{entrada.metricas}}), {{pipo.nome}}, {{agora.data}}, {{segredo.NOME}} (só em script/http/mcp). Filtros: | length, | json, | first, | last, | join:, | default:.
 Métricas (o que o Pipo conta a cada execução, para os dashboards): [{"key":"enviados","label":"e-mails enviados","from":"{{passos.enviar.saida.enviados}}","stage":2}]. Métricas com "stage" formam um funil.`;
 
 const ROTEIRO = `Roteiro (vale para qualquer Pipo; pergunte UMA coisa por vez, aceite respostas soltas e guarde cada uma com save_interview):

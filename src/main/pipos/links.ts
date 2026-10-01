@@ -1,6 +1,7 @@
 // Conexão entre Pipos (Fase 21): "depois de" com atraso, entrega de dados (handoff) pela caixa de
 // entrada, recusa de ciclos e o mapa da equipe.
-import { readFileSync } from 'node:fs';
+import { existsSync, readdirSync, readFileSync } from 'node:fs';
+import { join } from 'node:path';
 import type { Pipo, PipoRun } from '@shared/pipos';
 import { emit } from '../bus';
 import { db } from '../db';
@@ -9,7 +10,7 @@ import { handle } from '../ipc';
 import { every } from '../scheduler';
 import { inboxHooks, startRun } from './deps';
 import { pipesChanged } from './ipc';
-import { activePlaybook, getPipo, getRun, listPipos } from './repo';
+import { activePlaybook, getPipo, getRun, listPipos, pipoDir } from './repo';
 import { runnerHooks } from './runner';
 import { linkHooks } from './builder-tools';
 import { blockedReason } from './triggers';
@@ -130,12 +131,36 @@ export async function processInbox(now = new Date(), run: (pipo: Pipo, input: un
       } catch {
         input = null;
       }
-    } else if (fromRun) input = { de: getPipo(fromRun.pipoId)?.slug ?? null, resumo: fromRun.summary, metricas: fromRun.metrics };
+    } else if (fromRun) {
+      const slug = getPipo(fromRun.pipoId)?.slug ?? null;
+      input = { de: slug, resumo: fromRun.summary, metricas: fromRun.metrics, saidas: slug ? runOutputs(slug, fromRun.id) : {} };
+    }
     db().run("UPDATE pipo_inbox SET status = 'consumed' WHERE id = ?", r.id);
     await run(p, input, fromRun);
     n++;
   }
   return n;
+}
+
+const MAX_OUTPUTS_BYTES = 1_000_000;
+
+/** Saídas completas (já sem segredos) de uma execução: {{entrada.saidas.<passo>}} no Pipo seguinte. */
+export function runOutputs(slug: string, runId: number): Record<string, unknown> {
+  const dir = join(pipoDir(slug), 'runs', String(runId));
+  const out: Record<string, unknown> = {};
+  if (!existsSync(dir)) return out;
+  let total = 0;
+  for (const f of readdirSync(dir).filter((x) => x.endsWith('.json'))) {
+    const text = readFileSync(join(dir, f), 'utf8');
+    total += text.length;
+    if (total > MAX_OUTPUTS_BYTES) break;
+    try {
+      out[f.slice(0, -5)] = JSON.parse(text);
+    } catch {
+      out[f.slice(0, -5)] = text;
+    }
+  }
+  return out;
 }
 
 async function defaultRun(p: Pipo, input: unknown, fromRun: PipoRun | null): Promise<unknown> {

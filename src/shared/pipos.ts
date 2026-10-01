@@ -91,6 +91,10 @@ export interface HttpStep extends StepCommon {
   /** Corpo: string com templates; JSON se começar com { ou [. */
   body?: string;
   timeoutSec?: number;
+  /** Template de uma lista: faz uma requisição por item ({{item}}, {{indice}}). Saída: um resultado por item. */
+  each?: string;
+  /** Com `each`: chave que identifica o item ({{item.email}}). Itens já enviados com sucesso nunca se repetem. */
+  onceBy?: string;
 }
 
 export interface McpStep extends StepCommon {
