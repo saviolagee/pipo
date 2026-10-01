@@ -37,7 +37,7 @@ export class AnthropicApiProvider implements AgentProvider {
     const history = sessions.get(sessionId) ?? [];
     history.push({ role: 'user', content: opts.prompt });
     const tools: BetaToolUnion[] = [
-      ...(opts.tools === 'none' ? [] : toolDescriptors()).map((t) => ({ name: t.name, description: t.description, input_schema: t.inputSchema as BetaTool['input_schema'], eager_input_streaming: true })),
+      ...(opts.tools === 'none' ? [] : toolDescriptors(this.ctxFor(opts.mcpContext))).map((t) => ({ name: t.name, description: t.description, input_schema: t.inputSchema as BetaTool['input_schema'], eager_input_streaming: true })),
       {
         name: 'read_attachment',
         description: 'Lê um arquivo anexado (texto) pelo caminho absoluto.',

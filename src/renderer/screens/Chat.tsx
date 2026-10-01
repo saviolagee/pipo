@@ -1,11 +1,13 @@
 import { AnimatePresence, motion } from 'motion/react';
 import { Fragment, useEffect, useRef, useState } from 'react';
-import type { Accessory, Attachment, MascotState } from '@shared/types';
+import type { Accessory, Attachment, Card, MascotState } from '@shared/types';
 import { Button } from '../components/Button';
 import { usePinOnFocus } from '../components/Form';
 import { IconArrowUp, IconFile, IconMic, IconPlus, IconSpark, IconX } from '../components/Icons';
 import { t } from '../i18n/pt-BR';
 import { prettyModel } from '@shared/models';
+import type { DraftInfo } from '@shared/pipos';
+import { suggestCommands } from '../lib/commands';
 import { api } from '../lib/api';
 import { Mascot } from '../mascot/Mascot';
 import { useChat } from '../store/chat';
@@ -15,6 +17,9 @@ import { AttentionCard } from './AttentionCard';
 import { useVoice } from '../voice/useVoice';
 
 const c = t.chat;
+
+/** Cards que aparecem dentro da conversa (não por cima). */
+export const INLINE_CARD_KINDS: Card['kind'][] = ['action', 'pipo_plan', 'pipo_secret'];
 
 /** Markdown mínimo: **negrito**, `código`, listas e quebras de linha. */
 function Rich({ text }: { text: string }): React.JSX.Element {
@@ -53,6 +58,29 @@ function FileChip({ a, onRemove }: { a: Attachment; onRemove?: () => void }): Re
   );
 }
 
+const STAGE_ORDER: DraftInfo['stage'][] = ['start', 'personality', 'interview', 'connections', 'plan', 'rehearsal', 'hire'];
+
+/** Barra discreta das 7 etapas do /criarpipo. */
+function DraftBar({ draft }: { draft: DraftInfo }): React.JSX.Element {
+  const at = STAGE_ORDER.indexOf(draft.stage);
+  const color = draft.color ?? '#F4F4F5';
+  return (
+    <div className="flex items-center gap-[8px] pb-[6px] pl-[66px] pr-[4px]" aria-label={`${t.team.stages[draft.stage]} (${at + 1}/7)`}>
+      <span className="h-[8px] w-[8px] shrink-0 rounded-[3px]" style={{ background: draft.name ? color : 'transparent', border: draft.name ? 'none' : '1px dashed #71717A' }} />
+      <span className="shrink-0 text-[11.5px] font-medium text-fg">{draft.name ?? 'Pipo novo'}</span>
+      {draft.editing && <span className="shrink-0 text-[10.5px] text-fg-3">{t.team.editing}</span>}
+      <div className="flex flex-1 items-center gap-[3px]">
+        {STAGE_ORDER.map((s, i) => (
+          <div key={s} className="flex flex-1 flex-col gap-[2px]" title={t.team.stages[s]}>
+            <motion.div className="h-[3px] rounded-full" initial={false} animate={{ background: i <= at ? color : 'rgba(255,255,255,0.1)' }} transition={{ duration: 0.3 }} />
+          </div>
+        ))}
+      </div>
+      <span className="w-[78px] shrink-0 text-right text-[10.5px] text-fg-2">{t.team.stages[draft.stage]}</span>
+    </div>
+  );
+}
+
 export function ChatScreen({ mood, accessories, state }: { mood: number; accessories: Accessory[]; state: MascotState }): React.JSX.Element {
   const chat = useChat();
   const cards = useUi((s) => s.cards);
@@ -61,7 +89,7 @@ export function ChatScreen({ mood, accessories, state }: { mood: number; accesso
   const listRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const pin = usePinOnFocus('chat');
-  const actionCards = cards.filter((x) => x.kind === 'action');
+  const actionCards = cards.filter((x) => INLINE_CARD_KINDS.includes(x.kind));
   const allAtts = [...new Map([...chat.messages.flatMap((m) => m.attachments), ...chat.pending].map((a) => [a.id, a])).values()];
 
   useEffect(() => {
@@ -85,6 +113,13 @@ export function ChatScreen({ mood, accessories, state }: { mood: number; accesso
   };
 
   const voice = useVoice((v) => submit(v));
+  const suggestions = suggestCommands(text);
+  const [sel, setSel] = useState(0);
+  useEffect(() => setSel(0), [text]);
+  const complete = (name: string): void => {
+    setText(`/${name} `);
+    inputRef.current?.focus();
+  };
   const empty = chat.messages.length === 0 && !chat.busy;
 
   return (
@@ -101,6 +136,7 @@ export function ChatScreen({ mood, accessories, state }: { mood: number; accesso
         )}
       </div>
 
+      {chat.draft && <DraftBar draft={chat.draft} />}
       <div ref={listRef} className="scroll-thin relative min-h-0 flex-1 overflow-y-auto pl-[66px] pr-[4px]" style={{ background: 'radial-gradient(80% 60% at 50% 100%, rgba(99,102,241,0.08), transparent)' }}>
         {empty && (
           <div className="flex h-full flex-col items-start justify-center gap-[10px]">
@@ -174,7 +210,37 @@ export function ChatScreen({ mood, accessories, state }: { mood: number; accesso
         </div>
       </div>
 
+      {chat.draft?.stage === 'start' && !chat.busy && chat.messages.length <= 2 && (
+        <div className="flex flex-wrap gap-[5px] pl-[66px] pt-[4px]">
+          {t.team.ideas.map((idea) => (
+            <button key={idea} type="button" onClick={() => submit(idea)} className="rounded-full px-[10px] py-[4px] text-[11.5px] text-fg-2 transition-colors hover:bg-white/[0.1] hover:text-fg" style={{ background: 'var(--bg-card-hover)' }}>
+              {idea}
+            </button>
+          ))}
+        </div>
+      )}
+
       <div className="relative mt-[8px] flex items-end gap-[10px]">
+        {suggestions.length > 0 && (
+          <div className="absolute bottom-[42px] left-[66px] z-10 w-[340px] rounded-[12px] p-[4px]" role="listbox" style={{ background: '#161618', border: '1px solid var(--border-subtle)', boxShadow: '0 10px 30px rgba(0,0,0,0.5)' }}>
+            {suggestions.map((s, i) => (
+              <button
+                key={s.name}
+                type="button"
+                role="option"
+                aria-selected={i === sel}
+                onMouseDown={(e) => {
+                  e.preventDefault();
+                  complete(s.name);
+                }}
+                className={`flex w-full items-baseline gap-[8px] rounded-[8px] px-[10px] py-[5px] text-left ${i === sel ? 'bg-white/[0.08]' : ''}`}
+              >
+                <span className="mono text-[12px] text-fg">/{s.name}</span>
+                <span className="truncate text-[11.5px] text-fg-3">{s.hint}</span>
+              </button>
+            ))}
+          </div>
+        )}
         <div className="absolute -top-[58px] left-0">
           <Mascot state={chat.busy ? 'thinking' : chat.error ? 'sad' : state === 'happy' ? 'happy' : 'idle'} size={48} mood={mood} accessories={accessories.filter((a) => a !== 'coffee')} />
         </div>
@@ -184,6 +250,16 @@ export function ChatScreen({ mood, accessories, state }: { mood: number; accesso
             value={text}
             onChange={(e) => setText(e.target.value)}
             onKeyDown={(e) => {
+              if (suggestions.length && (e.key === 'ArrowDown' || e.key === 'ArrowUp')) {
+                e.preventDefault();
+                setSel((v) => (v + (e.key === 'ArrowDown' ? 1 : suggestions.length - 1)) % suggestions.length);
+                return;
+              }
+              if (suggestions.length && (e.key === 'Tab' || (e.key === 'Enter' && text.trim() !== `/${suggestions[sel].name}`))) {
+                e.preventDefault();
+                complete(suggestions[sel].name);
+                return;
+              }
               if (e.key === 'Enter' && !e.shiftKey) {
                 e.preventDefault();
                 submit();

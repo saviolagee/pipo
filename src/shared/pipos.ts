@@ -29,6 +29,25 @@ export const PIPO_COLOR_NAMES: Record<PipoColor, string> = {
 
 export type PipoAccessory = 'none' | 'cap' | 'headset' | 'magnifier' | 'tie' | 'bow' | 'beanie' | 'glasses' | 'pencil';
 
+/** Acessório do Pipo colorido → camada do mascote. */
+export function pipoAccessoryLayers(a: PipoAccessory): Array<'headphones' | 'glasses' | 'cap' | 'magnifier' | 'tie' | 'bow' | 'beanie' | 'pencil'> {
+  if (a === 'none') return [];
+  if (a === 'headset') return ['headphones'];
+  return [a];
+}
+
+export const PIPO_ACCESSORY_NAMES: Record<PipoAccessory, string> = {
+  none: 'nenhum',
+  cap: 'boné',
+  headset: 'fone',
+  magnifier: 'lupa',
+  tie: 'gravata',
+  bow: 'laço',
+  beanie: 'gorro',
+  glasses: 'óculos',
+  pencil: 'lápis',
+};
+
 export interface PipoPersonality {
   /** Missão em uma frase ("Eu encontro leads e faço o primeiro contato"). */
   mission: string;
@@ -281,6 +300,29 @@ export interface PipoSummary extends Pipo {
   lastRun: PipoRun | null;
   nextRunAt: string | null;
   secrets: string[];
+}
+
+/** Rascunho do /criarpipo visto pelo chat (barra de progresso). */
+export interface DraftInfo {
+  conversationId: number | null;
+  draftId: number;
+  stage: 'start' | 'personality' | 'interview' | 'connections' | 'plan' | 'rehearsal' | 'hire';
+  name: string | null;
+  color: string | null;
+  editing: boolean;
+}
+
+/** Modelo próprio do usuário ("Salvar como modelo" ou .pipo importado). */
+export interface PipoModel {
+  id: number;
+  name: string;
+  color: PipoColor;
+  accessory: PipoAccessory;
+  personality: PipoPersonality;
+  playbook: PipoPlaybook;
+  /** Nomes dos segredos que o modelo precisa (sem valores). */
+  secrets: string[];
+  createdAt: string;
 }
 
 /** "Prospector de Leads!" → "prospector-de-leads" */

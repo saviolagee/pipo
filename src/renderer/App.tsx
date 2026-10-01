@@ -18,7 +18,7 @@ import { FocusCard } from './screens/FocusCard';
 import { RitualCheck } from './screens/RitualCheck';
 import { TasksScreen } from './screens/Tasks';
 import { DayReview } from './screens/DayReview';
-import { ChatScreen } from './screens/Chat';
+import { ChatScreen, INLINE_CARD_KINDS } from './screens/Chat';
 import { TeamScreen } from './screens/Team';
 import { bindPipoEvents } from './store/pipos';
 import { bindAgentEvents, useChat } from './store/chat';
@@ -78,7 +78,8 @@ export function App(): React.JSX.Element {
   const mascot = useMascot(hovered);
   const clicks = useRef<number[]>([]);
   // No chat, cards de ação aparecem inline na conversa (seção 8.7).
-  const overlayCards = ui.tab === 'chat' ? ui.cards.filter((c) => c.kind !== 'action') : ui.cards;
+  // O card do plano de um Pipo só existe no chat; ações e chaves seguras ficam inline lá.
+  const overlayCards = ui.tab === 'chat' ? ui.cards.filter((c) => !INLINE_CARD_KINDS.includes(c.kind)) : ui.cards.filter((c) => c.kind !== 'pipo_plan');
   const topCard = overlayCards[overlayCards.length - 1] ?? null;
   const [ingest, setIngest] = useState<IngestProgress | null>(null);
   const [swallowing, setSwallowing] = useState<string | null>(null);

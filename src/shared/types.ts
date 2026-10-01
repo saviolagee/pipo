@@ -223,7 +223,14 @@ export type Accessory =
   | 'hat'
   | 'crown'
   | 'cape'
-  | 'pajama';
+  | 'pajama'
+  // Acessórios dos Pipos coloridos (escolhidos na criação).
+  | 'cap'
+  | 'magnifier'
+  | 'tie'
+  | 'bow'
+  | 'beanie'
+  | 'pencil';
 
 export type UnlockableAccessory = 'scarf' | 'cool_glasses' | 'hat' | 'crown' | 'cape';
 
@@ -269,6 +276,8 @@ export type CardKind =
   | 'agent_error'
   | 'plan_day'
   | 'close_day'
+  | 'pipo_plan'
+  | 'pipo_secret'
   | 'info';
 
 export interface CardButton {
@@ -294,8 +303,10 @@ export interface Card {
   autoDismissMs?: number;
   /** Card de um Pipo colorido: o mascote aparece na cor dele. */
   pipoColor?: string;
-  /** Lista para aprovação em lote (carrossel). */
+  /** Lista para aprovação em lote (carrossel) ou passos do plano. */
   list?: Array<{ title: string; detail?: string }>;
+  /** Campo seguro para um segredo do Pipo (o valor vai direto para o cofre, nunca pelo chat). */
+  secret?: { pipoId: number; name: string };
 }
 
 export interface Toast {

@@ -1,5 +1,5 @@
 // Repositório dos Pipos coloridos: identidade, versões do plano, gatilhos, execuções, memória e permissões.
-import { mkdirSync, rmSync } from 'node:fs';
+import { existsSync, mkdirSync, renameSync, rmSync } from 'node:fs';
 import { join } from 'node:path';
 import {
   EMPTY_PLAYBOOK,
@@ -53,6 +53,9 @@ const toPipo = (r: PipoRow): Pipo => ({
   activeVersion: r.active_version,
   createdAt: r.created_at,
 });
+
+/** O cofre de segredos é indexado pelo @nome: quando ele muda, os segredos mudam junto. */
+export const repoHooks: { slugChanged: (from: string, to: string) => void } = { slugChanged: () => undefined };
 
 // ---------- Pastas ----------
 
@@ -124,6 +127,15 @@ export function updatePipo(id: number, patch: PipoPatch): Pipo {
   const cur = getPipo(id);
   if (!cur) throw new Error('Pipo não encontrado.');
   const next = { ...cur, ...patch };
+  // Ainda em rascunho (nunca contratado): o @nome acompanha o nome novo.
+  if (patch.name && patch.name.trim() !== cur.name && !cur.activeVersion) {
+    const slug = uniqueSlug(patch.name, id);
+    if (slug !== cur.slug) {
+      if (existsSync(pipoDir(cur.slug))) renameSync(pipoDir(cur.slug), pipoDir(slug));
+      db().run('UPDATE pipos SET slug = ? WHERE id = ?', slug, id);
+      repoHooks.slugChanged(cur.slug, slug);
+    }
+  }
   db().run(
     'UPDATE pipos SET name = ?, color = ?, accessory = ?, personality_json = ?, model = ?, effort = ?, paused = ?, run_on_days_off = ? WHERE id = ?',
     next.name.trim(),

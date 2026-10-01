@@ -42,6 +42,15 @@ export function deletePipoSecrets(slug: string): void {
   setKV(indexKey(slug), []);
 }
 
+/** Move os segredos quando o @nome de um Pipo em rascunho muda. */
+export function moveSecrets(from: string, to: string): void {
+  for (const n of secretNames(from)) {
+    const v = getPipoSecret(from, n);
+    if (v) setPipoSecret(to, n, v);
+  }
+  deletePipoSecrets(from);
+}
+
 /** Troca qualquer valor de segredo por •••• (stdout, erros, prévias). */
 export function maskSecrets(text: string, secrets: Record<string, string>): string {
   let out = text;

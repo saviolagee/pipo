@@ -49,8 +49,8 @@ function writeConfig(): void {
 
 async function handleRequest(req: BridgeRequest): Promise<BridgeResponse> {
   if (req.token !== token) return { id: req.id, error: 'token inválido' };
-  if (req.method === 'list_tools') return { id: req.id, tools: toolDescriptors() };
   const ctx = contexts.get(req.ctx) ?? { mode: 'chat', conversationId: null };
+  if (req.method === 'list_tools') return { id: req.id, tools: toolDescriptors(ctx) };
   const r = await callTool(req.name ?? '', req.args ?? {}, ctx);
   return { id: req.id, text: r.text, isError: r.isError };
 }

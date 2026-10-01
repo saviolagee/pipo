@@ -79,6 +79,19 @@ interface Active {
 }
 
 const active = new Map<number, Active>();
+const finished = new Map<number, { promise: Promise<PipoRun>; resolve: (r: PipoRun) => void }>();
+
+/** Espera uma execução terminar (ensaio do /criarpipo, testes). */
+export function runDone(runId: number): Promise<PipoRun> {
+  let entry = finished.get(runId);
+  if (!entry) {
+    let resolve: (r: PipoRun) => void = () => undefined;
+    const promise = new Promise<PipoRun>((r) => (resolve = r));
+    entry = { promise, resolve };
+    finished.set(runId, entry);
+  }
+  return entry.promise;
+}
 const queue: Array<{ req: RunRequest; start: (runId: number | null) => void }> = [];
 export const MAX_PARALLEL = 2;
 
@@ -294,19 +307,22 @@ export async function execute(req: RunRequest, deps: RunnerDeps, onStart: (runId
   }
   const minutes = (Date.now() - startedAt) / 60_000;
   const summary = status === 'done' ? summarize(pipo, playbook, metrics, minutes) : `${pipo.name}: ${status === 'cancelled' ? 'cancelado' : 'falhou'} — ${error}`;
-  const finished = finishRun(run.id, status, { summary, metrics, error });
+  const finished_ = finishRun(run.id, status, { summary, metrics, error });
   setLive(pipo.id, status === 'done' ? 'done' : status === 'failed' ? 'error' : 'idle', run.id, null);
   deps.update(run.id);
+  void runDone(run.id);
+  finished.get(run.id)?.resolve(finished_);
+  setTimeout(() => finished.delete(run.id), 60_000).unref?.();
 
   if (!dryRun) {
-    await deps.notify({ pipo, title: summary, body: null, final: true, run: finished, trigger: req.trigger });
+    await deps.notify({ pipo, title: summary, body: null, final: true, run: finished_, trigger: req.trigger });
     // 3 falhas seguidas pausam o Pipo.
     if (status === 'failed' && consecutiveFailures(pipo.id) >= 3) {
       updatePipo(pipo.id, { paused: true });
-      await deps.notify({ pipo, title: `${pipo.name} pausou depois de 3 falhas seguidas.`, body: error, final: false, run: finished, trigger: 'pause' });
+      await deps.notify({ pipo, title: `${pipo.name} pausou depois de 3 falhas seguidas.`, body: error, final: false, run: finished_, trigger: 'pause' });
     }
   }
-  return finished;
+  return finished_;
 }
 
 class CancelRun extends Error {}

@@ -1,6 +1,6 @@
 // Contrato de IPC tipado. Main implementa `InvokeHandlers`; o renderer chama via `window.pipo.invoke`.
 import type { HolidayPrefs } from './holidays';
-import type { Pipo, PipoLive, PipoMemoryRule, PipoPlaybook, PipoRun, PipoRunStep, PipoSummary, PipoTrigger, PipoVersion } from './pipos';
+import type { DraftInfo, Pipo, PipoLive, PipoMemoryRule, PipoModel, PipoPlaybook, PipoRun, PipoRunStep, PipoSummary, PipoTrigger, PipoVersion } from './pipos';
 import type {
   ActivityBlock,
   DayKind,
@@ -147,6 +147,12 @@ export interface InvokeHandlers {
   'pipos:runDetail': (runId: number) => { run: PipoRun; steps: PipoRunStep[] } | null;
   'pipos:runs': (id: number) => PipoRun[];
   'pipos:saveVersion': (id: number, playbook: PipoPlaybook, changelog: string) => PipoVersion;
+  'pipos:startDraft': (opts: { editSlug?: string; fromModelId?: number; fresh?: boolean }) => { conversationId: number; draftId: number; resumed: boolean; name: string | null };
+  'pipos:draftFor': (conversationId: number) => DraftInfo | null;
+  'pipos:submitSecret': (cardId: string, value: string) => boolean;
+  'pipos:saveModel': (id: number) => PipoModel;
+  'pipos:models': () => PipoModel[];
+  'pipos:deleteModel': (id: number) => void;
 }
 
 export type InvokeChannel = keyof InvokeHandlers;
@@ -188,6 +194,8 @@ export interface MainEvents {
   'pipos:live': PipoLive;
   'pipos:runUpdate': { run: PipoRun; steps: PipoRunStep[] };
   'pipos:handoff': { fromPipoId: number; toPipoId: number };
+  'pipos:draft': DraftInfo;
+  'pipos:hired': { pipoId: number; version: number };
   'ui:openPipoRun': { pipoId: number; runId: number };
 }
 

@@ -18,15 +18,25 @@ import { confirmAction, type ConfirmSpec } from '../confirm-bridge';
 import type { ToolDescriptor } from '../protocol';
 
 export interface ToolCtx {
-  /** 'capture': captura rápida (cria direto, sem confirmação). */
-  mode: 'chat' | 'capture';
+  /**
+   * 'capture': captura rápida (cria direto, sem confirmação).
+   * 'builder': conversa do /criarpipo (ferramentas de construção do Pipo colorido).
+   * 'pipo': conversa com um Pipo colorido (Fase 20).
+   */
+  mode: 'chat' | 'capture' | 'builder' | 'pipo';
   conversationId: number | null;
+  /** Rascunho do /criarpipo ligado a esta conversa. */
+  draftId?: number | null;
+  /** Pipo colorido dono da conversa. */
+  pipoId?: number | null;
 }
 
 type Args = Record<string, unknown>;
 
-interface ToolDef {
+export interface ToolDef {
   name: string;
+  /** Modos em que aparece. Padrão: chat e captura (as do Pipo branco). */
+  modes?: Array<ToolCtx['mode']>;
   description: string;
   inputSchema: Record<string, unknown>;
   /** Altera dados → confirmação (exceto quando liberado). */
@@ -443,8 +453,23 @@ const TOOLS: ToolDef[] = [
   },
 ];
 
-export function toolDescriptors(): ToolDescriptor[] {
-  return TOOLS.map(({ name, description, inputSchema }) => ({ name, description, inputSchema }));
+/** Ferramentas registradas por outros módulos (construtor de Pipos, conversa com Pipos). */
+export function registerTools(defs: ToolDef[]): void {
+  for (const d of defs) {
+    const i = TOOLS.findIndex((t) => t.name === d.name);
+    if (i >= 0) TOOLS.splice(i, 1);
+    TOOLS.push(d);
+  }
+}
+
+const DEFAULT_MODES: Array<ToolCtx['mode']> = ['chat', 'capture', 'builder', 'pipo'];
+
+function availableIn(t: ToolDef, mode: ToolCtx['mode']): boolean {
+  return (t.modes ?? DEFAULT_MODES).includes(mode);
+}
+
+export function toolDescriptors(ctx?: ToolCtx): ToolDescriptor[] {
+  return TOOLS.filter((t) => !ctx || availableIn(t, ctx.mode)).map(({ name, description, inputSchema }) => ({ name, description, inputSchema }));
 }
 
 /** Nomes das ferramentas que alteram dados (para --allowedTools e para a UI). */
@@ -455,6 +480,7 @@ export function mutatingTools(): string[] {
 export async function callTool(name: string, args: Args, ctx: ToolCtx): Promise<{ text: string; isError: boolean }> {
   const tool = TOOLS.find((t) => t.name === name);
   if (!tool) return { text: `Ferramenta desconhecida: ${name}`, isError: true };
+  if (!availableIn(tool, ctx.mode)) return { text: `A ferramenta ${name} não está disponível nesta conversa.`, isError: true };
   try {
     const spec = tool.confirm?.(args, ctx);
     if (spec) {

@@ -19,8 +19,9 @@ import {
   getRun,
   runSteps,
   deleteOldRuns,
+  repoHooks,
 } from './repo';
-import { deletePipoSecrets, secretNames, setPipoSecret } from './secrets';
+import { deletePipoSecrets, moveSecrets, secretNames, setPipoSecret } from './secrets';
 import { startRun } from './deps';
 import { cancelRun } from './runner';
 
@@ -36,6 +37,7 @@ export function pipesChanged(): void {
 }
 
 export function registerPiposIpc(): void {
+  repoHooks.slugChanged = moveSecrets;
   const orphans = closeOrphanRuns();
   if (orphans) console.warn(`[pipos] ${orphans} execução(ões) interrompida(s) pelo fechamento do app.`);
 

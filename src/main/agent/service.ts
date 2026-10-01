@@ -49,7 +49,17 @@ export function agentAvailable(): boolean {
   return (s.provider === 'anthropic-api' && s.hasKey) || claudeStatus().state === 'ok';
 }
 
-function systemPrompt(mode: 'chat' | 'capture'): string {
+/** Prompts de outros modos (construtor de Pipos, conversa com um Pipo colorido). */
+export const promptHooks: {
+  builder: ((draftId: number) => string) | null;
+  pipo: ((pipoId: number) => string) | null;
+  /** Descobre o modo de uma conversa (rascunho aberto → construtor; conversa de um Pipo → pipo). */
+  modeFor: ((conversationId: number) => { mode: 'builder' | 'pipo'; draftId?: number; pipoId?: number } | null) | null;
+} = { builder: null, pipo: null, modeFor: null };
+
+function systemPrompt(mode: 'chat' | 'capture' | 'builder' | 'pipo', ctx?: ToolCtx): string {
+  if (mode === 'builder' && ctx?.draftId && promptHooks.builder) return promptHooks.builder(ctx.draftId);
+  if (mode === 'pipo' && ctx?.pipoId && promptHooks.pipo) return promptHooks.pipo(ctx.pipoId);
   return buildSystemPrompt({
     profile: getProfile(),
     rituals: listRituals(),
@@ -57,7 +67,7 @@ function systemPrompt(mode: 'chat' | 'capture'): string {
     goalTodayMin: goalForDate(getProfile(), new Date()),
     now: new Date(),
     timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
-    mode,
+    mode: mode === 'capture' ? 'capture' : 'chat',
   });
 }
 
@@ -65,7 +75,9 @@ function systemPrompt(mode: 'chat' | 'capture'): string {
 async function run(opts: {
   conversationId: number | null;
   prompt: string;
-  mode: 'chat' | 'capture';
+  mode: 'chat' | 'capture' | 'builder' | 'pipo';
+  draftId?: number;
+  pipoId?: number;
   sessionId: string | null;
   signal: AbortSignal;
   onEvent: (e: ProviderEvent) => void;
@@ -74,14 +86,14 @@ async function run(opts: {
   effort?: AgentEffort;
 }): Promise<ProviderEvent & ({ type: 'done' } | { type: 'error' })> {
   const agent = getSettings().agent;
-  const ctx: ToolCtx = { mode: opts.mode, conversationId: opts.conversationId };
+  const ctx: ToolCtx = { mode: opts.mode, conversationId: opts.conversationId, draftId: opts.draftId ?? null, pipoId: opts.pipoId ?? null };
   const ctxId = openContext(ctx);
   contextsById.set(ctxId, ctx);
   let last: (ProviderEvent & ({ type: 'done' } | { type: 'error' })) | null = null;
   try {
     for await (const e of provider().send({
       prompt: opts.prompt,
-      systemPrompt: systemPrompt(opts.mode),
+      systemPrompt: systemPrompt(opts.mode, ctx),
       sessionId: opts.sessionId,
       mcpContext: ctxId,
       readDirs: [paths.files],
@@ -136,10 +148,13 @@ export async function sendMessage(opts: { conversationId: number | null; text: s
   void (async () => {
     let text = '';
     let model: string | null = null;
+    const special = promptHooks.modeFor?.(conv.id) ?? null;
     const result = await run({
       conversationId: conv.id,
       prompt: opts.thinkMore ? THINK_MORE_PROMPT : promptWithAttachments(opts.text, atts),
-      mode: 'chat',
+      mode: special?.mode ?? 'chat',
+      draftId: special?.draftId,
+      pipoId: special?.pipoId,
       sessionId: conv.claudeSessionId,
       signal: ac.signal,
       ...(opts.thinkMore ? { model: 'opus' as const, effort: 'high' as const } : {}),

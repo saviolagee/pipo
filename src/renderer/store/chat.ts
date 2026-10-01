@@ -1,8 +1,9 @@
 import { create } from 'zustand';
+import type { DraftInfo } from '@shared/pipos';
 import type { AgentErrorCode, Attachment, ChatMessage } from '@shared/types';
 import { isFocusNextIntent } from '@shared/intents';
 import { api } from '../lib/api';
-import { matchCommand } from '../lib/commands';
+import { matchCommand, runAtMention } from '../lib/commands';
 import { focusNext } from '../lib/focus';
 import { play } from '../sound/sfx';
 import { useUi } from './ui';
@@ -16,6 +17,10 @@ interface ChatState {
   error: { code: AgentErrorCode; message: string } | null;
   lastPrompt: string | null;
   pending: Attachment[];
+  /** Rascunho do /criarpipo ligado à conversa (barra de progresso). */
+  draft: DraftInfo | null;
+  /** Abre uma conversa existente (ex.: retomar um rascunho). */
+  openConversation: (id: number) => Promise<void>;
   send: (text: string) => Promise<void>;
   /** Refaz a última resposta com o Opus e effort alto. */
   thinkMore: () => Promise<void>;
@@ -36,6 +41,10 @@ export const useChat = create<ChatState>((set, get) => ({
   error: null,
   lastPrompt: null,
   pending: [],
+  draft: null,
+  openConversation: async (id) => {
+    set({ conversationId: id, messages: await api.invoke('agent:messages', id), streaming: '', error: null, busy: false, tool: null, draft: await api.invoke('pipos:draftFor', id) });
+  },
   send: async (text) => {
     const t = text.trim();
     if (!t || get().busy) return;
@@ -45,6 +54,8 @@ export const useChat = create<ChatState>((set, get) => ({
       await slash.cmd.run(slash.args);
       return;
     }
+    // "@prospector roda": dispara o Pipo sem passar pelo agente.
+    if (!get().pending.length && (await runAtMention(t))) return;
     // "foca na próxima": o app resolve na hora, sem esperar o agente.
     if (isFocusNextIntent(t) && !get().pending.length) {
       await focusNext();
@@ -74,7 +85,7 @@ export const useChat = create<ChatState>((set, get) => ({
       useUi.setState({ agentBusy: false });
     }
   },
-  newConversation: () => set({ conversationId: null, messages: [], streaming: '', error: null, busy: false, tool: null }),
+  newConversation: () => set({ conversationId: null, messages: [], streaming: '', error: null, busy: false, tool: null, draft: null }),
   addAttachments: (a) => set((s) => ({ pending: [...s.pending, ...a.filter((x) => !s.pending.some((p) => p.id === x.id))] })),
   removeAttachment: (id) => set((s) => ({ pending: s.pending.filter((p) => p.id !== id) })),
   reload: async () => {
@@ -85,7 +96,10 @@ export const useChat = create<ChatState>((set, get) => ({
 
 /** Liga os eventos do agente ao chat e ao mascote (seção 11.4). */
 export function bindAgentEvents(): () => void {
-  return api.on('agent:event', (e) => {
+  const offDraft = api.on('pipos:draft', (d) => {
+    if (d.conversationId !== null && d.conversationId === useChat.getState().conversationId) useChat.setState({ draft: d.stage === 'hire' ? { ...d } : d });
+  });
+  const off = api.on('agent:event', (e) => {
     const s = useChat.getState();
     if (s.conversationId !== null && e.conversationId !== s.conversationId && e.type !== 'start') return;
     switch (e.type) {
@@ -117,4 +131,8 @@ export function bindAgentEvents(): () => void {
         break;
     }
   });
+  return () => {
+    off();
+    offDraft();
+  };
 }
