@@ -24,6 +24,9 @@ const str = (v: unknown): string | undefined => (typeof v === 'string' && v.trim
 const COLORS = Object.keys(PIPO_COLORS) as PipoColor[];
 const ACCESSORIES: PipoAccessory[] = ['none', 'cap', 'headset', 'magnifier', 'tie', 'bow', 'beanie', 'glasses', 'pencil'];
 
+/** Detecção de ciclos (Fase 21). */
+export const linkHooks: { wouldCycle: (from: number, to: number) => boolean } = { wouldCycle: () => false };
+
 /** Ganchos da Fase 19 (gatilhos) e 20 (apresentação no chat do Pipo). */
 export const builderHooks: {
   applyTriggers: (pipoId: number, t: Draft['data']['triggers']) => string[];
@@ -68,6 +71,12 @@ function checkPlan(d: Draft, plan: PipoPlaybook): PlanIssue[] {
 
 function planReply(d: Draft, plan: PipoPlaybook): Record<string, unknown> {
   const issues = checkPlan(d, plan);
+  // Entregar para quem já entrega para este Pipo fecha um ciclo.
+  for (const s of plan.steps) {
+    if (s.kind !== 'handoff' || !d.data.pipoId) continue;
+    const to = getPipo(s.to);
+    if (to && linkHooks.wouldCycle(d.data.pipoId, to.id)) issues.push({ level: 'error', step: s.key, message: `Entregar para @${to.slug} criaria um ciclo (ele já chega neste Pipo).` });
+  }
   return { passos: describePlaybook(plan), metricas: plan.metrics.map((m) => `${m.key}: ${m.label}`), problemas: issues.length ? issues : 'nenhum' };
 }
 
@@ -301,6 +310,11 @@ const TOOLS: ToolDef[] = [
     run: (a, ctx) => {
       const d = draftOf(ctx);
       const after = a.after && typeof a.after === 'object' ? { from: String((a.after as Args).from ?? '').replace(/^@/, ''), delayMin: Number((a.after as Args).delay_min ?? 0) } : a.after === null ? null : d.data.triggers.after;
+      if (after?.from && d.data.pipoId) {
+        const from = getPipo(after.from);
+        if (!from) throw new Error(`Não existe Pipo @${after.from}.`);
+        if (linkHooks.wouldCycle(from.id, d.data.pipoId)) throw new Error(`Isso criaria um ciclo: @${after.from} já depende deste Pipo.`);
+      }
       const triggers = {
         schedule: a.schedule === undefined ? d.data.triggers.schedule : (str(a.schedule) ?? null),
         after: after && after.from ? after : null,

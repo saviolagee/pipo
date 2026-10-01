@@ -159,6 +159,10 @@ export interface InvokeHandlers {
   'pipos:chat': (pipoId: number) => { conversationId: number };
   'pipos:chatOwner': (conversationId: number) => { id: number; name: string; slug: string; color: string; accessory: Pipo['accessory'] } | null;
   'pipos:deleteMemory': (id: number) => void;
+  'pipos:links': () => Array<{ from: number; to: number; kind: 'after' | 'handoff'; delayMin: number }>;
+  'pipos:link': (fromId: number, toId: number, delayMin: number) => void;
+  'pipos:unlink': (fromId: number, toId: number) => void;
+  'pipos:wouldCycle': (fromId: number, toId: number) => boolean;
 }
 
 export type InvokeChannel = keyof InvokeHandlers;

@@ -13,6 +13,10 @@ interface PiposState {
   arrivingId: number | null;
   /** Pipos que acabaram de receber uma entrega (acendem por um instante). */
   flashIds: number[];
+  /** Última entrega entre Pipos (a luz corre na pill). */
+  handoff: { from: number; to: number; at: number } | null;
+  /** Pipo solto sobre outro na Equipe (pergunta o atraso). */
+  pendingLink: { from: number; to: number } | null;
   load: () => Promise<void>;
   setLive: (l: PipoLive) => void;
   open: (id: number | null, runId?: number | null) => void;
@@ -25,6 +29,8 @@ export const usePipos = create<PiposState>((set) => ({
   openRunId: null,
   arrivingId: null,
   flashIds: [],
+  handoff: null,
+  pendingLink: null,
   load: async () => set({ list: await api.invoke('pipos:list'), loaded: true }),
   setLive: (l) => set((s) => ({ list: s.list.map((p) => (p.id === l.pipoId ? { ...p, live: l } : p)) })),
   open: (id, runId = null) => set({ openId: id, openRunId: runId }),
@@ -38,8 +44,8 @@ export function bindPipoEvents(): () => void {
       usePipos.setState({ arrivingId: pipoId });
       setTimeout(() => usePipos.setState((s) => (s.arrivingId === pipoId ? { arrivingId: null } : s)), 2500);
     }),
-    api.on('pipos:handoff', ({ toPipoId }) => {
-      usePipos.setState((s) => ({ flashIds: [...s.flashIds, toPipoId] }));
+    api.on('pipos:handoff', ({ fromPipoId, toPipoId }) => {
+      usePipos.setState((s) => ({ flashIds: [...s.flashIds, toPipoId], handoff: { from: fromPipoId, to: toPipoId, at: Date.now() } }));
       setTimeout(() => usePipos.setState((s) => ({ flashIds: s.flashIds.filter((x) => x !== toPipoId) })), 1800);
     }),
   ];

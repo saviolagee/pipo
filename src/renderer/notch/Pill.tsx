@@ -39,6 +39,7 @@ export function Pill({ state, badge, mood, accessories, clipboardCandidate }: Pr
   const team = usePipos((s) => s.list);
   const arrivingId = usePipos((s) => s.arrivingId);
   const flashIds = usePipos((s) => s.flashIds);
+  const handoff = usePipos((s) => s.handoff);
   // Quem está trabalhando ou esperando aparece primeiro; até 4 na pill, o resto vira "+N".
   const order = { waiting: 0, working: 1, error: 2, done: 3, draft: 4, idle: 5 } as const;
   const minis = [...team].sort((a, b) => order[a.live.state] - order[b.live.state]);
@@ -53,7 +54,18 @@ export function Pill({ state, badge, mood, accessories, clipboardCandidate }: Pr
           {statusDot && <span className="absolute left-[2px] top-[5px] h-[6px] w-[6px] rounded-full" style={{ background: statusDot, boxShadow: '0 0 0 1.5px #000' }} />}
         </div>
         {shown.length > 0 && (
-          <div className="ml-[2px] flex items-center">
+          <div className="relative ml-[2px] flex items-center">
+            {handoff && Date.now() - handoff.at < 2000 && shown.some((p) => p.id === handoff.from) && shown.some((p) => p.id === handoff.to) && (
+              // A luz corre do mini-Pipo que entregou até o que recebeu.
+              <motion.span
+                key={handoff.at}
+                className="pointer-events-none absolute top-1/2 h-[5px] w-[5px] -translate-y-1/2 rounded-full bg-white"
+                style={{ boxShadow: `0 0 8px 2px ${PIPO_COLORS[shown.find((p) => p.id === handoff.from)!.color]}` }}
+                initial={{ left: shown.findIndex((p) => p.id === handoff.from) * 18 + 6, opacity: 0 }}
+                animate={{ left: shown.findIndex((p) => p.id === handoff.to) * 18 + 6, opacity: [0, 1, 1, 0] }}
+                transition={{ duration: 0.9, ease: 'easeInOut' }}
+              />
+            )}
             {shown.map((p) => (
               <button
                 key={p.id}

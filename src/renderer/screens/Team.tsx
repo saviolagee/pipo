@@ -1,5 +1,7 @@
 // Aba Equipe: os Pipos coloridos do usuário. Nenhum vem instalado; o convite leva ao /criarpipo.
 import { motion } from 'motion/react';
+import { useEffect, useState } from 'react';
+import { MiniPipo } from '../mascot/MiniPipo';
 import { PIPO_COLORS, pipoAccessoryLayers, type PipoSummary } from '@shared/pipos';
 import { IconPlay } from '../components/Icons';
 import { api } from '../lib/api';
@@ -36,6 +38,38 @@ function EmptyTeam(): React.JSX.Element {
   );
 }
 
+type Edge = { from: number; to: number; kind: 'after' | 'handoff'; delayMin: number };
+
+const delayLabel = (m: number): string => (m <= 0 ? '' : m >= 1440 ? ` +${Math.round(m / 1440)}d` : m >= 60 ? ` +${Math.round(m / 60)}h` : ` +${m}min`);
+
+/** Mapa simples das conexões: quem roda depois de quem e quem entrega para quem. */
+function LinksMap({ list, edges }: { list: PipoSummary[]; edges: Edge[] }): React.JSX.Element | null {
+  if (!edges.length) return <p className="px-[4px] pt-[10px] text-[11px] text-fg-3">{tt.linkHint}</p>;
+  const byId = new Map(list.map((p) => [p.id, p]));
+  return (
+    <div className="mt-[10px] rounded-[12px] px-[10px] py-[8px]" style={{ background: 'var(--bg-card)', border: '1px solid var(--border-subtle)' }}>
+      <div className="mb-[4px] text-[10.5px] font-medium uppercase tracking-[0.05em] text-fg-3">{tt.links}</div>
+      <div className="flex flex-wrap gap-x-[16px] gap-y-[4px]">
+        {edges.map((e, i) => {
+          const a = byId.get(e.from);
+          const b = byId.get(e.to);
+          if (!a || !b) return null;
+          return (
+            <span key={i} className="flex items-center gap-[5px] text-[11.5px] text-fg-2">
+              <MiniPipo color={PIPO_COLORS[a.color]} state={a.live.state === 'idle' ? 'done' : a.live.state} size={12} title={a.name} />
+              {a.name}
+              <span className="text-fg-3">{e.kind === 'handoff' ? '⇢' : '→'}</span>
+              <MiniPipo color={PIPO_COLORS[b.color]} state={b.live.state === 'idle' ? 'done' : b.live.state} size={12} title={b.name} />
+              {b.name}
+              <span className="mono text-[10px] text-fg-3">{e.kind === 'handoff' ? 'entrega' : delayLabel(e.delayMin)}</span>
+            </span>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
 export function PipoCard({ p, onOpen }: { p: PipoSummary; onOpen: () => void }): React.JSX.Element {
   const color = PIPO_COLORS[p.color];
   const working = p.live.state === 'working' || p.live.state === 'waiting';
@@ -49,6 +83,18 @@ export function PipoCard({ p, onOpen }: { p: PipoSummary; onOpen: () => void }):
       layout
       role="button"
       tabIndex={0}
+      draggable={!!p.activeVersion}
+      onDragStartCapture={(e: React.DragEvent) => {
+        e.dataTransfer.setData('pipo/id', String(p.id));
+        e.dataTransfer.effectAllowed = 'link';
+      }}
+      onDragOver={(e: React.DragEvent) => {
+        if (e.dataTransfer.types.includes('pipo/id')) e.preventDefault();
+      }}
+      onDrop={(e: React.DragEvent) => {
+        const from = Number(e.dataTransfer.getData('pipo/id'));
+        if (from && from !== p.id) usePipos.setState({ pendingLink: { from, to: p.id } });
+      }}
       onClick={onOpen}
       onKeyDown={(e) => e.key === 'Enter' && onOpen()}
       className="group flex min-w-0 cursor-default items-center gap-[10px] rounded-[14px] p-[10px] text-left transition-colors hover:bg-white/[0.06]"
@@ -81,11 +127,51 @@ export function PipoCard({ p, onOpen }: { p: PipoSummary; onOpen: () => void }):
   );
 }
 
+/** "Rodar o B depois do A?" ao soltar um Pipo sobre outro. */
+function LinkChooser({ list, pending, onDone }: { list: PipoSummary[]; pending: { from: number; to: number }; onDone: () => void }): React.JSX.Element {
+  const a = list.find((p) => p.id === pending.from);
+  const b = list.find((p) => p.id === pending.to);
+  const [err, setErr] = useState<string | null>(null);
+  const close = (): void => usePipos.setState({ pendingLink: null });
+  const link = async (min: number): Promise<void> => {
+    try {
+      await api.invoke('pipos:link', pending.from, pending.to, min);
+      close();
+      onDone();
+    } catch (e) {
+      setErr((e instanceof Error ? e.message : String(e)).replace(/^Error invoking remote method '[^']+': (Error: )?/, ''));
+    }
+  };
+  return (
+    <div className="mb-[8px] flex flex-wrap items-center gap-[6px] rounded-[12px] px-[10px] py-[8px] text-[12px]" style={{ background: 'var(--bg-card-hover)' }}>
+      <span className="mr-[4px] text-fg">{err ?? tt.linkAsk(a?.name ?? '', b?.name ?? '')}</span>
+      {!err &&
+        ([
+          [0, tt.linkNow],
+          [60, tt.link1h],
+          [1440, tt.link1d],
+          [4320, tt.link3d],
+        ] as const).map(([m, label]) => (
+          <Button key={m} size="sm" variant={m === 0 ? 'primary' : 'secondary'} onClick={() => void link(m)}>
+            {label}
+          </Button>
+        ))}
+      <Button size="sm" variant="tertiary" onClick={close}>
+        {t.common.cancel}
+      </Button>
+    </div>
+  );
+}
+
 export function TeamScreen(): React.JSX.Element {
   const list = usePipos((s) => s.list);
   const loaded = usePipos((s) => s.loaded);
   const openId = usePipos((s) => s.openId);
+  const pending = usePipos((s) => s.pendingLink);
   const open = list.find((p) => p.id === openId) ?? null;
+  const [edges, setEdges] = useState<Edge[]>([]);
+  const reloadEdges = (): void => void api.invoke('pipos:links').then(setEdges);
+  useEffect(reloadEdges, [list]);
   return (
     <div className="flex h-[372px] flex-col px-[12px] pb-[12px]">
       {open ? (
@@ -100,10 +186,14 @@ export function TeamScreen(): React.JSX.Element {
               + {tt.create}
             </Button>
           </div>
-          <div className="scroll-thin grid min-h-0 flex-1 auto-rows-min grid-cols-2 gap-[8px] overflow-y-auto">
-            {list.map((p) => (
-              <PipoCard key={p.id} p={p} onOpen={() => usePipos.getState().open(p.id)} />
-            ))}
+          {pending && <LinkChooser list={list} pending={pending} onDone={reloadEdges} />}
+          <div className="scroll-thin min-h-0 flex-1 overflow-y-auto">
+            <div className="grid auto-rows-min grid-cols-2 gap-[8px]">
+              {list.map((p) => (
+                <PipoCard key={p.id} p={p} onOpen={() => usePipos.getState().open(p.id)} />
+              ))}
+            </div>
+            <LinksMap list={list} edges={edges} />
           </div>
         </>
       )}

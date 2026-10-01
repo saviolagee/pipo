@@ -95,6 +95,9 @@ export function runDone(runId: number): Promise<PipoRun> {
 const queue: Array<{ req: RunRequest; start: (runId: number | null) => void }> = [];
 export const MAX_PARALLEL = 2;
 
+/** Ganchos de quem precisa saber que uma execução terminou (conexão entre Pipos). */
+export const runnerHooks: { finished: Array<(run: PipoRun) => void> } = { finished: [] };
+
 export function activeRuns(): Array<{ runId: number; pipoId: number }> {
   return [...active.values()].map((a) => ({ runId: a.runId, pipoId: a.pipoId }));
 }
@@ -311,6 +314,13 @@ export async function execute(req: RunRequest, deps: RunnerDeps, onStart: (runId
   setLive(pipo.id, status === 'done' ? 'done' : status === 'failed' ? 'error' : 'idle', run.id, null);
   deps.update(run.id);
   void runDone(run.id);
+  for (const h of runnerHooks.finished) {
+    try {
+      h(finished_);
+    } catch (e) {
+      console.warn('[pipos] gancho de fim falhou:', e);
+    }
+  }
   finished.get(run.id)?.resolve(finished_);
   setTimeout(() => finished.delete(run.id), 60_000).unref?.();
 

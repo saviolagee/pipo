@@ -49,11 +49,19 @@ export function RunTimeline({ runId, color, onBack }: { runId: number; color: st
   const [run, setRun] = useState<PipoRun | null>(null);
   const [steps, setSteps] = useState<PipoRunStep[]>([]);
   const [open, setOpen] = useState<string | null>(null);
+  const [from, setFrom] = useState<{ name: string; startedAt: string } | null>(null);
+  const team = usePipos((s) => s.list);
   useEffect(() => {
-    void api.invoke('pipos:runDetail', runId).then((d) => {
+    void api.invoke('pipos:runDetail', runId).then(async (d) => {
       if (d) {
         setRun(d.run);
         setSteps(d.steps);
+        // "Veio do Prospector, execução de ontem 9h."
+        if (d.run.fromRunId) {
+          const src = await api.invoke('pipos:runDetail', d.run.fromRunId);
+          const owner = src ? team.find((p) => p.id === src.run.pipoId) : null;
+          if (src && owner) setFrom({ name: owner.name, startedAt: src.run.startedAt });
+        }
       }
     });
     return api.on('pipos:runUpdate', (u) => {
@@ -75,6 +83,7 @@ export function RunTimeline({ runId, color, onBack }: { runId: number; color: st
         </span>
         <span className="text-[11px] text-fg-3">
           {fmtWhen(run.startedAt)} · {tt.trigger(run.trigger)}
+          {from && ` · ${tt.cameFrom(from.name, fmtWhen(from.startedAt))}`}
         </span>
         <span className="flex-1" />
         {live && (
@@ -141,6 +150,7 @@ export function PipoDetail({ p, onBack }: { p: PipoSummary; onBack: () => void }
   const [msg, setMsg] = useState<string | null>(null);
   const [confirmDelete, setConfirmDelete] = useState(false);
   const openRunId = usePipos((s) => s.openRunId);
+  const team = usePipos((s) => s.list);
   const color = PIPO_COLORS[p.color];
   const reload = async (): Promise<void> => {
     const r = await api.invoke('pipos:get', p.id);
@@ -257,11 +267,20 @@ export function PipoDetail({ p, onBack }: { p: PipoSummary; onBack: () => void }
             {p.nextRunAt && <p className="text-[11.5px] text-fg-3">{tt.nextRun(fmtWhen(p.nextRunAt))}</p>}
             {d?.triggers
               .filter((x) => x.kind === 'after_pipo')
-              .map((x) => (
-                <p key={x.id} className="text-[11.5px] text-fg-3">
-                  {'from' in x.spec ? tt.afterPipo(x.spec.from, x.spec.delayMin) : ''}
-                </p>
-              ))}
+              .map((x) => {
+                const spec = x.spec as { from?: string };
+                const src = spec.from ? team.find((t2) => t2.slug === spec.from) : null;
+                return (
+                  <p key={x.id} className="flex items-center gap-[6px] text-[11.5px] text-fg-3">
+                    {'from' in x.spec ? tt.afterPipo(x.spec.from, x.spec.delayMin) : ''}
+                    {src && (
+                      <button type="button" className="text-fg-3 underline-offset-2 hover:text-fg hover:underline" onClick={() => void api.invoke('pipos:unlink', src.id, p.id).then(reload)}>
+                        {tt.unlink}
+                      </button>
+                    )}
+                  </p>
+                );
+              })}
           </Section>
           <AccessoryPicker p={p} />
         </div>
