@@ -480,6 +480,10 @@ ausências.
 - Integrações Notion, Trello e ClickUp.
 - Níveis por Pipo (ganha experiência por execução bem-sucedida e desbloqueia acessórios).
 - Execução na nuvem para Pipos que precisam rodar com o PC desligado.
+- **Construtor pergunta menos:** ao criar o Pipo e o script dele, o branco faz no máximo 2–3
+  perguntas, só as essenciais (o que faz, de onde vêm os dados, para onde vai o resultado). O resto do
+  roteiro (`builder-prompt.ts`: limites, avisos, permissões, folgas, dependências) vira padrão
+  sensato, mostrado na proposta do plano para o usuário ajustar se quiser.
 
 ---
 
