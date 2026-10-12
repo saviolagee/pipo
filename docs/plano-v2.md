@@ -487,13 +487,18 @@ ausências.
 - **Trilha de objetivos (nova lógica de produtividade):** o centro deixa de ser horas vs meta e passa
   a ser o plano e o avanço nele. Substitui "Projetos com marcos".
   - **Criar plano:** o usuário diz o resultado que quer e a data desejada; o branco desmembra em
-    etapas e em ações por dia, e o usuário ajusta conversando.
+    etapas e em ações por dia.
+  - **Ajustar de dois jeitos:** à mão (criar, editar, reordenar, mover de dia e apagar ações direto
+    na trilha) e pelo chat (pedir ao Pipo para criar ou ajustar o plano). Os dois valem sempre.
   - **Trilha:** as ações aparecem como um caminho (estilo Duolingo), uma por dia, com a de hoje em
     destaque; concluir uma libera a próxima.
   - **Data que escorrega:** se uma ação atrasa, as seguintes são empurradas e a data final do
     objetivo é recalculada. Sem punição nem sequência quebrada.
   - **Horas em segundo plano:** o registro de tempo continua, mas sai da tela principal e da meta
     diária.
+- **Modo miniatura:** um comando (atalho e item no menu) encolhe o Pipo para uma miniatura bem
+  pequena no canto inferior direito, acima do relógio do Windows; o mesmo comando devolve ao topo.
+  Para quando o topo da tela é necessário (abas do Chrome e outros apps).
 
 ---
 
