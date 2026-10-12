@@ -497,11 +497,21 @@ ausências.
   - **Horas em segundo plano:** o registro de tempo continua, mas sai da tela principal e da meta
     diária.
 - **Decisões locais com Laya** (modelo de decisão aberto, ~345 MB, roda na máquina):
-  - **Sempre com ajuste fino:** nunca usar o modelo cru. Cada uso (classificar janela, passo
-    "decidir", navegação) tem seu ajuste fino e calibração antes de valer.
+  - **SEMPRE com ajuste fino, um para cada atividade:** nunca usar o modelo cru nem reaproveitar o
+    ajuste de uma atividade em outra. Cada uso (classificar janela, passo "decidir", navegação em
+    cada tipo de site, etc.) tem o seu próprio ajuste fino e a sua calibração antes de valer.
   - **Pipos na web:** o Laya escolhe a próxima ação na página (clicar, digitar, selecionar, parar)
     para a navegação ficar rápida. Exige um passo de navegador, que os planos ainda não têm.
   - **A confirmar antes:** se o ajuste fino cabe na GPU de 8 GB e o acerto em português.
+- **Site vira API:** o Pipo navega no site uma vez, grava o tráfego de rede e gera um passo `http`
+  com as chamadas internas do site; as execuções seguintes não abrem o navegador (referência:
+  `reverse-api-engineer`). Cookies e tokens capturados vão para o cofre. Quando o site muda e o
+  passo quebra, o Pipo refaz a captura. Respeitar os termos de uso de cada site.
+- **REA (engenharia reversa com agentes):** servidor MCP que analisa apps, sites e binários sem o
+  código-fonte (`morluto/rea`, MIT). Uso a definir: no desenvolvimento do Pipo (estudar como outro
+  app faz algo) e/ou como servidor MCP disponível para os Pipos.
+- **Mascote em Rive:** refazer o mascote como máquina de estados no Rive, reagindo aos dados do app
+  (humor, foco, Pipo trabalhando, miniatura), no lugar do SVG animado atual.
 - **Modo miniatura:** um comando (atalho e item no menu) encolhe o Pipo para uma miniatura bem
   pequena no canto inferior direito, acima do relógio do Windows; o mesmo comando devolve ao topo.
   Para quando o topo da tela é necessário (abas do Chrome e outros apps).
