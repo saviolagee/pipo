@@ -484,6 +484,16 @@ ausências.
   perguntas, só as essenciais (o que faz, de onde vêm os dados, para onde vai o resultado). O resto do
   roteiro (`builder-prompt.ts`: limites, avisos, permissões, folgas, dependências) vira padrão
   sensato, mostrado na proposta do plano para o usuário ajustar se quiser.
+- **Trilha de objetivos (nova lógica de produtividade):** o centro deixa de ser horas vs meta e passa
+  a ser o plano e o avanço nele. Substitui "Projetos com marcos".
+  - **Criar plano:** o usuário diz o resultado que quer e a data desejada; o branco desmembra em
+    etapas e em ações por dia, e o usuário ajusta conversando.
+  - **Trilha:** as ações aparecem como um caminho (estilo Duolingo), uma por dia, com a de hoje em
+    destaque; concluir uma libera a próxima.
+  - **Data que escorrega:** se uma ação atrasa, as seguintes são empurradas e a data final do
+    objetivo é recalculada. Sem punição nem sequência quebrada.
+  - **Horas em segundo plano:** o registro de tempo continua, mas sai da tela principal e da meta
+    diária.
 
 ---
 
