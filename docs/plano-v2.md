@@ -496,6 +496,12 @@ ausências.
     objetivo é recalculada. Sem punição nem sequência quebrada.
   - **Horas em segundo plano:** o registro de tempo continua, mas sai da tela principal e da meta
     diária.
+- **Decisões locais com Laya** (modelo de decisão aberto, ~345 MB, roda na máquina):
+  - **Sempre com ajuste fino:** nunca usar o modelo cru. Cada uso (classificar janela, passo
+    "decidir", navegação) tem seu ajuste fino e calibração antes de valer.
+  - **Pipos na web:** o Laya escolhe a próxima ação na página (clicar, digitar, selecionar, parar)
+    para a navegação ficar rápida. Exige um passo de navegador, que os planos ainda não têm.
+  - **A confirmar antes:** se o ajuste fino cabe na GPU de 8 GB e o acerto em português.
 - **Modo miniatura:** um comando (atalho e item no menu) encolhe o Pipo para uma miniatura bem
   pequena no canto inferior direito, acima do relógio do Windows; o mesmo comando devolve ao topo.
   Para quando o topo da tela é necessário (abas do Chrome e outros apps).
