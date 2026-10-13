@@ -20,7 +20,8 @@ const { EMPTY_PLAYBOOK } = await import('../src/shared/pipos');
 type Deps = import('../src/main/pipos/runner').RunnerDeps;
 
 function hire(name: string, script: string): ReturnType<typeof repo.createPipo> {
-  const p = repo.createPipo({ name, color: 'orange', personality: { mission: '', tone: '', never: [] } });
+  // Roda em folgas: o teste usa a data de hoje e não pode quebrar num feriado.
+  const p = repo.createPipo({ name, color: 'orange', personality: { mission: '', tone: '', never: [] }, runOnDaysOff: true });
   writeFileSync(join(repo.pipoDir(p.slug), 'scripts', 's.js'), script);
   return p;
 }
