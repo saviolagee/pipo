@@ -508,8 +508,15 @@ ausências.
   `reverse-api-engineer`). Cookies e tokens capturados vão para o cofre. Quando o site muda e o
   passo quebra, o Pipo refaz a captura. Respeitar os termos de uso de cada site.
 - **REA (engenharia reversa com agentes):** servidor MCP que analisa apps, sites e binários sem o
-  código-fonte (`morluto/rea`, MIT). Uso a definir: no desenvolvimento do Pipo (estudar como outro
-  app faz algo) e/ou como servidor MCP disponível para os Pipos.
+  código-fonte (`morluto/rea`, MIT). Fica disponível para os Pipos como servidor MCP.
+- **Navegador para os Pipos e para o Pipo branco:** hoje nenhum deles usa navegador (os planos só
+  têm `http` e `mcp`, e o chat do branco tem busca e leitura de páginas desligadas).
+  - **Pipos coloridos:** novo passo de navegador nos planos (abrir página, clicar, preencher, ler).
+  - **Pipo branco, no chat:** também pode usar o navegador quando o usuário pede (pesquisar, abrir
+    e ler páginas, agir em sites), com confirmação antes de qualquer ação que envie algo.
+- **Dashboard personalizado por Pipo:** cada Pipo tem o seu painel, montado a partir do que ele faz
+  e do que resultou (ex.: um Pipo de vídeo mostra quantos vídeos fez). Os cartões vêm das métricas
+  do plano dele e são propostos na criação; o usuário ajusta.
 - **Mascote em Rive:** refazer o mascote como máquina de estados no Rive, reagindo aos dados do app
   (humor, foco, Pipo trabalhando, miniatura), no lugar do SVG animado atual.
 - **Modo miniatura:** um comando (atalho e item no menu) encolhe o Pipo para uma miniatura bem
