@@ -102,6 +102,29 @@ Clique em **Conversar** no Pipo. Ele responde com a personalidade dele, consulta
 execuções, roda o plano quando você pede e **aprende regras** ("nunca mande e-mail no fim de semana").
 As regras aparecem no detalhe do Pipo, onde dá para editar, apagar ou adicionar à mão.
 
+## Painel de cada Pipo
+
+Cada Pipo tem um painel próprio na janela de dashboards, montado com o que **ele** faz. Abra pelo
+botão **Painel** no detalhe do Pipo, ou em Dashboards → Equipe → **Abrir painel**.
+
+- **Resultados:** as métricas do plano em números grandes, comparadas com o período anterior. A
+  métrica marcada com `"main": true` no plano é o número em destaque (um Pipo de vídeo mostra
+  "vídeos feitos"). Sem `main`, vale o fim do funil ou a primeira métrica.
+- **Agora e custo:** próxima execução, pendências (confirmações esperando você e entregas na fila),
+  tempo economizado e tokens gastos no período, por execução e no mês. Os tokens são os dos passos
+  `agent`, ensaios incluídos.
+- **Por dia, funil e comparação:** a métrica em destaque por dia, o funil (métricas com `stage`) e o
+  período atual contra o anterior. Com o período em andamento, a comparação usa o mesmo trecho do
+  anterior (até quarta contra até quarta).
+- **Falhas e motivos:** quantas execuções falharam, em que passo e por quê. O mesmo motivo é agrupado.
+- **O que ele produziu:** arquivos e links que os passos devolveram. Para aparecerem, o passo precisa
+  devolver no JSON o caminho completo do arquivo ou a URL; o que o script grava em `PIPO_RUN_DIR`
+  também entra. Um clique abre vídeo, imagem, áudio e documento; outros tipos são mostrados na pasta.
+- **Execuções:** quando rodou, quanto demorou e o que saiu. Um clique mostra a execução no notch.
+
+Em **Personalizar** você escolhe o número em destaque, a ordem dos cartões e o que fica oculto. A
+escolha fica guardada por Pipo nesta máquina (não vai junto no `.pipo`).
+
 ## Compartilhar
 
 - **Salvar como modelo:** guarda o Pipo para criar outros parecidos (`/criarpipo` → "a partir de um

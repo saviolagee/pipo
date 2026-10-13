@@ -2,10 +2,11 @@
 // exportação CSV/PDF, "pergunte ao dashboard", relatório semanal e ferramenta para o chat.
 import { writeFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { BrowserWindow, dialog } from 'electron';
+import { BrowserWindow, dialog, shell } from 'electron';
 import type { DashData } from '@shared/dashboard';
 import { fmtHM } from '@shared/format';
 import { runRaw } from '../agent/service';
+import { emit } from '../bus';
 import { getKV, setKV } from '../db/repos/settings';
 import { balanceTransactions, stripeKey } from '../integrations/stripe';
 import { interruptions } from '../interruptions/manager';
@@ -14,7 +15,11 @@ import { registerTools } from '../mcp/tools';
 import { every } from '../scheduler';
 import { getProfile } from '../db/repos/profile';
 import { hmToMin, minutesOfDay } from '../time';
+import { getPipo, getRun, pipoDir, runSteps } from '../pipos/repo';
+import { nextRunAt, scheduleLabel } from '../pipos/triggers';
 import { clientEcon, dashboardData, dashHooks, rangeFor } from './data';
+import { pipoDashboard, pipoDashHooks, setPipoConfig } from './pipo';
+import { collectOutputs, opensDirectly } from './pipo-outputs';
 
 let win: BrowserWindow | null = null;
 
@@ -161,6 +166,23 @@ export function registerDashboard(): void {
       clearTimeout(timer);
     }
   });
+
+  pipoDashHooks.next = (pipoId) => ({ at: nextRunAt(pipoId), label: scheduleLabel(pipoId) });
+  handle('dash:pipo', (pipoId, range) => pipoDashboard(pipoId, range.kind === 'custom' ? range : rangeFor(range.kind, range.from ? new Date(`${range.from}T12:00:00`) : new Date())));
+  handle('dash:setPipoConfig', (pipoId, config) => setPipoConfig(pipoId, config));
+  handle('dash:openPipoOutput', async (pipoId, runId, target) => {
+    const p = getPipo(pipoId);
+    const run = getRun(runId);
+    if (!p || !run || run.pipoId !== p.id) return false;
+    // Só abre o que a própria execução produziu: o caminho é conferido de novo aqui.
+    const item = collectOutputs(pipoDir(p.slug), runId, run.startedAt, runSteps(runId).map((s) => ({ key: s.key, title: s.title }))).items.find((x) => x.target === target);
+    if (!item) return false;
+    if (item.kind === 'link') await shell.openExternal(item.target);
+    else if (opensDirectly(item.target)) return (await shell.openPath(item.target)) === '';
+    else shell.showItemInFolder(item.target);
+    return true;
+  });
+  handle('dash:openPipoRun', (pipoId, runId) => emit('ui:openPipoRun', { pipoId, runId }));
 
   registerTools([
     {

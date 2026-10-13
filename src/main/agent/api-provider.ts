@@ -47,6 +47,7 @@ export class AnthropicApiProvider implements AgentProvider {
     ] as BetaToolUnion[];
     const ctx = this.ctxFor(opts.mcpContext);
     let finalText = '';
+    const usage = { input: 0, output: 0 };
     const model = opts.model === 'default' ? API_MODEL : API_MODEL_IDS[opts.model];
     // O Haiku não aceita effort.
     const effort = opts.model === 'haiku' ? undefined : { effort: opts.effort };
@@ -77,6 +78,8 @@ export class AnthropicApiProvider implements AgentProvider {
           }
         }
         const msg = await stream.finalMessage();
+        usage.input += (msg.usage.input_tokens ?? 0) + (msg.usage.cache_creation_input_tokens ?? 0) + (msg.usage.cache_read_input_tokens ?? 0);
+        usage.output += msg.usage.output_tokens ?? 0;
         // Conteúdo completo de volta no histórico (blocos de thinking incluídos, sem edição).
         history.push({ role: 'assistant', content: msg.content });
         if (msg.stop_reason === 'refusal') {
@@ -103,7 +106,7 @@ export class AnthropicApiProvider implements AgentProvider {
         history.push({ role: 'user', content: results });
       }
       sessions.set(sessionId, history);
-      yield { type: 'done', text: finalText, sessionId };
+      yield { type: 'done', text: finalText, sessionId, usage };
     } catch (e) {
       if (e instanceof Anthropic.AuthenticationError) yield { type: 'error', code: 'not_logged', message: 'Chave de API inválida.' };
       else if (e instanceof Anthropic.RateLimitError) yield { type: 'error', code: 'rate_limited', message: 'Limite de uso da API atingido.' };

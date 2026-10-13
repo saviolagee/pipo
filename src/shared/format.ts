@@ -35,6 +35,23 @@ export function fmtDue(iso: string, now = new Date()): string {
   return `${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}${time}`;
 }
 
+/** Contagens: "1.284"; de 10 mil em diante, compacto ("12,9 mil", "4,2 mi"). */
+export function fmtCount(n: number): string {
+  try {
+    return new Intl.NumberFormat('pt-BR', Math.abs(n) >= 10_000 ? { notation: 'compact', maximumFractionDigits: 1 } : { maximumFractionDigits: 1 }).format(n);
+  } catch {
+    return String(Math.round(n));
+  }
+}
+
+/** Duração de uma execução: "42s", "6min", "3min 05s", "1h20". */
+export function fmtDur(sec: number): string {
+  const s = Math.max(0, Math.round(sec));
+  if (s < 60) return `${s}s`;
+  if (s < 3600) return s % 60 ? `${Math.floor(s / 60)}min ${String(s % 60).padStart(2, '0')}s` : `${s / 60}min`;
+  return fmtHM(s / 60);
+}
+
 /** "R$ 1.240,50"; compacto: "R$ 1,2 mil", "R$ 35 mil". */
 export function fmtMoney(value: number, currency = 'BRL', compact = false): string {
   const abs = Math.abs(value);

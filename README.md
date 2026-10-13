@@ -14,7 +14,8 @@ logado com a sua assinatura** — sem chave de API.
   evento ou depois de outro Pipo. Na pill, os mini-Pipos acendem enquanto trabalham. Veja
   [docs/pipos.md](docs/pipos.md).
 - **Dashboards:** horas vs meta, foco, distração, melhores horários, clientes (valor/hora), métricas
-  dos Pipos e dinheiro (Stripe), com exportação CSV/PDF e "pergunte ao dashboard".
+  dos Pipos e dinheiro (Stripe), com exportação CSV/PDF e "pergunte ao dashboard". Cada Pipo tem um
+  painel próprio com o que ele produziu, falhas, custo em tokens e comparação entre períodos.
 - **Dias não trabalhados:** folga, férias, doença e feriados (nacionais e estaduais) não quebram a
   sequência nem contam contra a meta.
 - **Tempo de verdade:** só conta com movimento de mouse/teclado (vídeo parado na tela não conta;

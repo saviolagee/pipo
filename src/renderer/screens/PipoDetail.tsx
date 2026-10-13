@@ -204,6 +204,10 @@ export function PipoDetail({ p, onBack }: { p: PipoSummary; onBack: () => void }
           <p className="truncate text-[12px] text-fg-2">{p.live.stepLabel ?? p.personality.mission}</p>
         </div>
         <span className="text-[11.5px] text-fg-2">{msg}</span>
+        {/* O painel do Pipo abre na janela de dashboards (o notch é pequeno para gráficos). */}
+        <Button size="sm" variant="tertiary" disabled={!p.activeVersion} onClick={() => void api.invoke('dash:open', `pipo:${p.id}`)}>
+          {tt.dashboard}
+        </Button>
       </div>
 
       <div className="flex flex-wrap items-center gap-[6px] pb-[10px]">

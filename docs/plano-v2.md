@@ -516,7 +516,17 @@ ausências.
     e ler páginas, agir em sites), com confirmação antes de qualquer ação que envie algo.
 - **Dashboard personalizado por Pipo:** cada Pipo tem o seu painel, montado a partir do que ele faz
   e do que resultou (ex.: um Pipo de vídeo mostra quantos vídeos fez). Os cartões vêm das métricas
-  do plano dele e são propostos na criação; o usuário ajusta.
+  do plano dele e são propostos na criação; o usuário ajusta. **Implementado** (ver
+  [pipos.md](pipos.md#painel-de-cada-pipo)). O painel traz:
+  - **Resultados:** as métricas do Pipo em números grandes, com a principal em destaque.
+  - **Galeria do que ele produziu:** arquivos e links de cada execução, com atalho para abrir.
+  - **Linha do tempo das execuções:** quando rodou, quanto demorou e o que saiu.
+  - **Falhas e motivos:** quantas execuções falharam, em que passo e por quê.
+  - **Custo:** tokens gastos por execução e no mês.
+  - **Tempo economizado:** estimativa de quanto levaria à mão.
+  - **Pendências:** o que está esperando aprovação.
+  - **Próxima execução:** quando ele roda de novo.
+  - **Comparação:** o período atual contra o anterior.
 - **Mascote em Rive:** refazer o mascote como máquina de estados no Rive, reagindo aos dados do app
   (humor, foco, Pipo trabalhando, miniatura), no lugar do SVG animado atual.
 - **Modo miniatura:** um comando (atalho e item no menu) encolhe o Pipo para uma miniatura bem

@@ -237,7 +237,7 @@ const TOOLS: ToolDef[] = [
       type: 'object',
       properties: {
         steps: { type: 'array', items: { type: 'object' }, description: 'Lista de passos (formato no prompt de sistema).' },
-        metrics: { type: 'array', items: { type: 'object', properties: { key: { type: 'string' }, label: { type: 'string' }, from: { type: 'string' }, stage: { type: 'number' } } } },
+        metrics: { type: 'array', items: { type: 'object', properties: { key: { type: 'string' }, label: { type: 'string' }, from: { type: 'string' }, stage: { type: 'number' }, main: { type: 'boolean', description: 'Resultado principal: número em destaque no painel do Pipo.' } } } },
         max_run_minutes: { type: 'number' },
         window: { type: 'object', properties: { start: { type: 'string' }, end: { type: 'string' } } },
         saved_minutes_per_run: { type: 'number' },

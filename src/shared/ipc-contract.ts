@@ -1,5 +1,5 @@
 // Contrato de IPC tipado. Main implementa `InvokeHandlers`; o renderer chama via `window.pipo.invoke`.
-import type { DashData, DashRange } from './dashboard';
+import type { DashData, DashRange, PipoDash, PipoDashConfig } from './dashboard';
 import type { HolidayPrefs } from './holidays';
 import type { DraftInfo, Pipo, PipoLive, PipoMemoryRule, PipoModel, PipoPlaybook, PipoRun, PipoRunStep, PipoSummary, PipoTrigger, PipoVersion } from './pipos';
 import type {
@@ -138,6 +138,12 @@ export interface InvokeHandlers {
   'dash:exportCsv': (name: string, csv: string) => string | null;
   'dash:exportPdf': (name: string) => string | null;
   'dash:ask': (question: string, range: DashRange) => string;
+  'dash:pipo': (pipoId: number, range: DashRange) => PipoDash | null;
+  'dash:setPipoConfig': (pipoId: number, config: PipoDashConfig) => PipoDashConfig;
+  /** Abre um arquivo ou link que uma execução produziu (só o que está na galeria dela). */
+  'dash:openPipoOutput': (pipoId: number, runId: number, target: string) => boolean;
+  /** Mostra uma execução no notch (aba Equipe). */
+  'dash:openPipoRun': (pipoId: number, runId: number) => void;
   'stripe:connect': (key: string) => string;
   'stripe:income': () => StripeIncome | null;
   'days:list': (start: string, end: string) => DayStatus[];

@@ -19,7 +19,7 @@ const STEP_DOC = `Formato dos passos (JSON). Todo passo tem "kind", "key" (minú
 - notify: {"kind":"notify","title":"...","body":"..."}.
 - handoff: {"kind":"handoff","to":"slug de outro Pipo","payload":"{{passos.x.saida}}","run":true}.
 Templates: {{passos.<key>.saida}} (saída de um passo anterior), {{entrada}} (o que outro Pipo entregou; quando roda "depois de" outro Pipo, {{entrada.saidas.<passo>}} traz a saída de cada passo dele, mais {{entrada.resumo}} e {{entrada.metricas}}), {{pipo.nome}}, {{agora.data}}, {{segredo.NOME}} (só em script/http/mcp). Filtros: | length, | json, | first, | last, | join:, | default:.
-Métricas (o que o Pipo conta a cada execução, para os dashboards): [{"key":"enviados","label":"e-mails enviados","from":"{{passos.enviar.saida.enviados}}","stage":2}]. Métricas com "stage" formam um funil.`;
+Métricas (o que o Pipo conta a cada execução, para os dashboards): [{"key":"enviados","label":"e-mails enviados","from":"{{passos.enviar.saida.enviados}}","stage":2}]. Métricas com "stage" formam um funil. Cada Pipo tem um painel próprio montado com essas métricas: marque com "main": true a que é o resultado principal dele (ex.: {"key":"videos","label":"vídeos feitos","from":"{{passos.render.saida.videos | length}}","main":true}); ela vira o número em destaque. Para os arquivos e links aparecerem no painel, faça os passos devolverem no JSON o caminho completo de cada arquivo gerado (ex.: {"video":"C:\\\\Users\\\\...\\\\saida.mp4"}) ou a URL.`;
 
 const ROTEIRO = `Roteiro (vale para qualquer Pipo; pergunte UMA coisa por vez, aceite respostas soltas e guarde cada uma com save_interview):
 1. gatilho: quando ele roda (agenda, depois de outro Pipo, quando pedir).

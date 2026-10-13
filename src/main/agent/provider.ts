@@ -1,4 +1,5 @@
 // Abstração de provedor do agente (seção 3.3).
+import type { TokenUsage } from '@shared/pipos';
 import type { AgentEffort, AgentModel } from '@shared/types';
 
 export type ProviderEvent =
@@ -6,7 +7,8 @@ export type ProviderEvent =
   | { type: 'tool'; name: string }
   /** Modelo que está respondendo (do `system/init` e de cada mensagem). */
   | { type: 'model'; model: string }
-  | { type: 'done'; text: string; sessionId: string | null }
+  /** `usage`: tokens da chamada inteira, quando o provedor informa. */
+  | { type: 'done'; text: string; sessionId: string | null; usage?: TokenUsage }
   | { type: 'error'; code: 'not_installed' | 'not_logged' | 'rate_limited' | 'failed'; message: string };
 
 export interface SendOptions {

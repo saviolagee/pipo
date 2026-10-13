@@ -150,6 +150,8 @@ export function App(): React.JSX.Element {
       api.on('ui:openPipoRun', ({ pipoId, runId }) => {
         usePipos.getState().open(pipoId, runId);
         useUi.getState().setTab('team');
+        // Também chega da janela de dashboards, com o notch recolhido.
+        useUi.getState().setExpanded(true);
       }),
       api.on('stripe:income', (income) => useData.getState().set({ income })),
       api.on('stripe:payment', (p) => {

@@ -1,7 +1,7 @@
 // Janela de dashboards (Fase 22): visão geral (hoje/semana/mês/ano), ano, ritmo, clientes, equipe e
 // dinheiro; tabela em cada gráfico, CSV/PDF e "pergunte ao dashboard".
 import { useEffect, useMemo, useState } from 'react';
-import type { DashData, DashRange } from '@shared/dashboard';
+import type { DashData, DashRange, PipoDash } from '@shared/dashboard';
 import { fmtHM, fmtMoney } from '@shared/format';
 import { PIPO_COLORS, type PipoColor } from '@shared/pipos';
 import type { ActivityBlock, Client } from '@shared/types';
@@ -9,6 +9,9 @@ import { t } from '../i18n/pt-BR';
 import { api } from '../lib/api';
 import { Mascot } from '../mascot/Mascot';
 import { BarChart, DataTable, Funnel, HBars, INK, LegendSwatch, LineChart, RhythmHeatmap, SERIES, toCsv, YearHeatmap } from './charts';
+import { timelineTable } from './PipoCards';
+import { PipoDashboard } from './PipoDashboard';
+import { Card, Kpi } from './ui';
 
 const d = t.dash;
 type Tab = keyof typeof d.tabs;
@@ -38,45 +41,6 @@ function periodLabelRaw(r: DashRange): string {
   if (r.kind === 'month') return a.toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' });
   if (r.kind === 'year') return String(a.getFullYear());
   return `${ddmm(r.from)} – ${ddmm(r.to)}`;
-}
-
-function Card({ title, children, table, right, wide = false }: { title: string; children: React.ReactNode; table?: { head: string[]; rows: Array<Array<string | number>> }; right?: React.ReactNode; wide?: boolean }): React.JSX.Element {
-  const [asTable, setAsTable] = useState(false);
-  return (
-    <section className={`rounded-[14px] p-[16px] ${wide ? 'col-span-2' : ''}`} style={{ background: '#121214', border: '1px solid rgba(255,255,255,0.06)' }}>
-      <div className="mb-[12px] flex items-center gap-[10px]">
-        <h2 className="text-[13px] font-semibold" style={{ color: INK.primary }}>
-          {title}
-        </h2>
-        <span className="flex-1" />
-        {right}
-        {table && (
-          <button type="button" onClick={() => setAsTable((v) => !v)} className="rounded-full px-[8px] py-[2px] text-[11px] hover:bg-white/[0.06]" style={{ color: INK.secondary }}>
-            {asTable ? d.chart : d.table}
-          </button>
-        )}
-      </div>
-      {asTable && table ? <DataTable head={table.head} rows={table.rows} /> : children}
-    </section>
-  );
-}
-
-function Kpi({ label, value, sub, accent }: { label: string; value: string; sub?: string; accent?: string }): React.JSX.Element {
-  return (
-    <div className="rounded-[14px] px-[16px] py-[12px]" style={{ background: '#121214', border: '1px solid rgba(255,255,255,0.06)' }}>
-      <div className="text-[11.5px]" style={{ color: INK.secondary }}>
-        {label}
-      </div>
-      <div className="mono mt-[2px] text-[24px] font-semibold leading-tight" style={{ color: accent ?? INK.primary }}>
-        {value}
-      </div>
-      {sub && (
-        <div className="mt-[2px] text-[11px]" style={{ color: INK.muted }}>
-          {sub}
-        </div>
-      )}
-    </div>
-  );
 }
 
 const CAT_COLOR: Record<string, string> = { work: SERIES[0], client: SERIES[0], meeting: SERIES[6], distraction: SERIES[1], other: '#52525B' };
@@ -337,7 +301,7 @@ function ClientsView({ data, onSaved }: { data: DashData; onSaved: () => void })
   );
 }
 
-function TeamView({ data }: { data: DashData }): React.JSX.Element {
+function TeamView({ data, onOpen }: { data: DashData; onOpen: (pipoId: number) => void }): React.JSX.Element {
   if (!data.team.length) return <p className="text-[13px]" style={{ color: INK.muted }}>{d.noTeam}</p>;
   return (
     <div className="grid grid-cols-2 gap-[14px]">
@@ -348,7 +312,14 @@ function TeamView({ data }: { data: DashData }): React.JSX.Element {
           <Card
             key={p.pipoId}
             title={p.name}
-            right={<Mascot state="idle" size={26} color={color} glow={false} still />}
+            right={
+              <>
+                <button type="button" onClick={() => onOpen(p.pipoId)} className="rounded-full px-[10px] py-[2px] text-[11.5px]" style={{ background: 'rgba(255,255,255,0.08)', color: INK.primary }}>
+                  {d.pipo.open}
+                </button>
+                <Mascot state="idle" size={26} color={color} glow={false} still />
+              </>
+            }
             table={{ head: ['Versão', 'Execuções', ...p.metrics.map((m) => m.label)], rows: p.versions.map((v) => [`v${v.version}`, v.runs, ...p.metrics.map((m) => v.metrics[m.key] ?? 0)]) }}
           >
             <div className="mb-[12px] grid grid-cols-4 gap-[8px] text-[11.5px]" style={{ color: INK.secondary }}>
@@ -419,9 +390,23 @@ function csvFor(tab: Tab, data: DashData): string {
   return toCsv(['dia', 'minutos', 'meta', 'extra', 'foco', 'distracao', 'reunioes', 'tarefas_feitas', 'tarefas_criadas', 'humor', 'status'], data.days.map((x) => [x.date, x.workedMin, x.goalMin, x.extraMin, x.focusMin, x.distractedMin, x.meetingMin, x.tasksDone, x.tasksCreated, x.mood, x.status]));
 }
 
+/** A aba pedida de fora pode ser o painel de um Pipo: "pipo:<id>". */
+function parseTab(raw: string | null): { tab: Tab; pipoId: number | null } {
+  const m = /^pipo:(\d+)$/.exec(raw ?? '');
+  if (m) return { tab: 'team', pipoId: Number(m[1]) };
+  return { tab: raw && raw in d.tabs ? (raw as Tab) : 'overview', pipoId: null };
+}
+
 export function DashboardApp(): React.JSX.Element {
-  const params = new URLSearchParams(location.search);
-  const [tab, setTab] = useState<Tab>((params.get('tab') as Tab) ?? 'overview');
+  const initial = parseTab(new URLSearchParams(location.search).get('tab'));
+  const [tab, setTabRaw] = useState<Tab>(initial.tab);
+  // Painel de um Pipo, aberto por cima da aba Equipe.
+  const [pipoId, setPipoId] = useState<number | null>(initial.pipoId);
+  const [pipoData, setPipoData] = useState<PipoDash | null>(null);
+  const setTab = (x: Tab): void => {
+    setTabRaw(x);
+    setPipoId(null);
+  };
   const [period, setPeriod] = useState<Period>('week');
   const [ref, setRef] = useState(new Date());
   const [data, setData] = useState<DashData | null>(null);
@@ -447,7 +432,11 @@ export function DashboardApp(): React.JSX.Element {
   }, [range]);
   useEffect(() => {
     void api.invoke('clients:list').then(setClients);
-    const off = api.on('dash:tab', (x) => setTab(x as Tab));
+    const off = api.on('dash:tab', (x) => {
+      const next = parseTab(x);
+      setTabRaw(next.tab);
+      setPipoId(next.pipoId);
+    });
     const id = setInterval(() => void load(), 60_000);
     return () => {
       off();
@@ -474,6 +463,8 @@ export function DashboardApp(): React.JSX.Element {
   };
 
   const tabs = (Object.keys(d.tabs) as Tab[]).filter((x) => x !== 'money' || !!data?.money || tab === 'money');
+  const onPipo = tab === 'team' && pipoId !== null;
+  const exportName = onPipo && pipoData ? pipoData.pipo.slug : tab;
   return (
     <div className="dash-root min-h-screen w-full" style={{ background: '#0B0B0D', color: INK.primary }}>
       <header className="sticky top-0 z-10 flex flex-wrap items-center gap-[12px] px-[24px] py-[14px]" style={{ background: 'rgba(11,11,13,0.92)', backdropFilter: 'blur(8px)', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
@@ -501,8 +492,8 @@ export function DashboardApp(): React.JSX.Element {
           <span className="min-w-[150px] text-center" style={{ color: INK.primary }}>{data ? periodLabel(data.range) : ''}</span>
           <button type="button" aria-label={d.next} onClick={() => setRef((r) => shift(effective, r, 1))} className="rounded-full px-[8px] py-[2px] hover:bg-white/[0.06]">›</button>
         </div>
-        <button type="button" onClick={() => data && void api.invoke('dash:exportCsv', `pipo-${tab}-${data.range.from}`, csvFor(tab, data)).then((p) => p && setMsg(d.saved(p)))} className="rounded-full px-[10px] py-[3px] text-[12px] hover:bg-white/[0.06]" style={{ color: INK.secondary }}>{d.csv}</button>
-        <button type="button" onClick={() => data && void api.invoke('dash:exportPdf', `pipo-${tab}-${data.range.from}`).then((p) => p && setMsg(d.saved(p)))} className="rounded-full px-[10px] py-[3px] text-[12px] hover:bg-white/[0.06]" style={{ color: INK.secondary }}>{d.pdf}</button>
+        <button type="button" onClick={() => data && void api.invoke('dash:exportCsv', `pipo-${exportName}-${data.range.from}`, onPipo && pipoData ? toCsv(timelineTable(pipoData).head, timelineTable(pipoData).rows) : csvFor(tab, data)).then((p) => p && setMsg(d.saved(p)))} className="rounded-full px-[10px] py-[3px] text-[12px] hover:bg-white/[0.06]" style={{ color: INK.secondary }}>{d.csv}</button>
+        <button type="button" onClick={() => data && void api.invoke('dash:exportPdf', `pipo-${exportName}-${data.range.from}`).then((p) => p && setMsg(d.saved(p)))} className="rounded-full px-[10px] py-[3px] text-[12px] hover:bg-white/[0.06]" style={{ color: INK.secondary }}>{d.pdf}</button>
       </header>
 
       <div className="px-[24px] pt-[14px]">
@@ -549,7 +540,11 @@ export function DashboardApp(): React.JSX.Element {
         ) : tab === 'clients' ? (
           <ClientsView data={data} onSaved={() => void load()} />
         ) : tab === 'team' ? (
-          <TeamView data={data} />
+          pipoId !== null ? (
+            <PipoDashboard pipoId={pipoId} range={data.range} onBack={() => setPipoId(null)} onData={setPipoData} />
+          ) : (
+            <TeamView data={data} onOpen={setPipoId} />
+          )
         ) : (
           <MoneyView data={data} />
         )}

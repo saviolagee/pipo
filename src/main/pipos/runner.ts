@@ -3,7 +3,7 @@
 // métricas declaradas, pausa após 3 falhas e no máximo 2 execuções ao mesmo tempo (1 por Pipo).
 import { mkdirSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
-import type { AgentStep, Pipo, PipoPlaybook, PipoRun, PipoStep } from '@shared/pipos';
+import type { AgentStep, Pipo, PipoPlaybook, PipoRun, PipoStep, TokenUsage } from '@shared/pipos';
 import { evaluate, render, renderText, SENT_KEY, type TemplateCtx } from '@shared/template';
 import type { AgentEffort, AgentModel } from '@shared/types';
 import { setLive } from './live';
@@ -19,13 +19,14 @@ export interface ConfirmResult {
 }
 
 export interface RunnerDeps {
-  agent: (o: { system: string; prompt: string; model: AgentModel; effort: AgentEffort; readDirs: string[]; signal: AbortSignal }) => Promise<string>;
+  /** `onUsage` recebe os tokens da chamada, quando o provedor informa (custo no painel do Pipo). */
+  agent: (o: { system: string; prompt: string; model: AgentModel; effort: AgentEffort; readDirs: string[]; signal: AbortSignal; onUsage?: (u: TokenUsage) => void }) => Promise<string>;
   confirm: (o: { pipo: Pipo; runId: number; stepKey: string; title: string; message: string; preview: string | null; list: unknown[] | null }) => Promise<ConfirmAnswer | ConfirmResult>;
   notify: (o: { pipo: Pipo; title: string; body: string | null; final: boolean; run: PipoRun | null; trigger: string }) => void | Promise<void>;
   gfetch: <T>(url: string, init?: RequestInit) => Promise<T>;
   fetch: typeof fetch;
   handoff: (o: { from: Pipo; to: string; payload: unknown; run: boolean; runId: number }) => Promise<string>;
-  askPipo: (o: { from: Pipo; slug: string; question: string; signal: AbortSignal }) => Promise<string>;
+  askPipo: (o: { from: Pipo; slug: string; question: string; signal: AbortSignal; onUsage?: (u: TokenUsage) => void }) => Promise<string>;
   update: (runId: number) => void;
 }
 
@@ -171,6 +172,11 @@ export async function execute(req: RunRequest, deps: RunnerDeps, onStart: (runId
   const timeout = setTimeout(() => ac.abort(), Math.max(1, playbook.limits.maxRunMinutes) * 60_000);
   const startedAt = Date.now();
   let approvedInRun = false;
+  const tokens: TokenUsage = { input: 0, output: 0 };
+  const onUsage = (u: TokenUsage): void => {
+    tokens.input += u.input;
+    tokens.output += u.output;
+  };
   let status: PipoRun['status'] = 'done';
   let error: string | null = null;
   const steps = playbook.steps;
@@ -252,7 +258,7 @@ export async function execute(req: RunRequest, deps: RunnerDeps, onStart: (runId
   const runAgent = async (step: AgentStep): Promise<unknown> => {
     let prompt = renderText(step.prompt, ctx);
     if (step.askPipo) {
-      const answer = await deps.askPipo({ from: pipo, slug: step.askPipo, question: prompt, signal: ac.signal });
+      const answer = await deps.askPipo({ from: pipo, slug: step.askPipo, question: prompt, signal: ac.signal, onUsage });
       prompt += `\n\nO Pipo @${step.askPipo} respondeu:\n${answer}`;
     }
     const text = await deps.agent({
@@ -262,6 +268,7 @@ export async function execute(req: RunRequest, deps: RunnerDeps, onStart: (runId
       effort: step.effort ?? pipo.effort,
       readDirs: [runDir],
       signal: ac.signal,
+      onUsage,
     });
     return step.json ? parseAgentJson(text) : text.trim();
   };
@@ -328,7 +335,7 @@ export async function execute(req: RunRequest, deps: RunnerDeps, onStart: (runId
   }
   const minutes = (Date.now() - startedAt) / 60_000;
   const summary = status === 'done' ? summarize(pipo, playbook, metrics, minutes) : `${pipo.name}: ${status === 'cancelled' ? 'cancelado' : 'falhou'} — ${error}`;
-  const finished_ = finishRun(run.id, status, { summary, metrics, error });
+  const finished_ = finishRun(run.id, status, { summary, metrics, error, tokens });
   setLive(pipo.id, status === 'done' ? 'done' : status === 'failed' ? 'error' : 'idle', run.id, null);
   deps.update(run.id);
   void runDone(run.id);

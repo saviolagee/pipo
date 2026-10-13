@@ -22,6 +22,10 @@ describe('ClaudeCodeProvider', () => {
     expect(parseStreamLine(JSON.stringify({ type: 'stream_event', event: { type: 'content_block_delta', delta: { type: 'text_delta', text: 'Olá' } } }))).toEqual([{ type: 'delta', text: 'Olá' }]);
     expect(parseStreamLine(JSON.stringify({ type: 'stream_event', event: { type: 'content_block_start', content_block: { type: 'tool_use', name: 'mcp__pipo__list_tasks' } } }))).toEqual([{ type: 'tool', name: 'mcp__pipo__list_tasks' }]);
     expect(parseStreamLine(JSON.stringify({ type: 'result', subtype: 'success', is_error: false, result: 'ok', session_id: 's1' }))).toEqual([{ type: 'done', text: 'ok', sessionId: 's1' }]);
+    // Tokens da chamada: a entrada soma o que veio do cache e o que foi escrito nele.
+    expect(parseStreamLine(JSON.stringify({ type: 'result', subtype: 'success', is_error: false, result: 'ok', session_id: 's1', usage: { input_tokens: 10, cache_creation_input_tokens: 200, cache_read_input_tokens: 3000, output_tokens: 45 } }))).toEqual([
+      { type: 'done', text: 'ok', sessionId: 's1', usage: { input: 3210, output: 45 } },
+    ]);
     expect(parseStreamLine('lixo')).toEqual([]);
     expect(parseStreamLine(JSON.stringify({ type: 'system', subtype: 'init' }))).toEqual([]);
     expect(parseStreamLine(JSON.stringify({ type: 'system', subtype: 'init', model: 'claude-sonnet-5-5' }))).toEqual([{ type: 'model', model: 'claude-sonnet-5-5' }]);

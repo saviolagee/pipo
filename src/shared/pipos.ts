@@ -171,6 +171,8 @@ export interface MetricDef {
   from: string;
   /** Ordem no funil (1, 2, 3…). Métricas com etapa formam um funil no dashboard. */
   stage?: number;
+  /** Resultado principal do Pipo: vira o número em destaque no painel dele. */
+  main?: boolean;
 }
 
 export interface PipoPlaybook {
@@ -264,6 +266,15 @@ export interface PipoRun {
   /** Execução de outro Pipo que entregou a entrada (handoff), se houver. */
   fromRunId: number | null;
   error: string | null;
+  /** Tokens gastos pelos passos `agent` desta execução. */
+  tokensIn: number;
+  tokensOut: number;
+}
+
+/** Uso de tokens de uma chamada ao modelo. */
+export interface TokenUsage {
+  input: number;
+  output: number;
 }
 
 export interface PipoRunStep {

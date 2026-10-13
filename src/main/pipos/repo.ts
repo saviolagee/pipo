@@ -18,6 +18,7 @@ import {
   type PipoVersion,
   type RunStatus,
   type StepStatus,
+  type TokenUsage,
   type TriggerKind,
 } from '@shared/pipos';
 import type { AgentEffort, AgentModel } from '@shared/types';
@@ -258,6 +259,8 @@ interface RunRow {
   metrics_json: string;
   from_run_id: number | null;
   error: string | null;
+  tokens_in: number;
+  tokens_out: number;
 }
 
 const toRun = (r: RunRow): PipoRun => ({
@@ -273,6 +276,8 @@ const toRun = (r: RunRow): PipoRun => ({
   metrics: JSON.parse(r.metrics_json) as Record<string, number>,
   fromRunId: r.from_run_id,
   error: r.error,
+  tokensIn: r.tokens_in ?? 0,
+  tokensOut: r.tokens_out ?? 0,
 });
 
 export function createRun(pipoId: number, version: number, trigger: string, dryRun: boolean, fromRunId: number | null, steps: PipoStep[]): PipoRun {
@@ -316,14 +321,16 @@ export function lastRun(pipoId: number, includeDry = false): PipoRun | null {
   return r ? toRun(r) : null;
 }
 
-export function finishRun(id: number, status: RunStatus, opts: { summary?: string | null; metrics?: Record<string, number>; error?: string | null } = {}): PipoRun {
+export function finishRun(id: number, status: RunStatus, opts: { summary?: string | null; metrics?: Record<string, number>; error?: string | null; tokens?: TokenUsage } = {}): PipoRun {
   db().run(
-    'UPDATE pipo_runs SET status = ?, finished_at = ?, summary = COALESCE(?, summary), metrics_json = COALESCE(?, metrics_json), error = ? WHERE id = ?',
+    'UPDATE pipo_runs SET status = ?, finished_at = ?, summary = COALESCE(?, summary), metrics_json = COALESCE(?, metrics_json), error = ?, tokens_in = COALESCE(?, tokens_in), tokens_out = COALESCE(?, tokens_out) WHERE id = ?',
     status,
     status === 'running' || status === 'waiting' ? null : new Date().toISOString(),
     opts.summary ?? null,
     opts.metrics ? JSON.stringify(opts.metrics) : null,
     opts.error ?? null,
+    opts.tokens ? Math.round(opts.tokens.input) : null,
+    opts.tokens ? Math.round(opts.tokens.output) : null,
     id,
   );
   return getRun(id) as PipoRun;

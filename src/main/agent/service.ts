@@ -1,4 +1,5 @@
 // Orquestra as conversas com o agente: provedor, prompt de sistema, contexto MCP, streaming e persistência.
+import type { TokenUsage } from '@shared/pipos';
 import type { AgentEffort, AgentEvent, AgentModel, Task } from '@shared/types';
 import { parseCapture } from '@shared/parse-capture';
 import { emit } from '../bus';
@@ -211,7 +212,7 @@ export async function captureToTask(text: string, source: 'manual' | 'voice' | '
  * Chamada direta ao modelo para os passos `agent` dos Pipos coloridos: prompt de sistema próprio,
  * sem as ferramentas do Pipo branco, só leitura das pastas indicadas.
  */
-export async function runRaw(o: { system: string; prompt: string; model: AgentModel; effort: AgentEffort; readDirs: string[]; signal: AbortSignal }): Promise<string> {
+export async function runRaw(o: { system: string; prompt: string; model: AgentModel; effort: AgentEffort; readDirs: string[]; signal: AbortSignal; onUsage?: (u: TokenUsage) => void }): Promise<string> {
   if (!agentAvailable()) throw new Error('O Claude não está disponível. Confira em Configurações → Integrações.');
   let text = '';
   let result: ProviderEvent | null = null;
@@ -222,6 +223,7 @@ export async function runRaw(o: { system: string; prompt: string; model: AgentMo
   }
   if (!result) throw new Error('Sem resposta do Claude.');
   if (result.type === 'error') throw new Error(result.message);
+  if (result.type === 'done' && result.usage) o.onUsage?.(result.usage);
   return (text || (result.type === 'done' ? result.text : '')).trim();
 }
 

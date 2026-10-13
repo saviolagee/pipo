@@ -165,6 +165,7 @@ async function askPipo(o: Parameters<RunnerDeps['askPipo']>[0]): Promise<string>
     effort: target.effort,
     readDirs: [],
     signal: o.signal,
+    onUsage: o.onUsage,
   });
 }
 

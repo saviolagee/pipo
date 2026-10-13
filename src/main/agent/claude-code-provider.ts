@@ -2,6 +2,7 @@
 import { writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { modelArgs } from '@shared/models';
+import type { TokenUsage } from '@shared/pipos';
 import type { AgentEffort, AgentModel } from '@shared/types';
 import { mcpConfigPath } from '../mcp/server';
 import { paths } from '../paths';
@@ -54,6 +55,7 @@ interface StreamLine {
   model?: string;
   is_error?: boolean;
   result?: string;
+  usage?: { input_tokens?: number; output_tokens?: number; cache_creation_input_tokens?: number; cache_read_input_tokens?: number };
   event?: { type: string; delta?: { type: string; text?: string }; content_block?: { type: string; name?: string } };
   message?: { model?: string; content?: Array<{ type: string; name?: string; text?: string }> };
 }
@@ -76,9 +78,14 @@ export function parseStreamLine(line: string): ProviderEvent[] {
   if (j.type === 'assistant' && j.message?.model) return [{ type: 'model', model: j.message.model }];
   if (j.type === 'result') {
     if (j.is_error || (j.subtype && j.subtype !== 'success')) return [classifyError(j.result ?? j.subtype ?? '')];
-    return [{ type: 'done', text: j.result ?? '', sessionId: j.session_id ?? null }];
+    return [{ type: 'done', text: j.result ?? '', sessionId: j.session_id ?? null, ...(j.usage ? { usage: usageOf(j.usage) } : {}) }];
   }
   return [];
+}
+
+/** Entrada conta o que foi lido do cache e o que foi escrito nele: é o total que o modelo processou. */
+function usageOf(u: NonNullable<StreamLine['usage']>): TokenUsage {
+  return { input: (u.input_tokens ?? 0) + (u.cache_creation_input_tokens ?? 0) + (u.cache_read_input_tokens ?? 0), output: u.output_tokens ?? 0 };
 }
 
 export class ClaudeCodeProvider implements AgentProvider {
