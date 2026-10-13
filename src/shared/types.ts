@@ -426,10 +426,18 @@ export interface ActivitySettings {
   idleAfterSec: number;
 }
 
+export interface VoiceSettings {
+  /** Chamar por voz: o microfone fica ouvindo para reconhecer "Pipo" (transcrição local). Desligado por padrão. */
+  wake: boolean;
+  /** Quão fácil ele atende: mais alto atende falas menos nítidas, e abre por engano com mais facilidade. */
+  sensitivity: 'low' | 'normal' | 'high';
+}
+
 export interface Settings {
   money: MoneySettings;
   agent: AgentSettings;
   activity: ActivitySettings;
+  voice: VoiceSettings;
   volume: number;
   muted: boolean;
   paused: boolean;

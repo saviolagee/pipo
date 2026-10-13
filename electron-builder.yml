@@ -42,7 +42,7 @@ mac:
   extendInfo:
     # Sem ícone no Dock: o Pipo vive no notch e na barra de menus.
     LSUIElement: true
-    NSMicrophoneUsageDescription: O Pipo usa o microfone só quando você fala uma captura rápida. O áudio é transcrito no seu computador.
+    NSMicrophoneUsageDescription: O Pipo usa o microfone quando você fala uma captura rápida e, se você ligar o chamado por voz, para reconhecer "Pipo". O áudio é analisado no seu computador.
     NSAppleEventsUsageDescription: O Pipo lê o nome da janela em foco para registrar seu tempo. Nada sai do seu computador.
 dmg:
   artifactName: Pipo-${version}-${arch}.${ext}

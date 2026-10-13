@@ -1,6 +1,6 @@
 import { mkdirSync } from 'node:fs';
 import { join } from 'node:path';
-import { app, ipcMain, safeStorage, session } from 'electron';
+import { app, ipcMain, powerMonitor, safeStorage, session } from 'electron';
 import { APP_ID, APP_NAME } from '@shared/config';
 import { emit } from './bus';
 import { registerBootstrapIpc } from './bootstrap';
@@ -62,6 +62,8 @@ if (!app.requestSingleInstanceLock()) {
 
 function registerCoreIpc(): void {
   handle('window:setInteractive', (on) => setInteractive(on));
+  // Aberto por voz: só pega o teclado com o usuário parado há 1 s (um falso chamado não rouba a digitação).
+  handle('window:show', ({ focusIfIdle }) => showNotch(!focusIfIdle || powerMonitor.getSystemIdleTime() >= 1));
   handle('window:setExpanded', () => undefined);
   handle('app:quit', () => app.quit());
   handle('settings:get', () => getSettings());

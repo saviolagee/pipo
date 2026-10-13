@@ -7,6 +7,7 @@ export const DEFAULT_SETTINGS: Settings = {
   agent: { ...DEFAULT_AGENT },
   money: { showInPill: true, period: 'today', hideValues: false },
   activity: { idleAfterSec: ACTIVITY.idleThresholdSec },
+  voice: { wake: false, sensitivity: 'normal' },
   volume: 0.6,
   muted: false,
   paused: false,
@@ -46,6 +47,7 @@ export function getSettings(): Settings {
     agent: { ...DEFAULT_SETTINGS.agent, ...s.agent },
     money: { ...DEFAULT_SETTINGS.money, ...s.money },
     activity: { ...DEFAULT_SETTINGS.activity, ...s.activity },
+    voice: { ...DEFAULT_SETTINGS.voice, ...s.voice },
   };
 }
 

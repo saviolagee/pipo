@@ -22,6 +22,8 @@ interface UiState {
   capturePurpose: 'meeting' | null;
   weeklyReview: boolean;
   voiceRequested: boolean;
+  /** Chamar por voz ligado e com o microfone aberto. */
+  wakeListening: boolean;
   debugOpen: boolean;
   entranceKey: number;
   confettiKey: number;
@@ -32,6 +34,8 @@ interface UiState {
   setExpanded: (v: boolean) => void;
   setTab: (tab: Tab, expand?: boolean) => void;
   pin: (key: string, on: boolean) => void;
+  /** Prende o notch aberto por um tempo (aberto por voz ou por outra janela, sem o mouse por cima). */
+  hold: (key: string, ms: number) => void;
   pushCard: (c: Card) => void;
   dropCard: (id: string) => void;
   pushToast: (t: Toast) => void;
@@ -42,7 +46,9 @@ interface UiState {
   confetti: (count: number) => void;
 }
 
-export const useUi = create<UiState>((set) => ({
+const holds = new Map<string, ReturnType<typeof setTimeout>>();
+
+export const useUi = create<UiState>((set, get) => ({
   expanded: false,
   tab: 'home',
   pins: {},
@@ -57,6 +63,7 @@ export const useUi = create<UiState>((set) => ({
   capturePurpose: null,
   weeklyReview: false,
   voiceRequested: false,
+  wakeListening: false,
   debugOpen: false,
   entranceKey: 0,
   confettiKey: 0,
@@ -73,6 +80,18 @@ export const useUi = create<UiState>((set) => ({
       else delete pins[key];
       return { pins };
     }),
+  hold: (key, ms) => {
+    const old = holds.get(key);
+    if (old) clearTimeout(old);
+    get().pin(key, true);
+    holds.set(
+      key,
+      setTimeout(() => {
+        holds.delete(key);
+        get().pin(key, false);
+      }, ms),
+    );
+  },
   pushCard: (c) => set((s) => ({ cards: [...s.cards.filter((x) => x.id !== c.id), c] })),
   dropCard: (id) => set((s) => ({ cards: s.cards.filter((c) => c.id !== id) })),
   pushToast: (t) => set((s) => ({ toasts: [...s.toasts.filter((x) => x.id !== t.id), t] })),

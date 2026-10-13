@@ -1,5 +1,5 @@
 import { motion } from 'motion/react';
-import { IconChart, IconChat, IconCheckCircle, IconGear, IconHome, IconPlus, IconSpeaker, IconTeam } from '../components/Icons';
+import { IconChart, IconChat, IconCheckCircle, IconGear, IconHome, IconMic, IconPlus, IconSpeaker, IconTeam } from '../components/Icons';
 import { t } from '../i18n/pt-BR';
 import { api } from '../lib/api';
 import { useData } from '../store/data';
@@ -33,6 +33,7 @@ export function TopBar(): React.JSX.Element {
   const tab = useUi((s) => s.tab);
   const setTab = useUi((s) => s.setTab);
   const settings = useData((s) => s.settings);
+  const wakeListening = useUi((s) => s.wakeListening);
   const muted = settings?.muted ?? false;
 
   const toggleMute = async (): Promise<void> => {
@@ -50,6 +51,12 @@ export function TopBar(): React.JSX.Element {
         ))}
       </div>
       <div className="flex items-center gap-[2px]">
+        {wakeListening && (
+          // Microfone aberto para o chamado por voz: sempre visível, e leva à opção que desliga.
+          <TabButton active={false} label={t.tabs.wakeOn} onClick={() => setTab('settings')}>
+            <IconMic size={14} />
+          </TabButton>
+        )}
         <TabButton active={false} label={t.tabs.dashboards} onClick={() => void api.invoke('dash:open', null)}>
           <IconChart size={15} />
         </TabButton>

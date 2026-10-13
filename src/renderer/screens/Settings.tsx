@@ -476,6 +476,26 @@ function PrivacyBlock({ settings, onPatch, onMsg }: { settings: SettingsT; onPat
           ))}
         </div>
       </Block>
+      <Block title={s.wake}>
+        <div className="flex items-center gap-[10px] text-[12px] text-fg-2">
+          {s.wakeLabel}
+          <YesNo value={settings.voice.wake} onChange={(wake) => void onPatch({ voice: { ...settings.voice, wake } })} />
+        </div>
+        <p className="mt-[6px] text-[11.5px] text-fg-3">{s.wakeHint}</p>
+        {settings.voice.wake && (
+          <>
+            <div className="mt-[8px] flex items-center gap-[6px] text-[12px] text-fg-2">
+              {s.wakeSensitivity}
+              {(['low', 'normal', 'high'] as const).map((level) => (
+                <Chip key={level} on={settings.voice.sensitivity === level} onClick={() => void onPatch({ voice: { ...settings.voice, sensitivity: level } })}>
+                  {s.wakeLevels[level]}
+                </Chip>
+              ))}
+            </div>
+            <p className="mt-[4px] text-[11.5px] text-fg-3">{s.wakeSensitivityHint}</p>
+          </>
+        )}
+      </Block>
       <Block title={s.reactions}>
         <div className="grid grid-cols-2 gap-[8px] text-[12px] text-fg-2">
           {(

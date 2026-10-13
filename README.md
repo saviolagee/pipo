@@ -21,6 +21,8 @@ logado com a sua assinatura** — sem chave de API.
 - **Tempo de verdade:** só conta com movimento de mouse/teclado (vídeo parado na tela não conta;
   reunião conta).
 - **Modelo configurável:** Sonnet por padrão, Opus/Haiku em Configurações e "Pensar mais" por resposta.
+- **Chamar por voz (opcional):** diga "Pipo" para abrir o chat, ou "Pipo" e o nome de um Pipo da equipe
+  para falar com ele. Liga em Configurações → Privacidade → Chamar por voz, com ajuste de sensibilidade.
 
 ## Rodando
 
@@ -96,6 +98,10 @@ Decisões que diferem do plano original (e por quê):
 Tudo fica na máquina. Títulos de janela **não** vão para o Claude — só agregados (app, cliente, duração);
 títulos crus apenas quando você pede explicitamente ("o que eu fiz ontem à tarde?"), com confirmação.
 Configurações → Privacidade: pausar o registro, apps ignorados, apagar histórico.
+
+O chamado por voz vem desligado. Ligado, o microfone fica aberto e só falas curtas são analisadas, por
+um modelo de voz que roda na máquina (Whisper); nenhum áudio é gravado nem enviado. A escuta para em
+reuniões e com o Pipo pausado, e um ícone de microfone no topo do notch mostra quando está ativa.
 
 A referência visual está em [docs/referencia-visual.md](docs/referencia-visual.md). O plano da V2 está em
 [docs/plano-v2.md](docs/plano-v2.md) e o guia dos Pipos coloridos em [docs/pipos.md](docs/pipos.md).

@@ -31,6 +31,7 @@ import type { IngestProgress } from '@shared/types';
 import { configureSfx, play } from './sound/sfx';
 import { useData } from './store/data';
 import { useUi } from './store/ui';
+import { useWake } from './voice/wake';
 
 function useLook(hovered: boolean): { x: number; y: number } | null {
   const [look, setLook] = useState<{ x: number; y: number } | null>(null);
@@ -77,6 +78,7 @@ export function App(): React.JSX.Element {
   const [entering, setEntering] = useState(true);
   const look = useLook(hovered);
   const mascot = useMascot(hovered);
+  useWake();
   const clicks = useRef<number[]>([]);
   // No chat, cards de ação aparecem inline na conversa (seção 8.7).
   // O card do plano de um Pipo só existe no chat; ações e chaves seguras ficam inline lá.
@@ -149,9 +151,9 @@ export function App(): React.JSX.Element {
       api.on('day:today', (today) => useData.getState().set({ today })),
       api.on('ui:openPipoRun', ({ pipoId, runId }) => {
         usePipos.getState().open(pipoId, runId);
+        // Também chega da janela de dashboards, com o notch recolhido e o mouse longe dele.
+        useUi.getState().hold('openRun', 12_000);
         useUi.getState().setTab('team');
-        // Também chega da janela de dashboards, com o notch recolhido.
-        useUi.getState().setExpanded(true);
       }),
       api.on('stripe:income', (income) => useData.getState().set({ income })),
       api.on('stripe:payment', (p) => {

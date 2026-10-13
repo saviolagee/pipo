@@ -16,6 +16,7 @@ import { every } from '../scheduler';
 import { getProfile } from '../db/repos/profile';
 import { hmToMin, minutesOfDay } from '../time';
 import { getPipo, getRun, pipoDir, runSteps } from '../pipos/repo';
+import { showNotch } from '../window';
 import { nextRunAt, scheduleLabel } from '../pipos/triggers';
 import { clientEcon, dashboardData, dashHooks, rangeFor } from './data';
 import { pipoDashboard, pipoDashHooks, setPipoConfig } from './pipo';
@@ -182,7 +183,11 @@ export function registerDashboard(): void {
     else shell.showItemInFolder(item.target);
     return true;
   });
-  handle('dash:openPipoRun', (pipoId, runId) => emit('ui:openPipoRun', { pipoId, runId }));
+  handle('dash:openPipoRun', (pipoId, runId) => {
+    // O clique veio da janela de dashboards: o notch precisa vir à frente para a execução aparecer.
+    showNotch(true);
+    emit('ui:openPipoRun', { pipoId, runId });
+  });
 
   registerTools([
     {

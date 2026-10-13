@@ -1,4 +1,5 @@
 // Grava o microfone e converte para PCM mono 16 kHz (formato que o Whisper espera).
+import type { WakeScores } from '@shared/wake';
 import type { WorkerIn, WorkerOut } from './whisper.worker';
 
 export class Recorder {
@@ -66,6 +67,7 @@ export class Recorder {
 let worker: Worker | null = null;
 let nextId = 1;
 const waiting = new Map<number, { resolve: (t: string) => void; reject: (e: Error) => void }>();
+const waitingWake = new Map<number, { resolve: (r: { scores: WakeScores; ms: number }) => void; reject: (e: Error) => void }>();
 export const whisperListeners: Array<(m: WorkerOut) => void> = [];
 
 function getWorker(): Worker {
@@ -77,9 +79,14 @@ function getWorker(): Worker {
       if (m.type === 'result') {
         waiting.get(m.id)?.resolve(m.text);
         waiting.delete(m.id);
+      } else if (m.type === 'wake') {
+        waitingWake.get(m.id)?.resolve({ scores: m.scores, ms: m.ms });
+        waitingWake.delete(m.id);
       } else if (m.type === 'error' && m.id) {
         waiting.get(m.id)?.reject(new Error(m.message));
         waiting.delete(m.id);
+        waitingWake.get(m.id)?.reject(new Error(m.message));
+        waitingWake.delete(m.id);
       }
     };
   }
@@ -96,5 +103,14 @@ export function transcribe(audio: Float32Array): Promise<string> {
   return new Promise((resolve, reject) => {
     waiting.set(id, { resolve, reject });
     getWorker().postMessage({ type: 'transcribe', id, audio } satisfies WorkerIn, [audio.buffer]);
+  });
+}
+
+/** Chamado por voz: notas de uma fala curta ("começa com Pipo?", "continua com o nome de quem?"). */
+export function scoreWake(audio: Float32Array, names: Array<{ id: number; phrases: string[] }>, floor: number): Promise<{ scores: WakeScores; ms: number }> {
+  const id = nextId++;
+  return new Promise((resolve, reject) => {
+    waitingWake.set(id, { resolve, reject });
+    getWorker().postMessage({ type: 'wake', id, audio, names, floor } satisfies WorkerIn, [audio.buffer]);
   });
 }

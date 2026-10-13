@@ -52,6 +52,8 @@ export interface InvokeHandlers {
   'app:askMic': () => boolean;
 
   'window:setInteractive': (interactive: boolean) => void;
+  /** Traz o notch à frente. `focusIfIdle`: pega o teclado só se ninguém estiver digitando. */
+  'window:show': (opts: { focusIfIdle: boolean }) => void;
   'window:setExpanded': (expanded: boolean) => void;
 
   'profile:get': () => Profile | null;

@@ -12,6 +12,7 @@ export const t = {
     sound: 'Som',
     mute: 'Silenciar',
     unmute: 'Ativar som',
+    wakeOn: 'Ouvindo "Pipo" (microfone ligado). Clique para abrir as configurações.',
   },
   common: {
     back: 'Voltar',
@@ -630,6 +631,13 @@ export const t = {
     deleteRange: { today: 'Hoje', week: 'Últimos 7 dias', all: 'Tudo' },
     deleted: (n: number) => `${n} blocos apagados`,
     exportCsv: 'Exportar CSV (30 dias)',
+    wake: 'Chamar por voz',
+    wakeLabel: 'Dizer "Pipo" abre o chat',
+    wakeHint:
+      'Diga "Pipo" para abrir o chat, ou "Pipo" e o nome de um Pipo da equipe para falar com ele. Com isso ligado o microfone fica ouvindo: o áudio é analisado só neste computador e nunca é gravado nem enviado. A escuta para durante reuniões e com o Pipo pausado.',
+    wakeSensitivity: 'Sensibilidade',
+    wakeLevels: { low: 'Baixa', normal: 'Normal', high: 'Alta' } as Record<'low' | 'normal' | 'high', string>,
+    wakeSensitivityHint: 'Se ele não atende quando você chama, aumente. Se abre sozinho, diminua.',
     reactions: 'Reações ao contexto',
     reactionMeeting: 'Reunião (modo silencioso)',
     reactionEmail: 'E-mail longo',
