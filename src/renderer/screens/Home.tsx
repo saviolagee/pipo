@@ -3,8 +3,9 @@ import { useEffect, useState } from 'react';
 import type { Accessory, MascotState } from '@shared/types';
 import { FocusNextButton } from '../components/FocusNext';
 import { t } from '../i18n/pt-BR';
-import { fmtHM, fmtTime } from '../lib/api';
+import { fmtTime } from '../lib/api';
 import { Mascot, type Badge } from '../mascot/Mascot';
+import { TodayActions } from '../trail/TodayActions';
 import { useData } from '../store/data';
 import { useUi } from '../store/ui';
 import { Stars } from '../notch/Stars';
@@ -72,9 +73,9 @@ export function Home({ state, badge, mood, accessories, look, bump, onMascotClic
     today?.kind === 'holiday' ? t.days.phrase.holiday(today.note ?? '') : today && (today.kind === 'off' || today.kind === 'vacation' || today.kind === 'sick') ? t.days.phrase[today.kind] : null;
   const song = state === 'dancing' && nowPlaying ? `♪ ${nowPlaying.track}${nowPlaying.artist ? ` — ${nowPlaying.artist}` : ''}` : null;
 
+  // As horas saíram daqui: o centro do dia é a ação da trilha. Elas continuam na revisão do dia.
   const parts: string[] = [];
   if (stats) {
-    parts.push(stats.goalMin > 0 ? t.home.hoursOf(fmtHM(stats.workedMin), fmtHM(stats.goalMin)) : t.home.hoursOnly(fmtHM(stats.workedMin)));
     parts.push(t.home.tasksCount(stats.openTodayTasks));
     if (stats.nextMeeting) parts.push(t.home.nextMeeting(fmtTime(stats.nextMeeting.start)));
   }
@@ -96,6 +97,7 @@ export function Home({ state, badge, mood, accessories, look, bump, onMascotClic
           {paused ? t.home.paused : (song ?? dayPhrase ?? phrase)}
         </motion.p>
       </div>
+      <TodayActions />
       <div className="mt-[10px] flex items-center justify-between gap-3 px-[4px]">
         <button type="button" onClick={() => useUi.getState().setTab('review')} className="truncate text-left text-[12px] text-fg-2 hover:text-fg" title={t.home.review}>
           {parts.join(' · ')}

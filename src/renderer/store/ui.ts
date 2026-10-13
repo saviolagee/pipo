@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import type { Accessory, Card, GlowKind, MascotState, Toast } from '@shared/types';
 
-export type Tab = 'home' | 'tasks' | 'chat' | 'team' | 'add' | 'settings' | 'review';
+export type Tab = 'home' | 'trail' | 'tasks' | 'chat' | 'team' | 'add' | 'settings' | 'review';
 
 interface UiState {
   expanded: boolean;
@@ -25,6 +25,8 @@ interface UiState {
   /** Chamar por voz ligado e com o microfone aberto. */
   wakeListening: boolean;
   debugOpen: boolean;
+  /** Texto que outra tela deixa pronto no campo do chat (ex.: pedir ajuste de um plano). */
+  chatDraft: string | null;
   entranceKey: number;
   confettiKey: number;
   confettiCount: number;
@@ -65,6 +67,7 @@ export const useUi = create<UiState>((set, get) => ({
   voiceRequested: false,
   wakeListening: false,
   debugOpen: false,
+  chatDraft: null,
   entranceKey: 0,
   confettiKey: 0,
   confettiCount: 0,

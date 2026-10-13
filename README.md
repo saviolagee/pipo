@@ -9,6 +9,12 @@ logado com a sua assinatura** — sem chave de API.
   tempo por cliente, proteger o foco e reagir ao contexto.
 - **Tem emoção:** o humor do Pipo acompanha seu dia e sua semana; acessórios desbloqueiam com a sequência.
 - **Interrompe pouco:** orçamento diário de interrupções (3/5/8). Fora dele, só muda de expressão.
+- **Trilha de objetivos:** diga o resultado que você quer e até quando; o plano vira uma trilha com
+  uma ação por dia. Dá para ajustar à mão (criar, editar, reordenar, mudar o dia, apagar) ou pedir ao
+  Pipo no chat. Se uma ação fica para depois, as seguintes e a data final andam junto, sem punição;
+  adiantou, a trilha chega mais cedo. O Início mostra a ação do dia; as horas ficam na revisão do dia.
+- **Modo miniatura:** `Ctrl+Shift+M` encolhe o Pipo para uma bolinha no canto inferior direito, para
+  liberar o topo da tela.
 - **Equipe de Pipos coloridos:** crie ajudantes conversando (`/criarpipo`). Cada um tem personalidade,
   cofre de segredos e um plano de execução fixo e versionado, que roda sob demanda, num horário, por
   evento ou depois de outro Pipo. Na pill, os mini-Pipos acendem enquanto trabalham. Veja

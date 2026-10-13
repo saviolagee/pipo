@@ -2,8 +2,10 @@ import { AnimatePresence, motion } from 'motion/react';
 import type { Accessory, MascotState } from '@shared/types';
 import { INTEGRATION_COLORS, MiniFace } from '../components/MiniFace';
 import { useIntegrationFlags } from '../components/IntegrationGrid';
-import { fmtHM, fmtTimer } from '../lib/api';
+import { fmtTimer } from '../lib/api';
 import { fmtMoney } from '@shared/format';
+import { fmtDay, summarize } from '@shared/trail';
+import { useGoals, useToday } from '../store/goals';
 import { focusNext } from '../lib/focus';
 import { t } from '../i18n/pt-BR';
 import { IconPlay } from '../components/Icons';
@@ -26,9 +28,12 @@ interface Props {
 /** Pílula colapsada ~340×32 [Ref 7]. */
 export function Pill({ state, badge, mood, accessories, clipboardCandidate }: Props): React.JSX.Element {
   const focus = useData((s) => s.focus);
-  const stats = useData((s) => s.stats);
   const flags = useIntegrationFlags();
-  const progress = stats && stats.goalMin > 0 ? stats.workedMin / stats.goalMin : 0;
+  // O anel mostra o avanço no plano (ações feitas), não mais as horas do dia.
+  const goal = useGoals((s) => s.list.find((g) => g.status === 'active') ?? null);
+  const today = useToday();
+  const trail = goal ? summarize(goal, today) : null;
+  const progress = trail && trail.total > 0 ? trail.done / trail.total : 0;
   const income = useData((s) => s.income);
   const money = useData((s) => s.settings?.money);
   const moneyFlash = useUi((s) => s.moneyFlash);
@@ -147,7 +152,7 @@ export function Pill({ state, badge, mood, accessories, clipboardCandidate }: Pr
             {moneyText}
           </span>
         )}
-        <GoalRing progress={progress} size={16} title={stats ? `${fmtHM(stats.workedMin)} de ${fmtHM(stats.goalMin)}` : undefined} />
+        <GoalRing progress={progress} size={16} title={goal && trail ? t.trail.ring(goal.title, trail.done, trail.total, trail.endDay ? fmtDay(trail.endDay, today) : null) : t.trail.ringEmpty} />
         <div className="grid grid-cols-2 gap-[2px]">
           <MiniFace color={INTEGRATION_COLORS.google_calendar} size={9} dim={!flags.google_calendar} />
           <MiniFace color={INTEGRATION_COLORS.gmail} size={9} dim={!flags.gmail} />

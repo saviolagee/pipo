@@ -160,6 +160,15 @@ export const IconChart = ({ size = 16, ...p }: P): React.JSX.Element => (
   </svg>
 );
 
+/** Trilha de objetivos: um caminho com paradas até a bandeira. */
+export const IconTrail = ({ size = 16, ...p }: P): React.JSX.Element => (
+  <svg {...base(size, p)}>
+    <path d="M5.5 19.5h7.2a3.4 3.4 0 0 0 0-6.8H9.4a3.2 3.2 0 0 1 0-6.4h5.1" />
+    <circle cx="5.2" cy="19.5" r="2" fill="currentColor" stroke="none" />
+    <path d="M15.5 9.8V3.2l4.6 1.9-4.6 1.9" fill="currentColor" strokeWidth={1.4} />
+  </svg>
+);
+
 /** Modo miniatura: a tela com o Pipo no canto de baixo, à direita (ou de volta ao topo). */
 export const IconMini = ({ size = 16, on = false, ...p }: P & { on?: boolean }): React.JSX.Element => (
   <svg {...base(size, p)}>

@@ -496,6 +496,13 @@ ausências.
     objetivo é recalculada. Sem punição nem sequência quebrada.
   - **Horas em segundo plano:** o registro de tempo continua, mas sai da tela principal e da meta
     diária.
+  - **Implementado:** aba Trilha no notch, migração `006_goals` (`goals`, `goal_actions`), lógica das
+    datas em `src/shared/trail.ts` (testes em `tests/trail.test.ts`) e ferramentas do Pipo branco
+    (`list_goals`, `create_goal`, `update_goal`, `edit_goal_actions`, `replan_goal`). Além do pedido:
+    ação feita antes do dia puxa as seguintes para mais cedo (amanhã sempre tem a próxima); cada
+    plano escolhe os dias da semana em que anda e pula folgas, férias e feriados; fazer a ação do
+    dia conta para a sequência de dias. No Início aparece a ação da vez de cada plano e o anel da
+    pill mostra o avanço no plano; as horas continuam na revisão do dia e nos dashboards.
 - **Decisões locais com Laya** (modelo de decisão aberto, ~345 MB, roda na máquina):
   - **SEMPRE com ajuste fino, um para cada atividade:** nunca usar o modelo cru nem reaproveitar o
     ajuste de uma atividade em outra. Cada uso (classificar janela, passo "decidir", navegação em

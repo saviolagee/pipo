@@ -1,5 +1,5 @@
 import { motion } from 'motion/react';
-import { IconChart, IconChat, IconCheckCircle, IconGear, IconHome, IconMic, IconMini, IconPlus, IconSpeaker, IconTeam } from '../components/Icons';
+import { IconChart, IconChat, IconCheckCircle, IconGear, IconHome, IconMic, IconMini, IconPlus, IconSpeaker, IconTeam, IconTrail } from '../components/Icons';
 import { t } from '../i18n/pt-BR';
 import { api } from '../lib/api';
 import { useData } from '../store/data';
@@ -7,6 +7,7 @@ import { useUi, type Tab } from '../store/ui';
 
 const TABS: Array<{ id: Tab; label: string; Icon: (p: { size?: number }) => React.JSX.Element }> = [
   { id: 'home', label: t.tabs.home, Icon: IconHome },
+  { id: 'trail', label: t.trail.tab, Icon: IconTrail },
   { id: 'tasks', label: t.tabs.tasks, Icon: IconCheckCircle },
   { id: 'chat', label: t.tabs.chat, Icon: IconChat },
   { id: 'team', label: t.tabs.team, Icon: IconTeam },

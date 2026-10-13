@@ -2,6 +2,7 @@
 import type { DashData, DashRange, PipoDash, PipoDashConfig } from './dashboard';
 import type { HolidayPrefs } from './holidays';
 import type { DraftInfo, Pipo, PipoLive, PipoMemoryRule, PipoModel, PipoPlaybook, PipoRun, PipoRunStep, PipoSummary, PipoTrigger, PipoVersion } from './pipos';
+import type { ActionInput, ActionPatch, Goal, GoalInput, GoalPatch } from './trail';
 import type {
   ActivityBlock,
   DayKind,
@@ -157,6 +158,17 @@ export interface InvokeHandlers {
   'days:clearRange': (start: string, end: string) => number;
   'days:holidayPrefs': () => HolidayPrefs;
   'days:setHolidayPrefs': (p: HolidayPrefs) => HolidayPrefs;
+  'goals:list': () => Goal[];
+  'goals:create': (input: GoalInput) => Goal;
+  'goals:update': (id: number, patch: GoalPatch) => Goal;
+  'goals:delete': (id: number) => void;
+  'goals:addAction': (goalId: number, input: ActionInput) => Goal;
+  'goals:updateAction': (actionId: number, patch: ActionPatch) => Goal;
+  'goals:deleteAction': (actionId: number) => Goal;
+  'goals:setDone': (actionId: number, done: boolean) => Goal;
+  /** Nova ordem das ações pendentes (ids). */
+  'goals:reorder': (goalId: number, ids: number[]) => Goal;
+  'goals:renameStage': (goalId: number, from: string, to: string) => Goal;
   'pipos:list': () => PipoSummary[];
   'pipos:get': (id: number) => { pipo: Pipo; versions: PipoVersion[]; triggers: PipoTrigger[]; runs: PipoRun[]; memory: PipoMemoryRule[]; secrets: string[] } | null;
   'pipos:create': (p: { name: string; color: Pipo['color']; accessory?: Pipo['accessory']; personality: Pipo['personality']; model?: Pipo['model']; effort?: Pipo['effort']; runOnDaysOff?: boolean }) => Pipo;
@@ -211,7 +223,8 @@ export interface MainEvents {
   'music:nowPlaying': NowPlaying | null;
   'music:local': { action: 'play' | 'pause' | 'stop'; filePath?: string };
   'files:progress': IngestProgress;
-  'ui:navigate': { tab: 'home' | 'tasks' | 'chat' | 'add' | 'settings' | 'review'; expand: boolean; capture?: boolean; voice?: boolean; purpose?: 'meeting'; weekly?: boolean };
+  'goals:changed': Goal[];
+  'ui:navigate': { tab: 'home' | 'trail' | 'tasks' | 'chat' | 'add' | 'settings' | 'review'; expand: boolean; capture?: boolean; voice?: boolean; purpose?: 'meeting'; weekly?: boolean };
   'ui:toggle': null;
   'ui:collapse': null;
   'ui:paused': boolean;

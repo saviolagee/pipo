@@ -22,6 +22,7 @@ import { registerDebug } from './debug';
 import { registerIntegrations } from './integrations/ipc';
 import { registerInsights } from './insights';
 import { registerDays } from './days/flows';
+import { registerGoals } from './goals';
 import { registerPiposIpc } from './pipos/ipc';
 import { registerBuilder } from './pipos/builder';
 import { registerTriggers } from './pipos/triggers';
@@ -105,6 +106,7 @@ app.whenReady().then(() => {
   registerIntegrations();
   registerInsights();
   registerDays();
+  registerGoals();
   registerPiposIpc();
   registerBuilder();
   registerTriggers();

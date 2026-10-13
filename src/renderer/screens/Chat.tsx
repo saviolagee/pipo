@@ -145,6 +145,15 @@ export function ChatScreen({ mood, accessories, state }: { mood: number; accesso
     inputRef.current?.focus();
   }, []);
 
+  // Outra tela deixou um começo de mensagem pronto (ex.: "Sobre o plano X:").
+  const chatDraft = useUi((s) => s.chatDraft);
+  useEffect(() => {
+    if (chatDraft === null) return;
+    setText(chatDraft);
+    useUi.setState({ chatDraft: null });
+    inputRef.current?.focus();
+  }, [chatDraft]);
+
   // Prende o notch enquanto há conversa em andamento ou texto digitado.
   useEffect(() => {
     useUi.getState().pin('chat-busy', chat.busy || text.length > 0);
