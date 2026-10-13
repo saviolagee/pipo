@@ -215,7 +215,7 @@ const TOOLS: ToolDef[] = [
     name: 'save_interview',
     modes: ['builder'],
     description:
-      'Guarda a resposta de um item do roteiro de entrevista (gatilho, origem_dos_dados, o_que_fazer, destino, limites, quando_avisar, quando_pedir_permissao, folgas, depende_de_outro). Use "não se aplica" quando for o caso.',
+      'Guarda um item do roteiro (o_que_fazer, origem_dos_dados, destino, gatilho, limites, quando_avisar, quando_pedir_permissao, folgas, depende_de_outro), respondido pelo usuário ou assumido por você pelo padrão. Só os três primeiros podem virar pergunta. Use "não se aplica" quando for o caso.',
     inputSchema: { type: 'object', properties: { item: { type: 'string' }, answer: { type: 'string' } }, required: ['item', 'answer'] },
     run: (a, ctx) => {
       const d = draftOf(ctx);
@@ -224,8 +224,10 @@ const TOOLS: ToolDef[] = [
       const interview = { ...d.data.interview, [item]: String(a.answer ?? '') };
       const next = updateDraft(d.id, { data: { interview }, stage: stageAtLeast(d, 'interview') });
       emitDraft(next);
-      const required = ['gatilho', 'origem_dos_dados', 'o_que_fazer', 'destino', 'limites', 'quando_avisar', 'quando_pedir_permissao', 'folgas', 'depende_de_outro'];
-      return { respondidos: Object.keys(interview), faltam: required.filter((r) => !(r in interview)) };
+      // Só o essencial pode virar pergunta; o resto o construtor assume e mostra na proposta do plano.
+      const essential = ['o_que_fazer', 'origem_dos_dados', 'destino'];
+      const defaults = ['gatilho', 'limites', 'quando_avisar', 'quando_pedir_permissao', 'folgas', 'depende_de_outro'];
+      return { respondidos: Object.keys(interview), faltam: essential.filter((r) => !(r in interview)), assumir_sem_perguntar: defaults.filter((r) => !(r in interview)) };
     },
   },
   {
