@@ -11,6 +11,7 @@ export const DEFAULT_SETTINGS: Settings = {
   volume: 0.6,
   muted: false,
   paused: false,
+  mini: false,
   shortcuts: { ...DEFAULT_SHORTCUTS },
   distractions: { items: [...DEFAULT_DISTRACTIONS], toleranceSec: 60, allowed: [] },
   privacy: { trackingPaused: false, ignoredApps: [...DEFAULT_IGNORED_APPS] },

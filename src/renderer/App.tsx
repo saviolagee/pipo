@@ -7,6 +7,7 @@ import { api } from './lib/api';
 import { Confetti } from './mascot/effects/Confetti';
 import { Entrance } from './mascot/Entrance';
 import { useMascot } from './mascot/machine';
+import { MiniBubble } from './notch/MiniBubble';
 import { Notch } from './notch/Notch';
 import { Pill } from './notch/Pill';
 import { TopBar } from './notch/TopBar';
@@ -115,6 +116,10 @@ export function App(): React.JSX.Element {
       api.on('ui:paused', (paused) => {
         const s = useData.getState().settings;
         if (s) useData.getState().set({ settings: { ...s, paused } });
+      }),
+      api.on('ui:mini', (mini) => {
+        const s = useData.getState().settings;
+        if (s) useData.getState().set({ settings: { ...s, mini } });
       }),
       api.on('ui:openDebug', () => useUi.setState((s) => ({ debugOpen: !s.debugOpen }))),
       api.on('card:show', (card) => {
@@ -319,6 +324,8 @@ export function App(): React.JSX.Element {
         onHoverChange={setHovered}
         topBar={onboarding || (ui.tab === 'add' && ui.captureMode && !ui.dragOver) ? null : <TopBar />}
         fixedHeight={!onboarding && !topCard && ui.tab === 'chat' ? 384 : null}
+        mini={settings?.mini ?? false}
+        miniPill={<MiniBubble state={mascot.state} badge={mascot.badge} mood={mascot.mood} accessories={mascot.accessories} />}
         pill={<Pill state={mascot.state} badge={mascot.badge} mood={mascot.mood} accessories={mascot.accessories} clipboardCandidate={
               clip ? (
                 <button

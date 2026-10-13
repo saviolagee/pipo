@@ -6,7 +6,7 @@ import { nextSuggested } from './tasks/ipc';
 import { openDashboard } from './dashboard';
 import { getSettings, patchSettings } from './db/repos/settings';
 import { renderFace } from './icons';
-import { showNotch } from './window';
+import { miniHooks, setMini, showNotch } from './window';
 
 let tray: Tray | null = null;
 
@@ -29,7 +29,7 @@ export function setPaused(paused: boolean): void {
 
 function rebuildMenu(): void {
   if (!tray) return;
-  const paused = getSettings().paused;
+  const { paused, mini, shortcuts } = getSettings();
   const focus = focusState();
   const next = focus ? null : nextSuggested();
   const short = (s: string): string => (s.length > 40 ? `${s.slice(0, 39)}…` : s);
@@ -61,6 +61,7 @@ function rebuildMenu(): void {
         emit('ui:navigate', { tab: 'settings', expand: true });
       },
     },
+    { label: 'Modo miniatura', type: 'checkbox', checked: mini, accelerator: shortcuts.mini || undefined, click: () => setMini(!mini) },
     { label: paused ? 'Retomar' : 'Pausar', click: () => setPaused(!paused) },
     { type: 'separator' },
     { label: 'Sair', accelerator: 'CommandOrControl+Q', click: () => app.quit() },
@@ -75,6 +76,7 @@ export function createTray(): Tray {
   // O item "Focar na próxima" acompanha as tarefas e o foco.
   bus.on('task:changed', rebuildMenu);
   bus.on('focus:completed', rebuildMenu);
+  miniHooks.changed = rebuildMenu;
   setInterval(rebuildMenu, 30_000).unref();
   return tray;
 }

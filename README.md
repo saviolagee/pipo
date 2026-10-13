@@ -51,12 +51,13 @@ Integrações (Google Agenda/Gmail, Spotify) e voz: veja [docs/integracoes.md](d
 | `Ctrl/Cmd+Shift+Space` | Abrir/fechar o notch |
 | `Ctrl/Cmd+Shift+K` | Captura rápida (de novo com ela aberta: liga/desliga o microfone) |
 | `Ctrl/Cmd+Shift+F` | Começar foco na próxima tarefa sugerida (também no botão ▶ da pill) |
+| `Ctrl/Cmd+Shift+M` | Modo miniatura: o Pipo vira uma bolinha no canto inferior direito (de novo: volta ao topo) |
 | `Ctrl/Cmd+Shift+A` | Abrir os dashboards |
 | `Y` / `N` | Responder o card visível |
 | `Esc` | Fechar o notch |
 | `Ctrl+Alt+D` | Painel de debug do mascote (estados, humor, acessórios, simulações) |
 
-Os três primeiros são configuráveis em Configurações → Atalhos.
+Os quatro primeiros são configuráveis em Configurações → Atalhos.
 
 ## Arquitetura
 

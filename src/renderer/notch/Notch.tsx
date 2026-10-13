@@ -1,6 +1,6 @@
 import { AnimatePresence, motion } from 'motion/react';
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
-import { NOTCH } from '@shared/config';
+import { MINI, NOTCH } from '@shared/config';
 import type { GlowKind } from '@shared/types';
 import { api } from '../lib/api';
 import { isPinned, useUi } from '../store/ui';
@@ -17,10 +17,13 @@ interface Props {
   fixedHeight?: number | null;
   onHoverChange?: (hovered: boolean) => void;
   onDragEnter?: (e: React.DragEvent) => void;
+  /** Modo miniatura: recolhido, vira uma bolinha (a janela vai para o canto inferior direito). */
+  mini?: boolean;
+  miniPill?: React.ReactNode;
 }
 
 /** A ilha preta: alterna entre pill e notch expandido com mola elástica (seção 5.5). */
-export function Notch({ glow, pill, topBar, children, fixedHeight, onHoverChange, onDragEnter }: Props): React.JSX.Element {
+export function Notch({ glow, pill, topBar, children, fixedHeight, onHoverChange, onDragEnter, mini = false, miniPill }: Props): React.JSX.Element {
   const expanded = useUi((s) => s.expanded);
   const pins = useUi((s) => s.pins);
   const setExpanded = useUi((s) => s.setExpanded);
@@ -30,6 +33,7 @@ export function Notch({ glow, pill, topBar, children, fixedHeight, onHoverChange
   const leaveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const inside = useRef(false);
   const pinned = isPinned(pins);
+  const small = mini && !expanded;
 
   useLayoutEffect(() => {
     const el = contentRef.current;
@@ -81,7 +85,8 @@ export function Notch({ glow, pill, topBar, children, fixedHeight, onHoverChange
     clearTimers();
     void api.invoke('window:setInteractive', true);
     onHoverChange?.(true);
-    if (!expanded) hoverTimer.current = setTimeout(() => setExpanded(true), NOTCH.hoverExpandMs);
+    // Na miniatura, passar o mouse não abre: só o clique (o notch abre lá no topo da tela).
+    if (!expanded && !small) hoverTimer.current = setTimeout(() => setExpanded(true), NOTCH.hoverExpandMs);
   };
 
   const onLeave = (): void => {
@@ -94,26 +99,33 @@ export function Notch({ glow, pill, topBar, children, fixedHeight, onHoverChange
     }
   };
 
-  const width = expanded ? NOTCH.expandedWidth : NOTCH.pillWidth;
-  const height = expanded ? (topBar ? NOTCH.topBarHeight : 0) + (fixedHeight ?? contentH) : NOTCH.pillHeight;
-  const radius = expanded ? 24 : 14;
+  const width = expanded ? NOTCH.expandedWidth : small ? MINI.size : NOTCH.pillWidth;
+  const height = expanded ? (topBar ? NOTCH.topBarHeight : 0) + (fixedHeight ?? contentH) : small ? MINI.size : NOTCH.pillHeight;
+  const radius = expanded ? 24 : small ? MINI.size / 2 : 14;
+  const topRadius = small ? MINI.size / 2 : 0;
 
   return (
-    <div className="pointer-events-none relative flex h-full w-full justify-center">
-      <Glow kind={glow} width={width} height={height} expanded={expanded} />
+    <div className={`pointer-events-none relative flex h-full w-full justify-center ${small ? 'items-center' : ''}`}>
+      {/* Na miniatura o estado aparece no ponto colorido da bolinha; a luz não cabe na janela pequena. */}
+      <Glow kind={small ? 'none' : glow} width={width} height={height} expanded={expanded} />
       <motion.div
         role="region"
         aria-label="Pipo"
         className="pointer-events-auto relative overflow-hidden"
         initial={false}
-        animate={{ width, height, borderBottomLeftRadius: radius, borderBottomRightRadius: radius }}
-        transition={SPRING}
-        style={{ background: 'var(--bg-notch)', borderTopLeftRadius: 0, borderTopRightRadius: 0 }}
+        animate={{ width, height, borderBottomLeftRadius: radius, borderBottomRightRadius: radius, borderTopLeftRadius: topRadius, borderTopRightRadius: topRadius }}
+        transition={small ? { duration: 0 } : SPRING}
+        style={{ background: 'var(--bg-notch)' }}
         onMouseEnter={onEnter}
         onMouseLeave={onLeave}
         onClick={() => {
           if (!expanded) {
             clearTimers();
+            if (small) {
+              // Abre no topo da tela, longe do mouse: segura aberto e traz o teclado.
+              useUi.getState().hold('mini', 12_000);
+              void api.invoke('window:show', { focusIfIdle: false });
+            }
             setExpanded(true);
           }
         }}
@@ -142,7 +154,7 @@ export function Notch({ glow, pill, topBar, children, fixedHeight, onHoverChange
               animate={{ opacity: 1, transition: { delay: 0.08, duration: 0.18 } }}
               exit={{ opacity: 0, transition: { duration: 0.08 } }}
             >
-              {pill}
+              {small ? miniPill : pill}
             </motion.div>
           )}
         </AnimatePresence>

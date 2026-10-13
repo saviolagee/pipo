@@ -483,7 +483,7 @@ ausências.
 - **Construtor pergunta menos:** ao criar o Pipo e o script dele, o branco faz no máximo 2–3
   perguntas, só as essenciais (o que faz, de onde vêm os dados, para onde vai o resultado). O resto do
   roteiro (`builder-prompt.ts`: limites, avisos, permissões, folgas, dependências) vira padrão
-  sensato, mostrado na proposta do plano para o usuário ajustar se quiser.
+  sensato, mostrado na proposta do plano para o usuário ajustar se quiser. **Implementado.**
 - **Trilha de objetivos (nova lógica de produtividade):** o centro deixa de ser horas vs meta e passa
   a ser o plano e o avanço nele. Substitui "Projetos com marcos".
   - **Criar plano:** o usuário diz o resultado que quer e a data desejada; o branco desmembra em
@@ -531,7 +531,9 @@ ausências.
   (humor, foco, Pipo trabalhando, miniatura), no lugar do SVG animado atual.
 - **Modo miniatura:** um comando (atalho e item no menu) encolhe o Pipo para uma miniatura bem
   pequena no canto inferior direito, acima do relógio do Windows; o mesmo comando devolve ao topo.
-  Para quando o topo da tela é necessário (abas do Chrome e outros apps).
+  Para quando o topo da tela é necessário (abas do Chrome e outros apps). **Implementado:** atalho
+  `Ctrl+Shift+M`, item "Modo miniatura" no menu da bandeja e botão na barra do notch. Um clique na
+  miniatura abre o Pipo no topo; ao recolher, ele volta para o canto.
 
 ---
 

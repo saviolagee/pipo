@@ -441,7 +441,9 @@ export interface Settings {
   volume: number;
   muted: boolean;
   paused: boolean;
-  shortcuts: Record<'toggle' | 'quickCapture' | 'focusNext', string>;
+  shortcuts: Record<'toggle' | 'quickCapture' | 'focusNext' | 'mini', string>;
+  /** Modo miniatura: recolhido, o Pipo fica numa bolinha no canto inferior direito. */
+  mini: boolean;
   distractions: DistractionSettings;
   privacy: PrivacySettings;
   reactions: ReactionSettings;

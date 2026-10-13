@@ -13,6 +13,11 @@ export const t = {
     mute: 'Silenciar',
     unmute: 'Ativar som',
     wakeOn: 'Ouvindo "Pipo" (microfone ligado). Clique para abrir as configurações.',
+    miniOn: 'Virar miniatura no canto da tela (Ctrl+Shift+M)',
+    miniOff: 'Voltar para o topo da tela (Ctrl+Shift+M)',
+  },
+  mini: {
+    open: 'Abrir o Pipo',
   },
   common: {
     back: 'Voltar',
@@ -617,6 +622,7 @@ export const t = {
       toggle: 'Abrir/fechar',
       quickCapture: 'Captura rápida',
       focusNext: 'Focar na próxima tarefa',
+      mini: 'Modo miniatura',
     },
     shortcutsFixed: [
       ['Y / N', 'Responder card'],

@@ -159,3 +159,11 @@ export const IconChart = ({ size = 16, ...p }: P): React.JSX.Element => (
     <path d="M4 20V10M10 20V4M16 20v-7M21 20H3" />
   </svg>
 );
+
+/** Modo miniatura: a tela com o Pipo no canto de baixo, à direita (ou de volta ao topo). */
+export const IconMini = ({ size = 16, on = false, ...p }: P & { on?: boolean }): React.JSX.Element => (
+  <svg {...base(size, p)}>
+    <rect x="3" y="4.5" width="18" height="15" rx="3" />
+    {on ? <rect x="8.5" y="4.5" width="7" height="3.6" rx="1.4" fill="currentColor" stroke="none" /> : <circle cx="16.4" cy="15" r="2.3" fill="currentColor" stroke="none" />}
+  </svg>
+);

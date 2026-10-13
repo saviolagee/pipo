@@ -1,11 +1,15 @@
 import { join } from 'node:path';
-import { BrowserWindow, screen } from 'electron';
-import { WINDOW } from '@shared/config';
+import { BrowserWindow, ipcMain, screen } from 'electron';
+import { MINI, WINDOW } from '@shared/config';
 import { attachWindow, emit, getWindow } from './bus';
+import { getSettings, patchSettings } from './db/repos/settings';
 
 const isMac = process.platform === 'darwin';
 
-function targetBounds(): Electron.Rectangle {
+/** O notch está aberto? (o renderer avisa). No modo miniatura, a janela só fica no canto enquanto recolhida. */
+let expanded = false;
+
+function topBounds(): Electron.Rectangle {
   const display = screen.getPrimaryDisplay();
   const { workArea, bounds } = display;
   return {
@@ -16,6 +20,57 @@ function targetBounds(): Electron.Rectangle {
     height: WINDOW.height,
   };
 }
+
+/** Canto inferior direito da área útil: logo acima do relógio da barra de tarefas. */
+function miniBounds(): Electron.Rectangle {
+  const { workArea } = screen.getPrimaryDisplay();
+  return {
+    x: workArea.x + workArea.width - MINI.window - MINI.margin,
+    y: workArea.y + workArea.height - MINI.window - MINI.margin,
+    width: MINI.window,
+    height: MINI.window,
+  };
+}
+
+function isMini(): boolean {
+  try {
+    return getSettings().mini;
+  } catch {
+    // Banco ainda não aberto (criação da janela).
+    return false;
+  }
+}
+
+function targetBounds(): Electron.Rectangle {
+  return isMini() && !expanded ? miniBounds() : topBounds();
+}
+
+function applyBounds(): void {
+  const win = getWindow();
+  if (!win) return;
+  const next = targetBounds();
+  const cur = win.getBounds();
+  if (cur.x === next.x && cur.y === next.y && cur.width === next.width && cur.height === next.height) return;
+  // A janela não é redimensionável pelo usuário; para mudar o tamanho por código, libera um instante.
+  win.setResizable(true);
+  win.setBounds(next);
+  win.setResizable(false);
+}
+
+/** Liga ou desliga o modo miniatura (atalho, bandeja e botão do notch chegam aqui). */
+export function setMini(on: boolean): void {
+  patchSettings({ mini: on });
+  applyBounds();
+  emit('ui:mini', on);
+  miniHooks.changed();
+}
+
+export function toggleMini(): void {
+  setMini(!isMini());
+}
+
+/** A bandeja atualiza o item "Modo miniatura" por aqui. */
+export const miniHooks: { changed: () => void } = { changed: () => undefined };
 
 export function createNotchWindow(): BrowserWindow {
   const win = new BrowserWindow({
@@ -52,11 +107,16 @@ export function createNotchWindow(): BrowserWindow {
   win.setIgnoreMouseEvents(true, { forward: true });
 
   const reposition = (): void => {
-    if (!win.isDestroyed()) win.setBounds(targetBounds());
+    if (!win.isDestroyed()) applyBounds();
   };
   screen.on('display-metrics-changed', reposition);
   screen.on('display-added', reposition);
   screen.on('display-removed', reposition);
+  ipcMain.on('ui:expandedChanged', (e, on: boolean) => {
+    if (e.sender !== win.webContents) return;
+    expanded = on;
+    reposition();
+  });
 
   win.once('ready-to-show', () => {
     win.showInactive();

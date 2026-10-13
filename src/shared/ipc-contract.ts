@@ -55,6 +55,8 @@ export interface InvokeHandlers {
   /** Traz o notch à frente. `focusIfIdle`: pega o teclado só se ninguém estiver digitando. */
   'window:show': (opts: { focusIfIdle: boolean }) => void;
   'window:setExpanded': (expanded: boolean) => void;
+  /** Liga ou desliga o modo miniatura (mesmo efeito do atalho e do menu da bandeja). */
+  'window:setMini': (on: boolean) => void;
 
   'profile:get': () => Profile | null;
   'profile:save': (profile: Profile) => Profile;
@@ -213,6 +215,7 @@ export interface MainEvents {
   'ui:toggle': null;
   'ui:collapse': null;
   'ui:paused': boolean;
+  'ui:mini': boolean;
   'ui:openDebug': null;
   'clipboard:candidate': { text: string };
   'activity:current': CurrentActivity | null;

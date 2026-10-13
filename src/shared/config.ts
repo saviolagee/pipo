@@ -18,10 +18,19 @@ export const NOTCH = {
   leaveCollapseMs: 1500,
 } as const;
 
+/** Modo miniatura: uma bolinha no canto inferior direito, acima do relógio, quando o topo da tela é necessário. */
+export const MINI = {
+  size: 52,
+  /** Janela um pouco maior que a bolinha, para o brilho e a sombra caberem. */
+  window: 76,
+  margin: 8,
+} as const;
+
 export const DEFAULT_SHORTCUTS = {
   toggle: 'CommandOrControl+Shift+Space',
   quickCapture: 'CommandOrControl+Shift+K',
   focusNext: 'CommandOrControl+Shift+F',
+  mini: 'CommandOrControl+Shift+M',
 } as const;
 
 export type ShortcutId = keyof typeof DEFAULT_SHORTCUTS;

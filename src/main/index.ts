@@ -36,7 +36,7 @@ import { getProfile } from './db/repos/profile';
 import { nextSuggested, registerTasksIpc } from './tasks/ipc';
 import { startFocus } from './focus/session';
 import { createTray, setPaused } from './tray';
-import { createNotchWindow, setInteractive, showNotch, toggleNotch } from './window';
+import { createNotchWindow, setInteractive, setMini, showNotch, toggleMini, toggleNotch } from './window';
 
 app.setName(APP_NAME);
 if (process.platform === 'win32') app.setAppUserModelId(APP_ID);
@@ -65,6 +65,7 @@ function registerCoreIpc(): void {
   // Aberto por voz: só pega o teclado com o usuário parado há 1 s (um falso chamado não rouba a digitação).
   handle('window:show', ({ focusIfIdle }) => showNotch(!focusIfIdle || powerMonitor.getSystemIdleTime() >= 1));
   handle('window:setExpanded', () => undefined);
+  handle('window:setMini', (on) => setMini(on));
   handle('app:quit', () => app.quit());
   handle('settings:get', () => getSettings());
   handle('settings:patch', (patch) => {
@@ -135,6 +136,7 @@ app.whenReady().then(() => {
       void startFocus({ taskId: next?.id ?? null });
       emit('ui:navigate', { tab: 'home', expand: true });
     },
+    mini: toggleMini,
   });
   maybeDevCapture();
   void quickCheckClaude(paths.workspace);
