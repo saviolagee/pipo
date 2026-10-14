@@ -31,7 +31,9 @@ export function TodayActions(): React.JSX.Element {
         const s = summarize(g, today);
         const a = s.current;
         return (
-          <div key={g.id} className="flex h-[34px] items-center gap-[10px] rounded-[12px] px-[10px]" style={{ background: 'var(--bg-card)', border: '1px solid var(--border-subtle)' }}>
+          <div key={g.id} className="relative flex h-[34px] items-center gap-[10px] overflow-hidden rounded-[12px] px-[10px]" style={{ background: 'var(--bg-card)', border: '1px solid var(--border-subtle)' }}>
+            {/* Quanto do plano já foi andado, num fio na base da linha. */}
+            <span aria-hidden className="absolute bottom-0 left-0 h-[2px]" style={{ width: `${s.total ? (s.done / s.total) * 100 : 0}%`, background: 'linear-gradient(90deg, rgba(34,197,94,0.15), #22C55E)', transition: 'width 500ms var(--ease-out)' }} />
             <button
               type="button"
               disabled={!a}

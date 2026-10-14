@@ -85,6 +85,7 @@ export function SettingsScreen(): React.JSX.Element {
               <NameStep {...p} />
             </Block>
             <RoutineStep {...p} />
+            <div className="h-[16px]" />
             <Block title={t.onboarding.autostartSay}>
               <AutostartStep {...p} />
             </Block>
@@ -155,6 +156,7 @@ export function SettingsScreen(): React.JSX.Element {
         return (
           <>
             <PersonalityStep {...p} />
+            <div className="h-[16px]" />
             <Block title={s.accessories}>
               <AccessoriesBlock />
             </Block>
@@ -162,7 +164,7 @@ export function SettingsScreen(): React.JSX.Element {
               <Block title={s.volume}>
                 <div className="flex max-w-[280px] items-center gap-3">
                   <Slider ariaLabel={s.volume} min={0} max={1} step={0.05} value={settings.volume} onChange={(volume) => void patchSettings({ volume })} />
-                  <YesNo value={!settings.muted} onChange={(on) => void patchSettings({ muted: !on })} yes="🔊" no="🔇" />
+                  <YesNo value={!settings.muted} onChange={(on) => void patchSettings({ muted: !on })} yes={s.soundOn} no={s.soundOff} />
                 </div>
               </Block>
             )}

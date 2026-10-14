@@ -6,6 +6,7 @@ import { TextField, usePinOnFocus } from '../components/Form';
 import { IconCheck, IconChevron, IconPlus, IconX } from '../components/Icons';
 import { t } from '../i18n/pt-BR';
 import { api } from '../lib/api';
+import { Mascot } from '../mascot/Mascot';
 import { askPipo, completeAction } from './actions';
 
 const tt = t.trail;
@@ -163,8 +164,13 @@ function StageHead({ goalId, stage, done, total }: { goalId: number; stage: stri
       </div>
     );
   return (
-    <button type="button" title={tt.renameStage} onClick={() => setEditing(true)} className="flex items-baseline gap-[8px] text-left">
-      <span className="text-[10.5px] font-semibold uppercase tracking-[0.06em] text-fg-2">{stage || tt.noStage}</span>
+    <button type="button" title={tt.renameStage} onClick={() => setEditing(true)} className="flex h-[20px] items-center gap-[8px] rounded-full pl-[9px] pr-[8px] text-left transition-colors hover:bg-white/[0.09]" style={{ background: 'rgba(255,255,255,0.055)', boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.06)' }}>
+      <span className="text-[10.5px] font-semibold uppercase tracking-[0.06em]" style={{ color: done === total ? 'var(--status-done)' : 'var(--text-secondary)' }}>
+        {stage || tt.noStage}
+      </span>
+      <span aria-hidden className="h-[3px] w-[34px] overflow-hidden rounded-full" style={{ background: 'rgba(255,255,255,0.1)' }}>
+        <span className="block h-full rounded-full" style={{ width: `${total ? (done / total) * 100 : 0}%`, background: 'var(--status-done)', transition: 'width 400ms var(--ease-out)' }} />
+      </span>
       <span className="mono text-[10px] text-fg-3">
         {done}/{total}
       </span>
@@ -221,7 +227,7 @@ export function TrailPath({ goal, today }: { goal: Goal; today: string }): React
             const [x1, y1, x2, y2] = [xOf(it.index), it.y + ROW / 2, xOf(next.index), next.y + ROW / 2];
             const mid = (y1 + y2) / 2;
             const walked = !!it.action.doneAt;
-            return <path key={it.key} d={`M${x1} ${y1} C${x1} ${mid} ${x2} ${mid} ${x2} ${y2}`} fill="none" stroke={walked ? 'var(--status-done)' : 'rgba(255,255,255,0.16)'} strokeOpacity={walked ? 0.55 : 1} strokeWidth={3} strokeLinecap="round" strokeDasharray={walked ? undefined : '1 8'} />;
+            return <path key={it.key} d={`M${x1} ${y1} C${x1} ${mid} ${x2} ${mid} ${x2} ${y2}`} fill="none" stroke={walked ? 'var(--status-done)' : 'rgba(255,255,255,0.16)'} strokeOpacity={walked ? 0.6 : 1} strokeWidth={walked ? 4 : 3} strokeLinecap="round" strokeDasharray={walked ? undefined : '1 8'} />;
           })}
         </svg>
         {items.map((it) => {
@@ -252,18 +258,24 @@ export function TrailPath({ goal, today }: { goal: Goal; today: string }): React
                   aria-label={a.doneAt ? tt.doneOn(fmtDay(keyOf(new Date(a.doneAt)), today)) : isCurrent ? `${tt.complete}: ${a.title}` : tt.locked}
                   title={a.doneAt ? tt.edit : isCurrent ? tt.complete : tt.locked}
                   onClick={() => (isCurrent ? void completeAction(a) : a.doneAt ? setEditing(a.id) : undefined)}
-                  className={`relative flex h-full w-full items-center justify-center rounded-full transition-transform ${isCurrent ? 'hover:scale-[1.06]' : ''}`}
+                  className={`relative flex h-full w-full items-center justify-center rounded-full transition-transform duration-150 ${isCurrent ? 'hover:-translate-y-[1px] active:translate-y-[2px]' : ''}`}
                   style={
                     a.doneAt
-                      ? { background: 'var(--status-done)', color: '#000' }
+                      ? { background: 'linear-gradient(180deg, #4ADE80, #22C55E)', color: '#052E16', boxShadow: '0 3px 0 #15803D, inset 0 1px 0 rgba(255,255,255,0.35)' }
                       : isCurrent
-                        ? { background: '#fff', color: '#000', boxShadow: due ? '0 0 0 3px rgba(96,165,250,0.55), 0 0 18px rgba(59,130,246,0.5)' : '0 0 0 3px rgba(255,255,255,0.14)' }
-                        : { background: '#1c1c20', color: 'rgba(255,255,255,0.32)', boxShadow: 'inset 0 0 0 1px rgba(255,255,255,0.1)', cursor: 'default' }
+                        ? { background: 'linear-gradient(180deg, #FFFFFF, #E4E4E7)', color: '#000', boxShadow: due ? '0 3px 0 #93C5FD, 0 0 0 3px rgba(96,165,250,0.5), 0 0 22px rgba(59,130,246,0.55)' : '0 3px 0 #A1A1AA, 0 0 0 3px rgba(255,255,255,0.12)' }
+                        : { background: 'linear-gradient(180deg, #232327, #19191C)', color: 'rgba(255,255,255,0.3)', boxShadow: '0 3px 0 #0E0E10, inset 0 1px 0 rgba(255,255,255,0.07)', cursor: 'default' }
                   }
                 >
                   {a.doneAt || isCurrent ? <IconCheck size={isCurrent ? 15 : 12} strokeWidth={3} /> : <IconLock />}
                 </button>
               </div>
+              {isCurrent && (
+                // O Pipo acompanha a parada da vez: é ali que você está na trilha.
+                <motion.div aria-hidden className="pointer-events-none absolute" style={{ left: xOf(it.index) + (xOf(it.index) > 56 ? -58 : 24), top: ROW / 2 - 21 }} initial={{ opacity: 0, scale: 0.6 }} animate={{ opacity: 1, scale: 1 }} transition={{ type: 'spring', stiffness: 380, damping: 18 }}>
+                  <Mascot state={due ? 'happy' : 'idle'} size={22} glow={false} />
+                </motion.div>
+              )}
               <div className="absolute flex items-center gap-[8px]" style={{ left: COL, right: 12, top: 0, height: ROW }}>
                 {editing === a.id ? (
                   <EditRow action={a} today={today} onClose={() => setEditing(null)} />

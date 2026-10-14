@@ -149,6 +149,7 @@ export function PipoDetail({ p, onBack }: { p: PipoSummary; onBack: () => void }
   const [d, setD] = useState<Detail | null>(null);
   const [msg, setMsg] = useState<string | null>(null);
   const [confirmDelete, setConfirmDelete] = useState(false);
+  const [more, setMore] = useState(false);
   const [events, setEvents] = useState<Array<{ id: number; type: 'email_label' | 'folder' | 'meeting_end' | 'webhook'; label: string; lastFiredAt: string | null }>>([]);
   useEffect(() => {
     void api.invoke('pipos:events', p.id).then(setEvents);
@@ -217,7 +218,7 @@ export function PipoDetail({ p, onBack }: { p: PipoSummary; onBack: () => void }
         </Button>
       </div>
 
-      <div className="flex flex-wrap items-center gap-[6px] pb-[10px]">
+      <div className="flex items-center gap-[6px] pb-[10px]">
         {working ? (
           <Button size="sm" onClick={() => p.live.runId && void api.invoke('pipos:cancel', p.live.runId)}>
             {tt.cancel}
@@ -241,12 +242,6 @@ export function PipoDetail({ p, onBack }: { p: PipoSummary; onBack: () => void }
         >
           {tt.edit}
         </Button>
-        <Button size="sm" variant="tertiary" disabled={!p.activeVersion} onClick={() => void act(() => api.invoke('pipos:saveModel', p.id), tt.savedModel)}>
-          {tt.saveModel}
-        </Button>
-        <Button size="sm" variant="tertiary" disabled={!p.activeVersion} onClick={() => void act(async () => { const path = await api.invoke('pipos:exportFile', p.id); if (path) setMsg(tt.exported); })}>
-          {tt.exportPipo}
-        </Button>
         <span className="flex-1" />
         {confirmDelete ? (
           <>
@@ -259,9 +254,39 @@ export function PipoDetail({ p, onBack }: { p: PipoSummary; onBack: () => void }
             </Button>
           </>
         ) : (
-          <Button size="sm" variant="tertiary" onClick={() => setConfirmDelete(true)}>
-            {tt.delete}
-          </Button>
+          // O que se usa pouco fica guardado no "Mais": a fileira cabe sempre numa linha só.
+          <div className="relative" onMouseLeave={() => setMore(false)}>
+            <Button size="sm" variant="tertiary" aria-expanded={more} onClick={() => setMore((v) => !v)}>
+              {tt.more}
+            </Button>
+            {more && (
+              <div className="absolute right-0 top-[26px] z-20 pt-[6px]">
+                <div className="flex w-[196px] flex-col rounded-[12px] p-[4px]" style={{ background: '#17171a', border: '1px solid rgba(255,255,255,0.1)', boxShadow: '0 14px 36px rgba(0,0,0,0.55), inset 0 1px 0 rgba(255,255,255,0.06)' }}>
+                  {(
+                    [
+                      [tt.saveModel, !p.activeVersion, () => void act(() => api.invoke('pipos:saveModel', p.id), tt.savedModel)],
+                      [tt.exportPipo, !p.activeVersion, () => void act(async () => { const path = await api.invoke('pipos:exportFile', p.id); if (path) setMsg(tt.exported); })],
+                      [tt.delete, false, () => setConfirmDelete(true)],
+                    ] as Array<[string, boolean, () => void]>
+                  ).map(([label, disabled, run], i) => (
+                    <button
+                      key={label}
+                      type="button"
+                      disabled={disabled}
+                      onClick={() => {
+                        setMore(false);
+                        run();
+                      }}
+                      className="rounded-[8px] px-[10px] py-[6px] text-left text-[12px] transition-colors hover:bg-white/[0.07] disabled:opacity-40"
+                      style={{ color: i === 2 ? '#F87171' : 'var(--text-primary)' }}
+                    >
+                      {label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
         )}
       </div>
 

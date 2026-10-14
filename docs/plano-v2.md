@@ -525,6 +525,9 @@ ausências.
   - **Laya continua opcional:** nenhum ajuste fino do Laya foi treinado. Nesta máquina o PyTorch
     instalado é só de CPU, então testar o Laya na RTX 4060 (8 GB) pede instalar o PyTorch com
     CUDA e o pacote `laya`; a documentação dele fala em 16 GB e não traz acerto em português.
+  - **Para a próxima versão (pedido em 13/10/2026):** instalar o PyTorch com CUDA e o pacote `laya` e
+    testar treino e uso na RTX 4060, principalmente para navegar em sites (escolher o próximo
+    clique), que o modelo do Pipo não faz.
 - **Site vira API:** o Pipo navega no site uma vez, grava o tráfego de rede e gera um passo `http`
   com as chamadas internas do site; as execuções seguintes não abrem o navegador (referência:
   `reverse-api-engineer`). Cookies e tokens capturados vão para o cofre. Quando o site muda e o

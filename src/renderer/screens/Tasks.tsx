@@ -310,7 +310,7 @@ export function TasksScreen({ focusTaskId }: { focusTaskId?: number | null }): R
   const over = planned + meetings > goal && goal > 0;
 
   return (
-    <div className="flex h-[372px] flex-col">
+    <div className="flex max-h-[372px] min-h-[190px] flex-col">
       <QuickAdd />
       {next && !focusing && (
         <div className="px-[16px] pb-[6px]">

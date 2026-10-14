@@ -115,7 +115,7 @@ export function Notch({ glow, pill, topBar, children, fixedHeight, onHoverChange
         initial={false}
         animate={{ width, height, borderBottomLeftRadius: radius, borderBottomRightRadius: radius, borderTopLeftRadius: topRadius, borderTopRightRadius: topRadius }}
         transition={small ? { duration: 0 } : SPRING}
-        style={{ background: 'var(--bg-notch)' }}
+        style={{ background: 'var(--bg-notch)', boxShadow: small ? 'inset 0 0 0 1px rgba(255,255,255,0.09), 0 3px 9px rgba(0,0,0,0.4)' : 'var(--island-shadow)' }}
         onMouseEnter={onEnter}
         onMouseLeave={onLeave}
         onClick={() => {

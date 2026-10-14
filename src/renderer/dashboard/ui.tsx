@@ -13,7 +13,7 @@ export const BAD = '#FCA5A5';
 export function Card({ title, children, table, right, wide = false, grow = false }: { title: string; children: React.ReactNode; table?: { head: string[]; rows: Array<Array<string | number>> }; right?: React.ReactNode; wide?: boolean; /** Estica até a altura da linha (dentro de um contêiner flex). */ grow?: boolean }): React.JSX.Element {
   const [asTable, setAsTable] = useState(false);
   return (
-    <section className={`rounded-[14px] p-[16px] ${wide ? 'col-span-2' : ''} ${grow ? 'flex-1' : ''}`} style={{ background: '#121214', border: '1px solid rgba(255,255,255,0.06)' }}>
+    <section className={`rounded-[14px] p-[16px] ${wide ? 'col-span-2' : ''} ${grow ? 'flex-1' : ''}`} style={{ background: 'var(--bg-card)', border: '1px solid var(--border-subtle)' }}>
       <div className="mb-[12px] flex items-center gap-[10px]">
         <h2 className="text-[13px] font-semibold" style={{ color: INK.primary }}>
           {title}
@@ -33,7 +33,7 @@ export function Card({ title, children, table, right, wide = false, grow = false
 
 export function Kpi({ label, value, sub, accent }: { label: string; value: string; sub?: React.ReactNode; accent?: string }): React.JSX.Element {
   return (
-    <div className="rounded-[14px] px-[16px] py-[12px]" style={{ background: '#121214', border: '1px solid rgba(255,255,255,0.06)' }}>
+    <div className="rounded-[14px] px-[16px] py-[12px]" style={{ background: 'var(--bg-card)', border: '1px solid var(--border-subtle)' }}>
       <div className="text-[11.5px]" style={{ color: INK.secondary }}>
         {label}
       </div>

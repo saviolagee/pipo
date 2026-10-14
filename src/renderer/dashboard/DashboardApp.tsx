@@ -467,33 +467,35 @@ export function DashboardApp(): React.JSX.Element {
   const exportName = onPipo && pipoData ? pipoData.pipo.slug : tab;
   return (
     <div className="dash-root min-h-screen w-full" style={{ background: '#0B0B0D', color: INK.primary }}>
-      <header className="sticky top-0 z-10 flex flex-wrap items-center gap-[12px] px-[24px] py-[14px]" style={{ background: 'rgba(11,11,13,0.92)', backdropFilter: 'blur(8px)', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
+      <header className="sticky top-0 z-10 flex items-center gap-[10px] whitespace-nowrap px-[24px] py-[14px]" style={{ background: 'rgba(11,11,13,0.86)', backdropFilter: 'blur(14px) saturate(140%)', borderBottom: '1px solid rgba(255,255,255,0.07)' }}>
         <Mascot state="happy" size={28} glow={false} still />
         <h1 className="text-[15px] font-semibold">{d.title}</h1>
-        <nav className="ml-[8px] flex gap-[2px] rounded-full p-[3px]" style={{ background: '#121214' }}>
+        <nav className="ml-[6px] flex min-w-0 gap-[2px] overflow-x-auto rounded-full p-[3px]" style={{ background: '#121214', boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.05)', scrollbarWidth: 'none' }}>
           {tabs.map((x) => (
-            <button key={x} type="button" onClick={() => setTab(x)} className="rounded-full px-[12px] py-[4px] text-[12.5px]" style={{ background: tab === x ? '#2A2A2E' : 'transparent', color: tab === x ? INK.primary : INK.secondary }}>
+            <button key={x} type="button" onClick={() => setTab(x)} className="shrink-0 rounded-full px-[11px] py-[4px] text-[12.5px] transition-colors" style={{ background: tab === x ? '#2A2A2E' : 'transparent', color: tab === x ? INK.primary : INK.secondary }}>
               {d.tabs[x]}
             </button>
           ))}
         </nav>
         <span className="flex-1" />
         {tab !== 'year' && (
-          <div className="flex gap-[2px] rounded-full p-[3px]" style={{ background: '#121214' }}>
+          <div className="flex shrink-0 gap-[2px] rounded-full p-[3px]" style={{ background: '#121214', boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.05)' }}>
             {(['today', 'week', 'month', 'year'] as const).map((p) => (
-              <button key={p} type="button" onClick={() => setPeriod(p)} className="rounded-full px-[10px] py-[3px] text-[12px]" style={{ background: period === p ? '#2A2A2E' : 'transparent', color: period === p ? INK.primary : INK.secondary }}>
+              <button key={p} type="button" onClick={() => setPeriod(p)} className="rounded-full px-[10px] py-[3px] text-[12px] transition-colors" style={{ background: period === p ? '#2A2A2E' : 'transparent', color: period === p ? INK.primary : INK.secondary }}>
                 {d.periods[p]}
               </button>
             ))}
           </div>
         )}
-        <div className="flex items-center gap-[4px] text-[12.5px]">
+        <div className="flex shrink-0 items-center gap-[2px] text-[12.5px]">
           <button type="button" aria-label={d.prev} onClick={() => setRef((r) => shift(effective, r, -1))} className="rounded-full px-[8px] py-[2px] hover:bg-white/[0.06]">‹</button>
-          <span className="min-w-[150px] text-center" style={{ color: INK.primary }}>{data ? periodLabel(data.range) : ''}</span>
+          <span className="min-w-[108px] text-center" style={{ color: INK.primary }}>{data ? periodLabel(data.range) : ''}</span>
           <button type="button" aria-label={d.next} onClick={() => setRef((r) => shift(effective, r, 1))} className="rounded-full px-[8px] py-[2px] hover:bg-white/[0.06]">›</button>
         </div>
+        <div className="flex shrink-0 items-center">
         <button type="button" onClick={() => data && void api.invoke('dash:exportCsv', `pipo-${exportName}-${data.range.from}`, onPipo && pipoData ? toCsv(timelineTable(pipoData).head, timelineTable(pipoData).rows) : csvFor(tab, data)).then((p) => p && setMsg(d.saved(p)))} className="rounded-full px-[10px] py-[3px] text-[12px] hover:bg-white/[0.06]" style={{ color: INK.secondary }}>{d.csv}</button>
         <button type="button" onClick={() => data && void api.invoke('dash:exportPdf', `pipo-${exportName}-${data.range.from}`).then((p) => p && setMsg(d.saved(p)))} className="rounded-full px-[10px] py-[3px] text-[12px] hover:bg-white/[0.06]" style={{ color: INK.secondary }}>{d.pdf}</button>
+        </div>
       </header>
 
       <div className="px-[24px] pt-[14px]">
@@ -505,13 +507,13 @@ export function DashboardApp(): React.JSX.Element {
             placeholder={d.askPlaceholder}
             aria-label={d.askPlaceholder}
             className="h-[36px] flex-1 rounded-full px-[16px] text-[13px] outline-none"
-            style={{ background: '#121214', border: '1px solid rgba(255,255,255,0.06)', color: INK.primary }}
+            style={{ background: 'var(--bg-card)', border: '1px solid var(--border-subtle)', color: INK.primary }}
           />
           {msg && <span className="text-[12px]" style={{ color: INK.secondary }}>{msg}</span>}
           {loading && <span className="text-[12px]" style={{ color: INK.muted }}>…</span>}
         </div>
         {(asking || answer) && (
-          <div className="mt-[8px] flex items-start gap-[10px] rounded-[12px] px-[14px] py-[10px] text-[13px]" style={{ background: '#121214', border: '1px solid rgba(255,255,255,0.06)' }}>
+          <div className="mt-[8px] flex items-start gap-[10px] rounded-[12px] px-[14px] py-[10px] text-[13px]" style={{ background: 'var(--bg-card)', border: '1px solid var(--border-subtle)' }}>
             <Mascot state={asking ? 'thinking' : 'happy'} size={22} glow={false} />
             <span style={{ color: asking ? INK.muted : INK.primary }}>
               {asking

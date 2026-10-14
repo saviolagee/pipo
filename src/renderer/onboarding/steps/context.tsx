@@ -79,7 +79,7 @@ export function ClientsStep({ draft, set }: StepProps): React.JSX.Element {
           </div>
         ))}
       </div>
-      {draft.clients.length === 0 && <Label>{o.clientsHint}</Label>}
+      {draft.clients.length === 0 && <p className="text-[12px] leading-[1.45] text-fg-3">{o.clientsHint}</p>}
     </div>
   );
 }

@@ -2,10 +2,15 @@
 
 :root {
   --bg-notch: #000000;
-  --bg-card: #121214;
+  /* Vidro escuro: os cartões têm um degradê leve e um fio de luz no topo, para dar profundidade
+     sem perder leitura. A ilha continua preta; só o que está dentro dela ganha volume. */
+  --bg-card: linear-gradient(180deg, rgba(255, 255, 255, 0) 1px, rgba(255, 255, 255, 0.075) 1px, rgba(255, 255, 255, 0) 2.5px), linear-gradient(180deg, rgba(255, 255, 255, 0.05) 0%, rgba(255, 255, 255, 0.02) 100%), #0c0c0e;
   --bg-card-hover: #18181b;
-  --bg-input: #1c1c20;
-  --border-subtle: rgba(255, 255, 255, 0.06);
+  --bg-input: #1a1a1e;
+  --border-subtle: rgba(255, 255, 255, 0.07);
+  /* Sombra e fio de luz da ilha, para ela se destacar de qualquer papel de parede. */
+  --island-shadow: inset 0 -1px 0 rgba(255, 255, 255, 0.07), inset 1px 0 0 rgba(255, 255, 255, 0.03), inset -1px 0 0 rgba(255, 255, 255, 0.03), 0 14px 44px rgba(0, 0, 0, 0.42), 0 2px 10px rgba(0, 0, 0, 0.3);
+  --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
   --text-primary: #f4f4f5;
   --text-secondary: #a1a1aa;
   --text-muted: #6b6b73;
@@ -68,6 +73,26 @@ html.dashboard #root {
   user-select: text;
 }
 
+/* Barra de rolagem da janela de dashboards: fina e escura, como no resto do app. */
+html.dashboard {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.16) transparent;
+}
+html.dashboard ::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+html.dashboard ::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.14);
+  border-radius: 8px;
+}
+html.dashboard ::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.24);
+}
+html.dashboard ::-webkit-scrollbar-track {
+  background: transparent;
+}
+
 input,
 textarea,
 button,
@@ -108,6 +133,73 @@ textarea {
 }
 }
 
+
+/* Botão: afunda um pouco ao clicar e volta com suavidade. */
+.pipo-btn {
+  transition:
+    background-color 150ms ease,
+    color 150ms ease,
+    transform 140ms var(--ease-out),
+    box-shadow 150ms ease;
+}
+.pipo-btn:active:not(:disabled) {
+  transform: scale(0.96);
+}
+
+/* Aurora: duas luzes coloridas bem fracas que passeiam devagar atrás do mascote. */
+@keyframes pipo-aurora-a {
+  0%,
+  100% {
+    transform: translate3d(-8%, 4%, 0) scale(1);
+  }
+  50% {
+    transform: translate3d(10%, -6%, 0) scale(1.15);
+  }
+}
+@keyframes pipo-aurora-b {
+  0%,
+  100% {
+    transform: translate3d(8%, -2%, 0) scale(1.1);
+  }
+  50% {
+    transform: translate3d(-10%, 6%, 0) scale(0.95);
+  }
+}
+.pipo-aurora {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+.pipo-aurora::before,
+.pipo-aurora::after {
+  content: '';
+  position: absolute;
+  width: 62%;
+  height: 130%;
+  top: -15%;
+  border-radius: 50%;
+  filter: blur(46px);
+  opacity: 0.5;
+}
+.pipo-aurora::before {
+  left: 2%;
+  background: radial-gradient(closest-side, var(--aurora-a, rgba(99, 102, 241, 0.42)), transparent);
+  animation: pipo-aurora-a 16s ease-in-out infinite;
+}
+.pipo-aurora::after {
+  right: 2%;
+  background: radial-gradient(closest-side, var(--aurora-b, rgba(56, 189, 248, 0.3)), transparent);
+  animation: pipo-aurora-b 21s ease-in-out infinite;
+}
+
+/* Quem pediu menos movimento no sistema fica sem a aurora andando. */
+@media (prefers-reduced-motion: reduce) {
+  .pipo-aurora::before,
+  .pipo-aurora::after {
+    animation: none;
+  }
+}
 
 .pipo-range {
   -webkit-appearance: none;

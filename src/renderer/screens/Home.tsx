@@ -86,6 +86,7 @@ export function Home({ state, badge, mood, accessories, look, bump, onMascotClic
         className="relative flex h-[188px] flex-col items-center justify-center overflow-hidden rounded-[16px]"
         style={{ background: 'linear-gradient(180deg, #0B0B0D 0%, #08080A 100%)', border: '1px solid var(--border-subtle)' }}
       >
+        <div className="pipo-aurora" />
         <Stars />
         <div className="relative flex h-[110px] items-center justify-center">
           {entrance ?? <DraggableMascot state={state} badge={badge} mood={mood} accessories={accessories} size={76} look={look} bump={bump} onClick={onMascotClick} />}

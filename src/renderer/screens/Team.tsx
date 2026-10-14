@@ -187,7 +187,7 @@ export function TeamScreen(): React.JSX.Element {
   const reloadEdges = (): void => void api.invoke('pipos:links').then(setEdges);
   useEffect(reloadEdges, [list]);
   return (
-    <div className="flex h-[372px] flex-col px-[12px] pb-[12px]">
+    <div className={`flex flex-col px-[12px] pb-[12px] ${open || (loaded && list.length === 0) ? 'h-[372px]' : 'max-h-[372px]'}`}>
       {open ? (
         <PipoDetail p={open} onBack={() => usePipos.getState().open(null)} />
       ) : loaded && list.length === 0 ? (

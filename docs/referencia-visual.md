@@ -18,3 +18,19 @@ Notas extraídas de cada frame, usadas para implementar o visual:
 | 9 | Chat com anexo | Chip `quote.pdf` com ícone vermelho no topo, pergunta em pílula à direita, resposta solta à esquerda, mascote `^ ^` no canto inferior esquerdo, input pílula "Continue…" com botão branco ↑. |
 | 10 | Bandeja | Rosto do mascote monocromático na barra de menus. |
 | 11 | Tonto | Olhos em espiral, bochechas rosas, card com glow rosa: título em negrito + subtítulo cinza. |
+
+## Direção visual: "vidro escuro" (0.3.2)
+
+A ilha continua preta, para sumir no topo da tela. O que está dentro dela ganhou profundidade, na linha
+do que os apps de ilha e o "Liquid Glass" fazem em 2026, mas sem transparência em cima de texto:
+
+- **Cartões:** degradê leve com um fio de luz no topo (`--bg-card` em `tokens.css`). Vale também
+  para os dashboards.
+- **Ilha:** fio de luz na borda de baixo e sombra suave, para se destacar de qualquer papel de parede
+  (`--island-shadow`). A miniatura usa uma sombra curta.
+- **Luz:** uma aurora azul e violeta bem fraca passeia atrás do mascote no Início (`.pipo-aurora`);
+  para quem pede menos movimento no sistema, ela fica parada.
+- **Movimento com função:** cada tela entra com um fade e uma subidinha; botões afundam ao clicar
+  (`.pipo-btn`); as paradas da trilha têm "espessura" de botão e o Pipo acompanha a parada da vez.
+- **Sem vazio:** Equipe e Tarefas ocupam só a altura que precisam.
+- **Regra:** vidro e brilho só em superfícies; texto sempre sobre fundo firme, com o contraste de antes.

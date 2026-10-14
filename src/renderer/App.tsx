@@ -1,4 +1,4 @@
-import { AnimatePresence } from 'motion/react';
+import { AnimatePresence, motion } from 'motion/react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { NOTCH } from '@shared/config';
 import { fmtMoney } from '@shared/format';
@@ -353,7 +353,10 @@ export function App(): React.JSX.Element {
         }
       >
         <div className="relative">
-          {screen}
+          {/* Cada tela entra com um fade e uma subidinha; a chave troca junto com a aba ou o card. */}
+          <motion.div key={onboarding ? 'onboarding' : (topCard?.id ?? ui.tab)} initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.2, ease: [0.22, 1, 0.36, 1] }}>
+            {screen}
+          </motion.div>
           <Confetti burst={ui.confettiKey} count={ui.confettiCount} />
         </div>
       </Notch>
