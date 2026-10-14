@@ -145,22 +145,32 @@ o construtor monta passos `http` com o que viu. Daí em diante o Pipo roda **sem
 A saída é `{escolha, confianca, origem}`. `options` também pode ser um template que vira uma lista
 (por exemplo os títulos lidos por um passo `browser`), e a escolha pode ser o `target` de um `click`.
 
-- **Quem decide hoje é o Claude** (modelo rápido). O conteúdo a decidir vai como dado: pedidos
+- **Quem decide no começo é o Claude** (modelo rápido). O conteúdo a decidir vai como dado: pedidos
   escritos nele são ignorados.
 - **Cada decisão vira um exemplo da atividade** (`activity`). Decisões do mesmo tipo usam o mesmo
   nome; tipos diferentes nunca dividem o nome.
-- **Modelo local (Laya), sempre com ajuste fino por atividade.** Em Configurações → Agente (IA) →
-  Decisões dos Pipos dá para exportar os exemplos de uma atividade no formato de treino do
-  [Laya](https://nandhakishorm.github.io/laya/finetune/) (`laya-train --data atividade.jsonl …`) e
-  depois ligar o servidor local (`laya-serve`) **só para ela**. O app só liga se a atividade tiver
-  pelo menos 20 exemplos com gabarito e o modelo acertar 90% deles; o modelo cru, ou o ajuste de
-  outra atividade, nunca é usado. Resposta com pouca confiança, ou servidor fora do ar, volta para
-  o Claude, e esse caso vira mais um exemplo.
-- O servidor tem de estar na própria máquina (`127.0.0.1`): o que está sendo decidido não sai dela.
-- **O app não instala o Laya nem treina sozinho.** Treinar pede Python, o pacote `laya` e uma placa
-  de vídeo (a documentação fala em 16 GB; com 8 GB há a opção `--freeze-encoder`, que rende menos).
-  Nada disso foi rodado no desenvolvimento do Pipo, e a documentação do Laya não traz número de
-  acerto em português.
+- **Modelo local do Pipo, um por atividade.** Em Configurações → Agente (IA) → Decisões dos Pipos,
+  "Treinar modelo do Pipo" treina um classificador só para aquela atividade, dentro do app: na
+  CPU, sem Python e sem placa de vídeo. Um modelo de leitura de texto multilíngue
+  ([multilingual-e5-small](https://huggingface.co/Xenova/multilingual-e5-small), MIT, 118 MB,
+  baixado uma vez) transforma cada exemplo num vetor, e uma camada de decisão pequena é treinada
+  em cima deles.
+  - **Só liga se passar na prova:** pelo menos 24 exemplos com gabarito, e 92% de acerto em
+    exemplos que ficaram fora do treino, nas decisões que ele responde sozinho.
+  - **Na dúvida, devolve para o Claude** (confiança abaixo do limite escolhido na prova). Essa
+    decisão vira mais um exemplo, e a cada 5 exemplos novos o modelo treina de novo sozinho. Se o
+    acerto cair, ele pausa.
+  - Nunca é usado cru nem emprestado de outra atividade. Atividade cujas opções mudam a cada
+    decisão (uma lista de links) não dá para treinar e fica com o Claude.
+  - Dá para **importar exemplos** já com a resposta certa (um JSON por linha) para começar com o
+    modelo treinado, e exportar os exemplos de qualquer atividade.
+  - No teste de desenvolvimento, com 48 e-mails de exemplo: treinou em 11 s, acertou 8 de 8
+    e-mails novos, respondeu 6 sozinho em menos de 0,2 s cada e mandou 2 para o Claude.
+- **Laya (opcional):** quem já tem o [Laya](https://nandhakishorm.github.io/laya/finetune/)
+  treinado para uma atividade pode ligar o `laya-serve` dela ("Usar Laya"), com a mesma regra:
+  só para aquela atividade e só depois de acertar 90% dos exemplos dela. O servidor tem de estar
+  na própria máquina. O app não instala nem treina o Laya: isso pede Python, o pacote `laya` e
+  placa de vídeo (a documentação dele fala em 16 GB), e não foi rodado no desenvolvimento do Pipo.
 
 ### Servidores MCP conhecidos
 

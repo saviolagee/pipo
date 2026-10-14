@@ -516,9 +516,15 @@ ausências.
     `laya-train` e encaixe do `laya-serve` por atividade em Configurações → Agente (IA). O modelo
     local só liga numa atividade com 20+ exemplos dela e 90% de acerto contra eles; sem isso, e
     sempre que a confiança for baixa, quem decide é o Claude (ver [pipos.md](pipos.md#decisões)).
-  - **Ainda não existe:** nenhum ajuste fino foi treinado, e o Laya não foi instalado nem rodado
-    (treinar pede Python, o pacote `laya` e GPU; a documentação dele fala em 16 GB e não traz acerto
-    em português). As duas confirmações acima continuam em aberto.
+  - **Alternativa implementada, que não depende da GPU:** o modelo local do próprio Pipo. Um
+    classificador por atividade treinado dentro do app, na CPU, em cima de um modelo de leitura de
+    texto multilíngue (118 MB, baixado uma vez). Mesma regra de ouro: um treino por atividade, só
+    liga depois da prova (24+ exemplos, 92% de acerto fora do treino), na dúvida devolve para o
+    Claude e treina de novo sozinho a cada 5 exemplos novos. No teste: 8 de 8 e-mails novos
+    certos, 6 respondidos em menos de 0,2 s (ver [pipos.md](pipos.md#decisões)).
+  - **Laya continua opcional:** nenhum ajuste fino do Laya foi treinado. Nesta máquina o PyTorch
+    instalado é só de CPU, então testar o Laya na RTX 4060 (8 GB) pede instalar o PyTorch com
+    CUDA e o pacote `laya`; a documentação dele fala em 16 GB e não traz acerto em português.
 - **Site vira API:** o Pipo navega no site uma vez, grava o tráfego de rede e gera um passo `http`
   com as chamadas internas do site; as execuções seguintes não abrem o navegador (referência:
   `reverse-api-engineer`). Cookies e tokens capturados vão para o cofre. Quando o site muda e o

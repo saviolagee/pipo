@@ -2,7 +2,7 @@
 import type { DashData, DashRange, PipoDash, PipoDashConfig } from './dashboard';
 import type { HolidayPrefs } from './holidays';
 import type { DraftInfo, Pipo, PipoLive, PipoMemoryRule, PipoModel, PipoPlaybook, PipoRun, PipoRunStep, PipoSummary, PipoTrigger, PipoVersion } from './pipos';
-import type { ActivityInfo, CheckResult, LocalModelConfig } from './decide';
+import type { ActivityInfo, CheckResult, LocalModelConfig, OwnReport } from './decide';
 import type { ActionInput, ActionPatch, Goal, GoalInput, GoalPatch } from './trail';
 import type {
   ActivityBlock,
@@ -174,6 +174,11 @@ export interface InvokeHandlers {
   'decide:activities': () => ActivityInfo[];
   /** Liga o modelo local de uma atividade (só se passar na conferência) ou desliga com null. */
   'decide:setLocal': (activity: string, cfg: LocalModelConfig | null) => CheckResult | null;
+  /** Treina o modelo local do Pipo para a atividade e faz a prova; só liga se passar. */
+  'decide:trainOwn': (activity: string) => OwnReport;
+  'decide:removeOwn': (activity: string) => void;
+  /** Importa exemplos já com resposta (um JSON por linha). Sem caminho, abre a janela de escolher arquivo. */
+  'decide:import': (activity: string, path?: string | null) => number;
   /** Salva os exemplos da atividade no formato de treino do Laya. Devolve o caminho. */
   'decide:export': (activity: string) => string | null;
   'pipos:list': () => PipoSummary[];
@@ -233,6 +238,8 @@ export interface MainEvents {
   'music:local': { action: 'play' | 'pause' | 'stop'; filePath?: string };
   'files:progress': IngestProgress;
   'goals:changed': Goal[];
+  /** O processo principal pede ao modelo de leitura (na janela do notch) os vetores de uns textos. */
+  'embed:request': { id: string; texts: string[] };
   'ui:navigate': { tab: 'home' | 'trail' | 'tasks' | 'chat' | 'add' | 'settings' | 'review'; expand: boolean; capture?: boolean; voice?: boolean; purpose?: 'meeting'; weekly?: boolean };
   'ui:toggle': null;
   'ui:collapse': null;
@@ -266,6 +273,7 @@ export type SfxName = 'pop' | 'chime' | 'alert' | 'gulp' | 'boing' | 'tick';
 export interface RendererEvents {
   'ui:ready': null;
   'ui:expandedChanged': boolean;
+  'embed:result': { id: string; vectors?: Float32Array[]; error?: string };
 }
 
 export interface PipoBridge {

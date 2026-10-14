@@ -1,9 +1,12 @@
 // Passo `decide`: escolher uma entre opções fixas (classificar, rotear, sim/não, que link abrir).
-// Quem decide é o Claude, e cada decisão vira um exemplo daquela ATIVIDADE. Um modelo local (Laya)
-// só entra numa atividade quando existe um ajuste fino feito com os exemplos dela e ele passa na
-// conferência: nunca o modelo cru, nunca o ajuste de outra atividade. Funções puras aqui.
+// Quem decide é o Claude, e cada decisão vira um exemplo daquela ATIVIDADE. Um modelo local só
+// entra numa atividade depois de treinado com os exemplos dela e de passar na prova: nunca um
+// modelo cru, nunca o treino de outra atividade. Há dois modelos locais possíveis:
+// - o do próprio Pipo ("pipo"): treina dentro do app, na CPU, sem instalar nada;
+// - o Laya ("laya"): pede Python e placa de vídeo, fica para quem tiver. Funções puras aqui.
 
-export type DecideSource = 'claude' | 'laya';
+/** Quem deu a resposta. `usuario` são exemplos importados (já com a resposta certa). */
+export type DecideSource = 'claude' | 'laya' | 'pipo' | 'usuario';
 
 export interface DecideResult {
   escolha: string;
@@ -36,11 +39,43 @@ export interface LocalModelConfig {
   minConfidence: number;
 }
 
+/** Modelo local do próprio Pipo numa atividade. */
+export interface OwnModelInfo {
+  enabled: boolean;
+  /** Acerto na prova, entre as decisões que ele responde sozinho. */
+  accuracy: number;
+  /** Fração das decisões que ele responde sozinho (o resto vai para o Claude). */
+  coverage: number;
+  threshold: number;
+  trainedOn: number;
+  trainedAt: string;
+  /** Por que parou de responder (o acerto caiu, as opções mudaram), ou null. */
+  paused: string | null;
+}
+
+export interface OwnReport {
+  ok: boolean;
+  total: number;
+  accuracy: number;
+  coverage: number;
+  threshold: number;
+  error: string | null;
+}
+
+/**
+ * Regras do modelo do Pipo: quantos exemplos a atividade precisa, quanto ele tem de acertar na
+ * prova (com exemplos que ficaram fora do treino) e de quantos em quantos exemplos novos treina de novo.
+ */
+export const OWN = { minExamples: 24, minPerLabel: 3, target: 0.92, minCoverage: 0.3, retrainEvery: 5, maxTrain: 600 } as const;
+
 export interface ActivityInfo {
   activity: string;
   examples: number;
-  /** Exemplos que servem de gabarito (decididos pelo Claude ou corrigidos pelo usuário). */
+  /** Exemplos que servem de gabarito (decididos pelo Claude, importados ou corrigidos pelo usuário). */
   teacher: number;
+  /** As opções são sempre as mesmas? (Lista que muda a cada decisão não dá para treinar.) */
+  fixedOptions: boolean;
+  own: OwnModelInfo | null;
   local: (LocalModelConfig & { agreement: number; checkedAt: string }) | null;
 }
 
@@ -117,9 +152,9 @@ export function parseChoice(text: string, options: Record<string, string>): stri
   return Object.keys(options).find((k) => k.toLowerCase() === lower) ?? null;
 }
 
-/** O gabarito de um exemplo: a correção do usuário, ou a escolha do Claude. A do modelo local não ensina nada. */
+/** O gabarito de um exemplo: a correção do usuário, a escolha do Claude ou um exemplo importado. A resposta de um modelo local não ensina nada. */
 export function teacherChoice(e: Pick<DecisionExample, 'choice' | 'source' | 'corrected'>): string | null {
-  return e.corrected ?? (e.source === 'claude' ? e.choice : null);
+  return e.corrected ?? (e.source === 'claude' || e.source === 'usuario' ? e.choice : null);
 }
 
 /** Uma linha do arquivo de treino do Laya (`laya-train --data exemplos.jsonl`). null se o exemplo não tem gabarito. */

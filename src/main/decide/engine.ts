@@ -1,5 +1,6 @@
-// Motor do passo `decide`. O Claude decide e ensina; um modelo local (Laya, pelo `laya-serve`) só
-// responde por uma atividade depois de ligado com o ajuste fino DELA e conferido contra os exemplos dela.
+// Motor do passo `decide`. O Claude decide e ensina; um modelo local só responde por uma atividade
+// depois de treinado com os exemplos DELA e conferido contra eles. Dois modelos locais: o do
+// próprio Pipo (own.ts, treina no app) e o Laya (pelo `laya-serve`, para quem tiver).
 import {
   CHECK,
   checkPasses,
@@ -19,6 +20,8 @@ import type { TokenUsage } from '@shared/pipos';
 import type { AgentEffort, AgentModel } from '@shared/types';
 import { db } from '../db';
 import { getKV, setKV } from '../db/repos/settings';
+import type { Embedder } from './embedder';
+import { askOwn, learnFrom, ownInfo } from './own';
 
 const MAX_STATE = 6000;
 const LOCAL_TIMEOUT_MS = 5000;
@@ -52,15 +55,17 @@ export function examplesOf(activity: string, limit = 5000): DecisionExample[] {
 
 export function listActivities(): ActivityInfo[] {
   const local = localModels();
-  const rows = db().all<{ activity: string; n: number; teacher: number }>("SELECT activity, COUNT(*) AS n, SUM(CASE WHEN corrected IS NOT NULL OR source = 'claude' THEN 1 ELSE 0 END) AS teacher FROM decisions GROUP BY activity ORDER BY activity");
+  const rows = db().all<{ activity: string; n: number; teacher: number; shapes: number }>(
+    "SELECT activity, COUNT(*) AS n, SUM(CASE WHEN corrected IS NOT NULL OR source IN ('claude', 'usuario') THEN 1 ELSE 0 END) AS teacher, COUNT(DISTINCT options_json) AS shapes FROM decisions GROUP BY activity ORDER BY activity",
+  );
   const seen = new Set(rows.map((r) => r.activity));
   return [
-    ...rows.map((r) => ({ activity: r.activity, examples: r.n, teacher: r.teacher ?? 0, local: local[r.activity] ?? null })),
-    ...Object.keys(local).filter((a) => !seen.has(a)).map((a) => ({ activity: a, examples: 0, teacher: 0, local: local[a] })),
+    ...rows.map((r) => ({ activity: r.activity, examples: r.n, teacher: r.teacher ?? 0, fixedOptions: r.shapes === 1, own: ownInfo(r.activity), local: local[r.activity] ?? null })),
+    ...Object.keys(local).filter((a) => !seen.has(a)).map((a) => ({ activity: a, examples: 0, teacher: 0, fixedOptions: true, own: ownInfo(a), local: local[a] })),
   ];
 }
 
-function record(o: { activity: string; pipoId: number | null; runId: number | null; state: string; question: string; options: Record<string, string>; choice: string; confidence: number | null; source: DecideSource }): void {
+export function record(o: { activity: string; pipoId: number | null; runId: number | null; state: string; question: string; options: Record<string, string>; choice: string; confidence: number | null; source: DecideSource }): void {
   db().run(
     'INSERT INTO decisions (activity, pipo_id, run_id, state, question, options_json, choice, confidence, source, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
     o.activity,
@@ -122,6 +127,8 @@ export interface DecideInput {
   signal: AbortSignal;
   onUsage?: (u: TokenUsage) => void;
   fetch?: typeof fetch;
+  /** Modelo de leitura de texto (para o modelo local do Pipo). Sem ele, só Laya e Claude. */
+  embed?: Embedder;
 }
 
 export async function decide(o: DecideInput): Promise<DecideResult> {
@@ -137,8 +144,18 @@ export async function decide(o: DecideInput): Promise<DecideResult> {
       return { escolha: a.choice, confianca: a.confidence, origem: 'laya' };
     }
   }
+  if (o.embed) {
+    // Modelo do próprio Pipo, treinado com os exemplos desta atividade.
+    const a = await askOwn(o.activity, state, o.options, o.embed).catch(() => null);
+    if (a) {
+      record({ ...o, state, choice: a.choice, confidence: a.confidence, source: 'pipo' });
+      return { escolha: a.choice, confianca: a.confidence, origem: 'pipo' };
+    }
+  }
   const choice = await askClaude({ ...o, state });
   record({ ...o, state, choice, confidence: null, source: 'claude' });
+  // Mais um gabarito: de tantos em tantos, o modelo da atividade treina de novo (sem segurar o plano).
+  if (o.embed) void learnFrom(o.activity, () => examplesOf(o.activity), o.embed);
   return { escolha: choice, confianca: null, origem: 'claude' };
 }
 
