@@ -236,13 +236,16 @@ const visible = new Map<string, BrowserWindow>();
  * Janela de navegador à vista, com a mesma sessão (cookies) do dono: o usuário entra no site com a
  * senha dele, resolve um captcha ou só acompanha. O Pipo nunca digita senha de login.
  */
-export function openVisible(partition: string, url: string, title: string): BrowserWindow {
+export function openVisible(partition: string, url: string, title: string, opts: { fresh?: boolean; beforeLoad?: (win: BrowserWindow) => void } = {}): BrowserWindow {
   const old = visible.get(partition);
   if (old && !old.isDestroyed()) {
-    if (isHttpUrl(url) && old.webContents.getURL() !== url) void old.loadURL(url).catch(() => undefined);
-    old.show();
-    old.focus();
-    return old;
+    if (!opts.fresh) {
+      if (isHttpUrl(url) && old.webContents.getURL() !== url) void old.loadURL(url).catch(() => undefined);
+      old.show();
+      old.focus();
+      return old;
+    }
+    old.destroy();
   }
   const win = new BrowserWindow({
     width: 1120,
@@ -254,8 +257,12 @@ export function openVisible(partition: string, url: string, title: string): Brow
   win.setMenuBarVisibility(false);
   hardenContents(win.webContents);
   win.on('page-title-updated', (e) => e.preventDefault());
-  win.on('closed', () => visible.delete(partition));
+  win.on('closed', () => {
+    if (visible.get(partition) === win) visible.delete(partition);
+  });
   visible.set(partition, win);
+  // Quem grava o tráfego precisa começar antes da primeira requisição da página.
+  opts.beforeLoad?.(win);
   if (isHttpUrl(url)) void win.loadURL(url).catch(() => undefined);
   return win;
 }

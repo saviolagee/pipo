@@ -167,6 +167,8 @@ async function httpOnce(step: HttpStep, ctx: TemplateCtx, e: StepEnv, fetchImpl:
   try {
     const res = await fetchImpl(url, { method: step.method, headers, body, signal: ac.signal });
     const text = await res.text();
+    // Chamada capturada de um site: 401/403 quase sempre é a sessão que venceu.
+    if (step.capturedFrom && (res.status === 401 || res.status === 403)) throw new StepError(`A sessão do site expirou (HTTP ${res.status}). Abra o Pipo, clique em Navegador, entre no site de novo e feche a janela.`);
     if (!res.ok) throw new StepError(`HTTP ${res.status}: ${text.slice(0, 300)}`);
     return (res.headers.get('content-type') ?? '').includes('json') ? safeParse(text) : text;
   } catch (x) {

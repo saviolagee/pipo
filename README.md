@@ -22,6 +22,10 @@ logado com a sua assinatura** — sem chave de API.
 - **Navegador:** os Pipos usam sites que não têm API (abrir, clicar, preencher, ler), cada um com a
   sua sessão; você faz o login uma vez na janela do navegador dele. No chat, o Pipo branco pesquisa
   na web, lê páginas e age em sites, pedindo confirmação antes de enviar qualquer coisa.
+- **Site vira API:** na criação, o Pipo grava as chamadas internas de um site enquanto você o usa uma
+  vez e passa a repeti-las direto, sem abrir navegador. A sessão fica no cofre e renova com um login.
+- **REA para os Pipos:** o servidor MCP de engenharia reversa
+  ([morluto/rea](https://github.com/morluto/rea)) entra em qualquer Pipo com uma confirmação.
 - **Dashboards:** horas vs meta, foco, distração, melhores horários, clientes (valor/hora), métricas
   dos Pipos e dinheiro (Stripe), com exportação CSV/PDF e "pergunte ao dashboard". Cada Pipo tem um
   painel próprio com o que ele produziu, falhas, custo em tokens e comparação entre períodos.

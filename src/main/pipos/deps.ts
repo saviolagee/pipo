@@ -3,6 +3,7 @@ import { copyFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { PIPO_COLORS, type Pipo, type PipoRun } from '@shared/pipos';
 import { runRaw } from '../agent/service';
+import { refreshSiteCookies } from '../browser/capture';
 import { runBrowser } from '../browser/step';
 import { emit } from '../bus';
 import { showCard, takeCardPayload } from '../cards';
@@ -192,7 +193,12 @@ export function startRun(pipoId: number, opts: { dryRun?: boolean; trigger: stri
   const active = activePlaybook(pipoId);
   const playbook = opts.playbook ?? active?.playbook;
   if (!playbook || !playbook.steps.length) throw new Error(`${pipo.name} ainda não tem um plano de execução.`);
-  return requestRun({ pipo, playbook, version: opts.playbook ? 0 : (active?.version ?? 0), dryRun: !!opts.dryRun, trigger: opts.trigger, input: opts.input, fromRunId: opts.fromRunId ?? null }, realDeps);
+  const req = { pipo, playbook, version: opts.playbook ? 0 : (active?.version ?? 0), dryRun: !!opts.dryRun, trigger: opts.trigger, input: opts.input, fromRunId: opts.fromRunId ?? null };
+  if (!playbook.steps.some((s) => s.kind === 'http' && s.capturedFrom)) return requestRun(req, realDeps);
+  // Chamadas capturadas de um site: o cookie vem fresco da sessão do navegador do Pipo.
+  return refreshSiteCookies(pipo.slug, playbook)
+    .catch(() => undefined)
+    .then(() => requestRun(req, realDeps));
 }
 
 /** Copia um script do usuário para scripts/ do Pipo (arrastar arquivo na criação). */

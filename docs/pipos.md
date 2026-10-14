@@ -110,6 +110,34 @@ Para sites sem API. O passo `browser` usa o Chromium embutido no app, numa janel
 - Use `http` quando o site tem API: é mais rápido e quebra menos. Respeite os termos de uso de cada
   site.
 
+### Site vira API
+
+Muitos sites carregam os dados por chamadas internas (as mesmas que a página faz por baixo). Na
+criação do Pipo, o construtor pode **gravar** essas chamadas (`capture_site_api`): abre o site na
+janela do navegador do Pipo, você entra e faz uma vez o que ele deve repetir, clica em **Terminei**, e
+o construtor monta passos `http` com o que viu. Daí em diante o Pipo roda **sem abrir navegador**.
+
+- Cookies e tokens da sessão vão direto para o cofre do Pipo (`SITE_<SITE>_COOKIE`, `…_AUTH`…). O
+  modelo só vê o nome deles, nunca o valor.
+- O passo guarda de onde veio (`capturedFrom`). A cada execução o cookie é renovado a partir da
+  sessão do navegador do Pipo.
+- **Sessão vencida:** o passo falha com "A sessão do site expirou". Abra o Pipo, clique em
+  **Navegador**, entre no site de novo e feche a janela: os cookies e tokens que o plano usa são
+  trocados pelos novos e o plano não muda.
+- **O site mudou** (a chamada não existe mais ou devolve outra coisa): edite o Pipo (`/editarpipo`)
+  e peça para refazer a captura.
+- Só são gravadas chamadas de dados (XHR/fetch); páginas, imagens e rastreadores ficam de fora.
+  Automatize só o que os termos de uso do site permitem.
+
+### Servidores MCP conhecidos
+
+O construtor adiciona com `add_known_server` (você confirma antes: é nessa hora que o pacote é
+baixado) e vê as ferramentas com `list_mcp_tools`.
+
+| Servidor | Para quê | Precisa de |
+|---|---|---|
+| `rea` | [REA](https://github.com/morluto/rea) (MIT): engenharia reversa com agentes. Analisa apps, sites, APKs, firmware e binários sem o código-fonte. Roda `npx -y rea-agents@6.4.0 mcp`. | Node.js 22.19+ (ou 24.11+). Para binários nativos, Ghidra, Hopper ou IDA; para APKs, JADX com um JDK; para sites, um navegador da família Chrome. |
+
 O **Pipo branco** também navega, pelo chat: pesquisa (`web_search`), abre e lê páginas (`web_open`,
 `web_read`) e age em sites (`web_click`, `web_fill`). Ler não pede confirmação. Clicar num botão,
 preencher um campo ou abrir um endereço que você não citou (e que não veio de uma busca ou de uma

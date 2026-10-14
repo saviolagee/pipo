@@ -1,10 +1,12 @@
 // Navegador dos Pipos: registra as ferramentas do chat e do construtor e a janela de login de cada Pipo.
 import { app, session } from 'electron';
+import { emit } from '../bus';
 import { handle } from '../ipc';
 import { registerTools } from '../mcp/tools';
-import { pipoHooks } from '../pipos/ipc';
+import { pipesChanged, pipoHooks } from '../pipos/ipc';
 import { activePlaybook, getPipo } from '../pipos/repo';
 import { builderWebTools } from './builder-tools';
+import { renewSession, usesCapturedSite } from './capture';
 import { closeAllWebSessions, isHttpUrl, openVisible, pipoPartition, webSession } from './session';
 import { webTools } from './tools';
 
@@ -24,7 +26,20 @@ export function registerBrowser(): void {
   handle('pipos:openBrowser', (id) => {
     const p = getPipo(id);
     if (!p) return false;
-    openVisible(pipoPartition(p.slug), firstSite(id) ?? 'https://duckduckgo.com/', `${p.name} — navegador`);
+    const playbook = activePlaybook(id)?.playbook ?? null;
+    const url = firstSite(id) ?? 'https://duckduckgo.com/';
+    const title = `${p.name} — navegador`;
+    if (!playbook || !usesCapturedSite(playbook)) {
+      openVisible(pipoPartition(p.slug), url, title);
+      return true;
+    }
+    // Plano com chamadas capturadas: entrar no site de novo e fechar a janela renova a sessão.
+    void renewSession(p.slug, playbook, url, title)
+      .then((names) => {
+        if (names.length) emit('toast:show', { id: `renew:${p.id}:${Date.now()}`, text: `${p.name}: sessão do site renovada.`, durationMs: 5000 });
+        pipesChanged();
+      })
+      .catch((e) => emit('toast:show', { id: `renew:${p.id}:${Date.now()}`, text: `Não consegui renovar a sessão: ${(e as Error).message}`, durationMs: 6000 }));
     return true;
   });
 

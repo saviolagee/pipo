@@ -513,9 +513,16 @@ ausências.
 - **Site vira API:** o Pipo navega no site uma vez, grava o tráfego de rede e gera um passo `http`
   com as chamadas internas do site; as execuções seguintes não abrem o navegador (referência:
   `reverse-api-engineer`). Cookies e tokens capturados vão para o cofre. Quando o site muda e o
-  passo quebra, o Pipo refaz a captura. Respeitar os termos de uso de cada site.
+  passo quebra, o Pipo refaz a captura. Respeitar os termos de uso de cada site. **Implementado**
+  (ver [pipos.md](pipos.md#site-vira-api)): `capture_site_api` no construtor grava as chamadas pelo
+  protocolo de depuração do Chromium, guarda cookies e tokens no cofre e devolve só os nomes; o
+  cookie é renovado a cada execução e o botão "Navegador" renova a sessão vencida. Quando o site
+  muda de verdade, refazer a captura é pelo `/editarpipo` (não é automático).
 - **REA (engenharia reversa com agentes):** servidor MCP que analisa apps, sites e binários sem o
   código-fonte (`morluto/rea`, MIT). Fica disponível para os Pipos como servidor MCP.
+  **Implementado** como servidor conhecido (`add_known_server` + `list_mcp_tools` no construtor, ver
+  [pipos.md](pipos.md#servidores-mcp-conhecidos)). O pacote só é baixado quando o usuário confirma.
+  Pede Node.js 22.19+ e, para binários, Ghidra, Hopper ou IDA: não foi rodado no desenvolvimento.
 - **Navegador para os Pipos e para o Pipo branco:** hoje nenhum deles usa navegador (os planos só
   têm `http` e `mcp`, e o chat do branco tem busca e leitura de páginas desligadas).
   - **Pipos coloridos:** novo passo de navegador nos planos (abrir página, clicar, preencher, ler).
