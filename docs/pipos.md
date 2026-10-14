@@ -127,6 +127,8 @@ o construtor monta passos `http` com o que viu. Daí em diante o Pipo roda **sem
   trocados pelos novos e o plano não muda.
 - **O site mudou** (a chamada não existe mais ou devolve outra coisa): edite o Pipo (`/editarpipo`)
   e peça para refazer a captura.
+- Chamadas de login não entram, e todo campo com nome de senha, token, cartão ou documento vira
+  segredo (no pedido) ou `••••` (no exemplo de resposta) antes de chegar ao modelo.
 - Só são gravadas chamadas de dados (XHR/fetch); páginas, imagens e rastreadores ficam de fora.
   Automatize só o que os termos de uso do site permitem.
 

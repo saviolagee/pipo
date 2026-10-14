@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { secretBase, secretName, siteSecretsIn, summarizeCapture, type RecordedCall } from '../src/shared/site-api';
+import { isSensitiveKey, redact, secretBase, secretName, siteSecretsIn, summarizeCapture, type RecordedCall } from '../src/shared/site-api';
 
 const call = (over: Partial<RecordedCall>): RecordedCall => ({ method: 'GET', url: 'https://app.loja.com/api/pedidos', type: 'XHR', status: 200, mime: 'application/json', headers: {}, body: null, response: '{"pedidos":[]}', ...over });
 
@@ -49,6 +49,38 @@ describe('site vira API', () => {
     // Do próprio site primeiro; a leitura repetida conta uma vez (a última); o envio fica mesmo sem JSON na resposta.
     expect(calls.map((c) => `${c.method} ${c.url}`)).toEqual(['GET https://app.loja.com/api/pedidos?pagina=2', 'POST https://app.loja.com/api/pedidos', 'GET https://cdn.terceiro.io/config']);
     expect(calls[1].body).toBe('{"cliente":"Ana"}');
+  });
+
+  it('chamada de login fica de fora: a senha digitada nunca chega ao modelo', () => {
+    const { calls, secrets } = summarizeCapture(
+      [
+        call({ url: 'https://app.loja.com/api/login', method: 'POST', body: '{"email":"savio@x.com","password":"minha-senha-123"}', response: '{"access_token":"jwt-abc"}' }),
+        call({ url: 'https://app.loja.com/oauth/token', method: 'POST', type: 'Fetch', body: 'grant_type=password&username=savio&password=minha-senha-123' }),
+        call({ url: 'https://app.loja.com/api/authors' }),
+      ],
+      'https://app.loja.com/login',
+    );
+    expect(calls.map((c) => c.url)).toEqual(['https://app.loja.com/api/authors']);
+    expect(JSON.stringify({ calls, secrets })).not.toContain('minha-senha-123');
+  });
+
+  it('token no endereço ou no corpo vira segredo; na resposta de exemplo, some', () => {
+    const { calls, secrets } = summarizeCapture(
+      [
+        call({ url: 'https://app.loja.com/api/pedidos?status=aberto&access_token=tok-url', method: 'POST', body: '{"cliente":"Ana","csrfToken":"csrf-body","shipping":"Rua A, 10","pin":1234}', response: '{"ok":true,"refresh_token":"tok-resp","cpf":"123.456.789-00","nome":"Ana"}' }),
+        call({ url: 'https://app.loja.com/api/busca', method: 'POST', type: 'Fetch', headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, body: 'q=bolinha&api_key=key-form' }),
+      ],
+      'https://app.loja.com/painel',
+    );
+    expect(calls[0].url).toBe('https://app.loja.com/api/pedidos?status=aberto&access_token={{segredo.SITE_APP_LOJA_COM_ACCESS_TOKEN}}');
+    // Campo comum (até "shipping", que tem "pin" no meio) fica como está: o passo precisa dele.
+    expect(calls[0].body).toBe('{"cliente":"Ana","csrfToken":"{{segredo.SITE_APP_LOJA_COM_CSRFTOKEN}}","shipping":"Rua A, 10","pin":"{{segredo.SITE_APP_LOJA_COM_PIN}}"}');
+    expect(calls[0].resposta_exemplo).toBe('{"ok":true,"refresh_token":"••••","cpf":"••••","nome":"Ana"}');
+    expect(calls[1].body).toBe('q=bolinha&api_key={{segredo.SITE_APP_LOJA_COM_API_KEY}}');
+    expect(secrets).toEqual({ SITE_APP_LOJA_COM_ACCESS_TOKEN: 'tok-url', SITE_APP_LOJA_COM_CSRFTOKEN: 'csrf-body', SITE_APP_LOJA_COM_PIN: '1234', SITE_APP_LOJA_COM_API_KEY: 'key-form' });
+    expect(JSON.stringify(calls)).not.toMatch(/tok-url|csrf-body|tok-resp|key-form|123\.456/);
+    expect([isSensitiveKey('accessToken'), isSensitiveKey('user_password'), isSensitiveKey('shipping'), isSensitiveKey('description'), isSensitiveKey('opinion')]).toEqual([true, true, false, false, false]);
+    expect(redact('a=1&senha=xyz')).toBe('a=1&senha=••••');
   });
 
   it('corta corpo e resposta longos', () => {

@@ -61,7 +61,7 @@ export const builderWebTools: ToolDef[] = [
         pagina: url,
         chamadas: capture.calls,
         segredos_guardados: guardados,
-        nota: 'Use só as chamadas necessárias. Em cada passo http criado a partir daqui, ponha "capturedFrom": "' + url + '". Quando a sessão expirar, o usuário renova pelo botão Navegador do Pipo.',
+        nota: 'Use só as chamadas necessárias. Em cada passo http criado a partir daqui, ponha "capturedFrom": "' + url + '". Quando a sessão expirar, o usuário renova pelo botão Navegador do Pipo. Chamadas de login não são gravadas, e valores com nome de senha ou token já chegam como {{segredo.…}} (no pedido) ou •••• (na resposta de exemplo): não tente descobri-los.',
       };
     },
   },
