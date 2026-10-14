@@ -39,6 +39,7 @@ Cada passo tem uma `key` (usada nos templates) e um `title`. Tipos:
 | `mcp` | Ferramenta de um servidor MCP declarado no `mcp.json` do Pipo. |
 | `sheet` | Ler, adicionar ou atualizar linhas no Google Sheets (conexão das Configurações). |
 | `agent` | Julgamento: escrever, classificar, resumir. Pode pedir JSON e consultar outro Pipo. |
+| `decide` | Escolhe **uma** entre opções fixas (classificar, rotear, sim/não, qual link abrir). Veja [Decisões](#decisões). |
 | `confirm` | Pede sua confirmação no notch. Com `list`, vira **aprovação em lote**: um carrossel para revisar, editar e pular itens. |
 | `branch` | Condição simples (`{{x}} > 0`): encerra ou pula para outro passo. |
 | `notify` | Aviso no notch. Execuções agendadas esperam o foco acabar. |
@@ -128,6 +129,36 @@ o construtor monta passos `http` com o que viu. Daí em diante o Pipo roda **sem
   e peça para refazer a captura.
 - Só são gravadas chamadas de dados (XHR/fetch); páginas, imagens e rastreadores ficam de fora.
   Automatize só o que os termos de uso do site permitem.
+
+### Decisões
+
+```json
+{
+  "kind": "decide", "key": "triagem", "title": "Classificar o e-mail", "activity": "triagem_email",
+  "state": "{{passos.ler.saida}}", "question": "Que tipo de e-mail é este?",
+  "options": { "orcamento": "pede preço ou proposta", "suporte": "relata um problema", "outro": "qualquer outra coisa" }
+}
+```
+
+A saída é `{escolha, confianca, origem}`. `options` também pode ser um template que vira uma lista
+(por exemplo os títulos lidos por um passo `browser`), e a escolha pode ser o `target` de um `click`.
+
+- **Quem decide hoje é o Claude** (modelo rápido). O conteúdo a decidir vai como dado: pedidos
+  escritos nele são ignorados.
+- **Cada decisão vira um exemplo da atividade** (`activity`). Decisões do mesmo tipo usam o mesmo
+  nome; tipos diferentes nunca dividem o nome.
+- **Modelo local (Laya), sempre com ajuste fino por atividade.** Em Configurações → Agente (IA) →
+  Decisões dos Pipos dá para exportar os exemplos de uma atividade no formato de treino do
+  [Laya](https://nandhakishorm.github.io/laya/finetune/) (`laya-train --data atividade.jsonl …`) e
+  depois ligar o servidor local (`laya-serve`) **só para ela**. O app só liga se a atividade tiver
+  pelo menos 20 exemplos com gabarito e o modelo acertar 90% deles; o modelo cru, ou o ajuste de
+  outra atividade, nunca é usado. Resposta com pouca confiança, ou servidor fora do ar, volta para
+  o Claude, e esse caso vira mais um exemplo.
+- O servidor tem de estar na própria máquina (`127.0.0.1`): o que está sendo decidido não sai dela.
+- **O app não instala o Laya nem treina sozinho.** Treinar pede Python, o pacote `laya` e uma placa
+  de vídeo (a documentação fala em 16 GB; com 8 GB há a opção `--freeze-encoder`, que rende menos).
+  Nada disso foi rodado no desenvolvimento do Pipo, e a documentação do Laya não traz número de
+  acerto em português.
 
 ### Servidores MCP conhecidos
 

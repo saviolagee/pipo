@@ -5,6 +5,7 @@ import { PIPO_COLORS, type Pipo, type PipoRun } from '@shared/pipos';
 import { runRaw } from '../agent/service';
 import { refreshSiteCookies } from '../browser/capture';
 import { runBrowser } from '../browser/step';
+import { decide } from '../decide/engine';
 import { emit } from '../bus';
 import { showCard, takeCardPayload } from '../cards';
 import { randomUUID } from 'node:crypto';
@@ -178,6 +179,7 @@ export const realDeps: RunnerDeps = {
   gfetch: googleFetch,
   fetch: (...a) => fetch(...a),
   browser: (step, env, pipo) => runBrowser(step, env, pipo.slug),
+  decide: (o) => decide({ ...o, pipoId: o.pipo.id, agent: runRaw }),
   handoff,
   askPipo,
   update: (runId) => {

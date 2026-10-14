@@ -510,6 +510,15 @@ ausências.
   - **Pipos na web:** o Laya escolhe a próxima ação na página (clicar, digitar, selecionar, parar)
     para a navegação ficar rápida. Exige um passo de navegador, que os planos ainda não têm.
   - **A confirmar antes:** se o ajuste fino cabe na GPU de 8 GB e o acerto em português.
+  - **Implementado, até onde dá sem o ajuste fino:** passo `decide` nos planos (uma escolha entre
+    opções, que também serve para escolher o link ou botão de um passo `browser`), registro de cada
+    decisão como exemplo da atividade (migração `007_decisions`), exportação no formato do
+    `laya-train` e encaixe do `laya-serve` por atividade em Configurações → Agente (IA). O modelo
+    local só liga numa atividade com 20+ exemplos dela e 90% de acerto contra eles; sem isso, e
+    sempre que a confiança for baixa, quem decide é o Claude (ver [pipos.md](pipos.md#decisões)).
+  - **Ainda não existe:** nenhum ajuste fino foi treinado, e o Laya não foi instalado nem rodado
+    (treinar pede Python, o pacote `laya` e GPU; a documentação dele fala em 16 GB e não traz acerto
+    em português). As duas confirmações acima continuam em aberto.
 - **Site vira API:** o Pipo navega no site uma vez, grava o tráfego de rede e gera um passo `http`
   com as chamadas internas do site; as execuções seguintes não abrem o navegador (referência:
   `reverse-api-engineer`). Cookies e tokens capturados vão para o cofre. Quando o site muda e o
@@ -546,7 +555,9 @@ ausências.
   - **Próxima execução:** quando ele roda de novo.
   - **Comparação:** o período atual contra o anterior.
 - **Mascote em Rive:** refazer o mascote como máquina de estados no Rive, reagindo aos dados do app
-  (humor, foco, Pipo trabalhando, miniatura), no lugar do SVG animado atual.
+  (humor, foco, Pipo trabalhando, miniatura), no lugar do SVG animado atual. **Não implementado:**
+  depende de um arquivo `.riv` desenhado e animado no editor do Rive, que não dá para gerar por
+  código. Com o arquivo pronto, falta só trocar o componente do mascote e ligar os estados.
 - **Modo miniatura:** um comando (atalho e item no menu) encolhe o Pipo para uma miniatura bem
   pequena no canto inferior direito, acima do relógio do Windows; o mesmo comando devolve ao topo.
   Para quando o topo da tela é necessário (abas do Chrome e outros apps). **Implementado:** atalho

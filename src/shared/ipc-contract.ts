@@ -2,6 +2,7 @@
 import type { DashData, DashRange, PipoDash, PipoDashConfig } from './dashboard';
 import type { HolidayPrefs } from './holidays';
 import type { DraftInfo, Pipo, PipoLive, PipoMemoryRule, PipoModel, PipoPlaybook, PipoRun, PipoRunStep, PipoSummary, PipoTrigger, PipoVersion } from './pipos';
+import type { ActivityInfo, CheckResult, LocalModelConfig } from './decide';
 import type { ActionInput, ActionPatch, Goal, GoalInput, GoalPatch } from './trail';
 import type {
   ActivityBlock,
@@ -169,6 +170,12 @@ export interface InvokeHandlers {
   /** Nova ordem das ações pendentes (ids). */
   'goals:reorder': (goalId: number, ids: number[]) => Goal;
   'goals:renameStage': (goalId: number, from: string, to: string) => Goal;
+  /** Atividades do passo `decide`, com quantos exemplos cada uma tem e se há modelo local ligado. */
+  'decide:activities': () => ActivityInfo[];
+  /** Liga o modelo local de uma atividade (só se passar na conferência) ou desliga com null. */
+  'decide:setLocal': (activity: string, cfg: LocalModelConfig | null) => CheckResult | null;
+  /** Salva os exemplos da atividade no formato de treino do Laya. Devolve o caminho. */
+  'decide:export': (activity: string) => string | null;
   'pipos:list': () => PipoSummary[];
   'pipos:get': (id: number) => { pipo: Pipo; versions: PipoVersion[]; triggers: PipoTrigger[]; runs: PipoRun[]; memory: PipoMemoryRule[]; secrets: string[] } | null;
   'pipos:create': (p: { name: string; color: Pipo['color']; accessory?: Pipo['accessory']; personality: Pipo['personality']; model?: Pipo['model']; effort?: Pipo['effort']; runOnDaysOff?: boolean }) => Pipo;

@@ -5,7 +5,8 @@ import m003 from './003_pipos';
 import m004 from './004_pipo_files';
 import m005 from './005_pipo_tokens';
 import m006 from './006_goals';
+import m007 from './007_decisions';
 
-const migrations: string[] = [m001, m002, m003, m004, m005, m006];
+const migrations: string[] = [m001, m002, m003, m004, m005, m006, m007];
 
 export default migrations;

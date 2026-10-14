@@ -1,5 +1,6 @@
 // Validação e descrição do plano de execução (usado pelo construtor e pelo card do plano).
 import type { BrowserAction, PipoPlaybook, PipoStep, StepKind } from './pipos';
+import { ACTIVITY_NAME } from './decide';
 import { references } from './template';
 
 export interface PlanIssue {
@@ -8,7 +9,7 @@ export interface PlanIssue {
   message: string;
 }
 
-const KINDS: StepKind[] = ['script', 'http', 'browser', 'mcp', 'sheet', 'agent', 'confirm', 'branch', 'notify', 'handoff'];
+const KINDS: StepKind[] = ['script', 'http', 'browser', 'mcp', 'sheet', 'agent', 'decide', 'confirm', 'branch', 'notify', 'handoff'];
 const KEY = /^[a-z][a-z0-9_]{0,39}$/;
 const BROWSER_DO: Array<BrowserAction['do']> = ['goto', 'click', 'fill', 'submit', 'press', 'wait', 'read', 'list', 'screenshot'];
 /** Ações do navegador que podem enviar algo para o site. */
@@ -49,6 +50,8 @@ function textsOf(s: PipoStep): string[] {
       return [s.spreadsheetId, s.range, s.rows ?? ''];
     case 'agent':
       return [s.prompt];
+    case 'decide':
+      return [s.state ?? '', s.question ?? '', ...(typeof s.options === 'string' ? [s.options] : Object.values(s.options ?? {}))];
     case 'confirm':
       return [s.message, s.preview ?? '', s.list ?? ''];
     case 'branch':
@@ -112,6 +115,12 @@ export function validatePlaybook(p: PipoPlaybook, env: { secrets: string[]; scri
       case 'mcp':
         if (!env.mcpServers.includes(s.server)) issues.push({ level: 'warn', step: at, message: `Servidor MCP "${s.server}" ainda não foi adicionado (add_mcp_server).` });
         break;
+      case 'decide':
+        if (!ACTIVITY_NAME.test(s.activity ?? '')) issues.push({ level: 'error', step: at, message: 'A decisão precisa de "activity": o nome da atividade, minúsculo e sem espaço (ex.: triagem_email).' });
+        if (!s.question?.trim()) issues.push({ level: 'error', step: at, message: 'A decisão precisa de "question".' });
+        if (!s.state?.trim()) issues.push({ level: 'error', step: at, message: 'A decisão precisa de "state" (o que está sendo decidido).' });
+        if (typeof s.options === 'string' ? !s.options.includes('{{') : Object.keys(s.options ?? {}).length < 2) issues.push({ level: 'error', step: at, message: 'A decisão precisa de pelo menos duas "options" (ou um template que vire a lista).' });
+        break;
       case 'branch': {
         const target = s.then === 'end' ? null : s.then.replace(/^goto:/, '');
         if (s.then !== 'end' && !s.then.startsWith('goto:')) issues.push({ level: 'error', step: at, message: 'O "then" do branch é "end" ou "goto:<chave>".' });
@@ -150,6 +159,7 @@ const KIND_LABEL: Record<StepKind, string> = {
   mcp: 'ferramenta MCP',
   sheet: 'planilha',
   agent: 'IA',
+  decide: 'decisão',
   confirm: 'confirmação',
   branch: 'condição',
   notify: 'aviso',
@@ -170,6 +180,8 @@ function detailOf(s: PipoStep): string {
       return `${s.action === 'read' ? 'ler' : s.action === 'append' ? 'adicionar linhas em' : 'atualizar'} ${s.range}`;
     case 'agent':
       return `${s.model ?? 'modelo do Pipo'}${s.json ? ' · JSON' : ''}${s.askPipo ? ` · pergunta a @${s.askPipo}` : ''}`;
+    case 'decide':
+      return `${s.question} · ${typeof s.options === 'string' ? 'opções da lista' : Object.keys(s.options ?? {}).join(' | ')}`;
     case 'confirm':
       return s.message;
     case 'branch':

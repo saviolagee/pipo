@@ -24,6 +24,10 @@ logado com a sua assinatura** — sem chave de API.
   na web, lê páginas e age em sites, pedindo confirmação antes de enviar qualquer coisa.
 - **Site vira API:** na criação, o Pipo grava as chamadas internas de um site enquanto você o usa uma
   vez e passa a repeti-las direto, sem abrir navegador. A sessão fica no cofre e renova com um login.
+- **Decisões que ensinam um modelo local:** o passo `decide` escolhe entre opções (classificar,
+  rotear, que link abrir). Hoje decide o Claude, e cada decisão fica como exemplo daquela atividade,
+  pronto para treinar um modelo local ([Laya](https://huggingface.co/convaiinnovations/laya-multilingual))
+  só para ela. O modelo local só entra depois de conferido contra esses exemplos.
 - **REA para os Pipos:** o servidor MCP de engenharia reversa
   ([morluto/rea](https://github.com/morluto/rea)) entra em qualquer Pipo com uma confirmação.
 - **Dashboards:** horas vs meta, foco, distração, melhores horários, clientes (valor/hora), métricas

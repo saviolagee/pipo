@@ -3,6 +3,7 @@
 // métricas declaradas, pausa após 3 falhas e no máximo 2 execuções ao mesmo tempo (1 por Pipo).
 import { mkdirSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
+import { normalizeOptions, type DecideResult } from '@shared/decide';
 import { browserSends } from '@shared/plan-check';
 import type { AgentStep, BrowserStep, Pipo, PipoPlaybook, PipoRun, PipoStep, TokenUsage } from '@shared/pipos';
 import { evaluate, render, renderText, SENT_KEY, type TemplateCtx } from '@shared/template';
@@ -30,6 +31,8 @@ export interface RunnerDeps {
   askPipo: (o: { from: Pipo; slug: string; question: string; signal: AbortSignal; onUsage?: (u: TokenUsage) => void }) => Promise<string>;
   /** Passo `browser`: só existe no app (precisa do Chromium embutido). */
   browser?: (step: BrowserStep, env: StepEnv, pipo: Pipo) => Promise<unknown>;
+  /** Passo `decide`: escolhe uma opção e registra o exemplo da atividade. */
+  decide?: (o: { activity: string; state: string; question: string; options: Record<string, string>; pipo: Pipo; runId: number; signal: AbortSignal; onUsage: (u: TokenUsage) => void }) => Promise<DecideResult>;
   update: (runId: number) => void;
 }
 
@@ -217,6 +220,14 @@ export async function execute(req: RunRequest, deps: RunnerDeps, onStart: (runId
         return { output: await runSheet(step, env, deps.gfetch) };
       case 'agent':
         return { output: await runAgent(step) };
+      case 'decide': {
+        if (!deps.decide) throw new StepError('O passo de decisão não está disponível aqui.');
+        const options = normalizeOptions(typeof step.options === 'string' ? render(step.options, ctx) : Object.fromEntries(Object.entries(step.options).map(([k, v]) => [k, renderText(v, ctx)])));
+        if (Object.keys(options).length < 2) throw new StepError('A decisão ficou com menos de duas opções.');
+        const raw = render(step.state, ctx);
+        const state = typeof raw === 'string' ? raw : JSON.stringify(raw ?? null);
+        return { output: await deps.decide({ activity: step.activity, state, question: renderText(step.question, ctx), options, pipo, runId: run.id, signal: ac.signal, onUsage }) };
+      }
       case 'confirm': {
         const message = renderText(step.message, ctx);
         const preview = step.preview ? renderText(step.preview, ctx) : null;

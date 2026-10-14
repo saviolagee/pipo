@@ -59,7 +59,7 @@ export interface PipoPersonality {
 
 // ---------- Plano de execução ----------
 
-export type StepKind = 'script' | 'http' | 'browser' | 'mcp' | 'sheet' | 'agent' | 'confirm' | 'branch' | 'notify' | 'handoff';
+export type StepKind = 'script' | 'http' | 'browser' | 'mcp' | 'sheet' | 'agent' | 'decide' | 'confirm' | 'branch' | 'notify' | 'handoff';
 
 interface StepCommon {
   /** Identificador estável usado nos templates: {{passos.<key>.saida}}. */
@@ -158,6 +158,21 @@ export interface AgentStep extends StepCommon {
   askPipo?: string;
 }
 
+/**
+ * Decisão: escolhe UMA entre opções fixas (classificar, rotear, sim/não, que link abrir).
+ * A saída é {escolha, confianca, origem}. Cada decisão vira um exemplo da atividade.
+ */
+export interface DecideStep extends StepCommon {
+  kind: 'decide';
+  /** Nome da atividade (minúsculas_com_underscore). Cada atividade junta os seus exemplos e tem o seu próprio modelo local. */
+  activity: string;
+  /** O que está sendo decidido (texto ou JSON, com templates). */
+  state: string;
+  question: string;
+  /** {id: descrição}, ou um template que vira uma lista de textos ou um objeto. */
+  options: Record<string, string> | string;
+}
+
 export interface ConfirmStep extends StepCommon {
   kind: 'confirm';
   message: string;
@@ -191,7 +206,7 @@ export interface HandoffStep extends StepCommon {
   run: boolean;
 }
 
-export type PipoStep = ScriptStep | HttpStep | BrowserStep | McpStep | SheetStep | AgentStep | ConfirmStep | BranchStep | NotifyStep | HandoffStep;
+export type PipoStep = ScriptStep | HttpStep | BrowserStep | McpStep | SheetStep | AgentStep | DecideStep | ConfirmStep | BranchStep | NotifyStep | HandoffStep;
 
 export interface MetricDef {
   key: string;

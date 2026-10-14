@@ -24,6 +24,7 @@ import { registerInsights } from './insights';
 import { registerDays } from './days/flows';
 import { registerGoals } from './goals';
 import { registerBrowser } from './browser';
+import { registerDecide } from './decide';
 import { registerPiposIpc } from './pipos/ipc';
 import { registerBuilder } from './pipos/builder';
 import { registerTriggers } from './pipos/triggers';
@@ -112,6 +113,7 @@ app.whenReady().then(() => {
   registerPiposIpc();
   registerBuilder();
   registerBrowser();
+  registerDecide();
   registerTriggers();
   registerPipoChat();
   registerLinks();

@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import type { Settings as SettingsT, UnlockableAccessory } from '@shared/types';
 import { Button } from '../components/Button';
 import { DaysSettings } from './DaysSettings';
+import { DecideSettings } from './DecideSettings';
 import { ACTIVITY } from '@shared/config';
 import { fmtMoney } from '@shared/format';
 import { Chip, Label, Option, Slider, TagInput, TextField, YesNo } from '../components/Form';
@@ -144,7 +145,12 @@ export function SettingsScreen(): React.JSX.Element {
           </>
         );
       case 'agent':
-        return settings ? <AgentBlock settings={settings} onPatch={patchSettings} /> : null;
+        return settings ? (
+          <>
+            <AgentBlock settings={settings} onPatch={patchSettings} />
+            <DecideSettings onMsg={setMsg} />
+          </>
+        ) : null;
       case 'personality':
         return (
           <>
