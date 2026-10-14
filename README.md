@@ -8,6 +8,8 @@ logado com a sua assinatura** — sem chave de API.
 - **Sabe o que você está fazendo:** lê o app e o título da janela em foco (localmente) para registrar o
   tempo por cliente, proteger o foco e reagir ao contexto.
 - **Tem emoção:** o humor do Pipo acompanha seu dia e sua semana; acessórios desbloqueiam com a sequência.
+  O mascote é um boneco animado por código: pisca, olha em volta, acena, se espreguiça, pula e dá
+  pirueta, com transição suave entre as expressões (`Ctrl+Alt+D` → Galeria mostra todas).
 - **Interrompe pouco:** orçamento diário de interrupções (3/5/8). Fora dele, só muda de expressão.
 - **Trilha de objetivos:** diga o resultado que você quer e até quando; o plano vira uma trilha com
   uma ação por dia. Dá para ajustar à mão (criar, editar, reordenar, mudar o dia, apagar) ou pedir ao

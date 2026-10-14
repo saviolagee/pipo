@@ -738,6 +738,8 @@ export const t = {
     apiUseSubscription: 'Assinatura',
   },
   debug: {
+    gallery: 'Galeria',
+    poke: 'Clique para cutucar',
     title: 'Debug do mascote',
     state: 'Estado',
     mood: 'Humor',

@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import type { SfxName } from '@shared/ipc-contract';
 import type { Accessory, GlowKind, MascotState } from '@shared/types';
 import { t } from '../i18n/pt-BR';
@@ -26,6 +27,9 @@ export function DebugPanel(): React.JSX.Element {
   const glow = useUi((s) => s.glowOverride);
   const set = useUi((s) => s.set);
   const acc = debug.accessories ?? [];
+  // Galeria: todas as expressões em tamanho grande, para ver as animações de cada uma.
+  const [gallery, setGallery] = useState(false);
+  const [poke, setPoke] = useState<Record<string, number>>({});
 
   return (
     <div
@@ -35,11 +39,34 @@ export function DebugPanel(): React.JSX.Element {
       onMouseLeave={() => void api.invoke('window:setInteractive', false)}
     >
       <div className="mb-2 flex items-center justify-between">
-        <span className="font-semibold">{t.debug.title}</span>
+        <span className="flex items-center gap-[8px] font-semibold">
+          {t.debug.title}
+          <Chip on={gallery} onClick={() => setGallery((g) => !g)}>
+            {t.debug.gallery}
+          </Chip>
+        </span>
         <button type="button" className="text-fg-2 hover:text-fg" onClick={() => set({ debugOpen: false, debug: { state: null, mood: null, accessories: null }, glowOverride: null })}>
           {t.common.close}
         </button>
       </div>
+      {gallery && (
+        <div className="grid grid-cols-5 gap-y-[6px] rounded-[12px] py-[10px]" style={{ background: '#08080A' }}>
+          {STATES.map((s) => (
+            <button key={s} type="button" title={t.debug.poke} onClick={() => setPoke((k) => ({ ...k, [s]: (k[s] ?? 0) + 1 }))} className="flex flex-col items-center text-[10.5px] text-fg-3">
+              <Mascot state={s} size={58} mood={debug.mood ?? 60} accessories={acc} bump={poke[s] ?? 0} glow={false} />
+              {s}
+            </button>
+          ))}
+        </div>
+      )}
+      {!gallery && controls()}
+    </div>
+  );
+
+  // Função comum (não um componente): os controles não perdem o estado a cada desenho.
+  function controls(): React.JSX.Element {
+    return (
+      <>
       <Row label={t.debug.state}>
         <Chip on={debug.state === null} onClick={() => set({ debug: { ...debug, state: null } })}>
           auto
@@ -98,8 +125,9 @@ export function DebugPanel(): React.JSX.Element {
           </Chip>
         ))}
       </Row>
-    </div>
-  );
+      </>
+    );
+  }
 }
 
 function Row({ label, children }: { label: string; children: React.ReactNode }): React.JSX.Element {

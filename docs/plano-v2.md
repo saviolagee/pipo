@@ -555,9 +555,12 @@ ausências.
   - **Próxima execução:** quando ele roda de novo.
   - **Comparação:** o período atual contra o anterior.
 - **Mascote em Rive:** refazer o mascote como máquina de estados no Rive, reagindo aos dados do app
-  (humor, foco, Pipo trabalhando, miniatura), no lugar do SVG animado atual. **Não implementado:**
-  depende de um arquivo `.riv` desenhado e animado no editor do Rive, que não dá para gerar por
-  código. Com o arquivo pronto, falta só trocar o componente do mascote e ligar os estados.
+  (humor, foco, Pipo trabalhando, miniatura), no lugar do SVG animado atual. **Trocado por um boneco animado por
+  código** (`src/renderer/mascot/rig/`), já que o Rive depende de um arquivo `.riv` desenhado no
+  editor dele: cada expressão é uma pose, e molas levam o mascote de uma à outra. Olhos que se
+  transformam, mãozinhas que entram e saem, pulo com gravidade (estica no ar, amassa ao pousar,
+  pirueta ao comemorar), piscadas, olhadelas, manias de quando está à toa (acenar, espreguiçar,
+  sacudir) e efeitos por expressão. `Ctrl+Alt+D` → Galeria mostra todas.
 - **Modo miniatura:** um comando (atalho e item no menu) encolhe o Pipo para uma miniatura bem
   pequena no canto inferior direito, acima do relógio do Windows; o mesmo comando devolve ao topo.
   Para quando o topo da tela é necessário (abas do Chrome e outros apps). **Implementado:** atalho
