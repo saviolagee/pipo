@@ -23,6 +23,7 @@ import { registerIntegrations } from './integrations/ipc';
 import { registerInsights } from './insights';
 import { registerDays } from './days/flows';
 import { registerGoals } from './goals';
+import { registerBrowser } from './browser';
 import { registerPiposIpc } from './pipos/ipc';
 import { registerBuilder } from './pipos/builder';
 import { registerTriggers } from './pipos/triggers';
@@ -43,7 +44,8 @@ app.setName(APP_NAME);
 if (process.platform === 'win32') app.setAppUserModelId(APP_ID);
 // App todo em pt-BR: força o locale do Chromium (inputs de hora em 24h, datas, etc.).
 app.commandLine.appendSwitch('lang', 'pt-BR');
-// Nenhuma rede além de Claude, Google e Spotify (seção 17): sem atualizações de componentes nem
+// O app em si só fala com Claude, Google e Spotify (seção 17); o navegador dos Pipos abre os sites
+// que o usuário pede, em sessões separadas. Sem atualizações de componentes nem
 // download de dicionários do Chromium.
 app.commandLine.appendSwitch('disable-component-update');
 app.commandLine.appendSwitch('disable-features', 'SpellcheckService,MediaRouter,OptimizationHints,AutofillServerCommunication');
@@ -109,6 +111,7 @@ app.whenReady().then(() => {
   registerGoals();
   registerPiposIpc();
   registerBuilder();
+  registerBrowser();
   registerTriggers();
   registerPipoChat();
   registerLinks();

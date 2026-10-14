@@ -26,7 +26,7 @@ import { startRun } from './deps';
 import { cancelRun } from './runner';
 
 /** Preenchido pelos gatilhos (Fase 19): próxima execução agendada. */
-export const pipoHooks: { nextRunAt: (pipoId: number) => string | null } = { nextRunAt: () => null };
+export const pipoHooks: { nextRunAt: (pipoId: number) => string | null; deleted: (slug: string) => void } = { nextRunAt: () => null, deleted: () => undefined };
 
 export function summaries(): PipoSummary[] {
   return listPipos().map((p) => ({ ...p, live: getLive(p.id), lastRun: lastRun(p.id), nextRunAt: pipoHooks.nextRunAt(p.id), secrets: secretNames(p.slug) }));
@@ -63,6 +63,8 @@ export function registerPiposIpc(): void {
     deletePipoSecrets(p.slug);
     deletePipo(id);
     clearLive(id);
+    // Apaga também a sessão de navegador dele (cookies e logins).
+    pipoHooks.deleted(p.slug);
     pipesChanged();
   });
   handle('pipos:run', async (id, opts) => ({ runId: await startRun(id, { dryRun: opts?.dryRun, trigger: opts?.trigger ?? 'manual', input: opts?.input }) }));

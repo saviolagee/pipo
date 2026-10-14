@@ -59,7 +59,7 @@ export interface PipoPersonality {
 
 // ---------- Plano de execução ----------
 
-export type StepKind = 'script' | 'http' | 'mcp' | 'sheet' | 'agent' | 'confirm' | 'branch' | 'notify' | 'handoff';
+export type StepKind = 'script' | 'http' | 'browser' | 'mcp' | 'sheet' | 'agent' | 'confirm' | 'branch' | 'notify' | 'handoff';
 
 interface StepCommon {
   /** Identificador estável usado nos templates: {{passos.<key>.saida}}. */
@@ -95,6 +95,35 @@ export interface HttpStep extends StepCommon {
   each?: string;
   /** Com `each`: chave que identifica o item ({{item.email}}). Itens já enviados com sucesso nunca se repetem. */
   onceBy?: string;
+  /** Site de onde esta chamada foi capturada ("site vira API"): quando a sessão expira, é lá que se refaz a captura. */
+  capturedFrom?: string;
+}
+
+/**
+ * Uma ação na página. `target` é um seletor CSS ou o texto visível do botão, link ou campo
+ * (ou "css=…" / "texto=…" para não deixar dúvida).
+ */
+export type BrowserAction =
+  | { do: 'goto'; url: string }
+  | { do: 'click'; target: string }
+  | { do: 'fill'; target: string; value: string }
+  /** Envia o formulário do campo (como apertar Enter nele). */
+  | { do: 'submit'; target?: string }
+  | { do: 'press'; key: string }
+  /** Espera `seconds` ou até `for` aparecer na página. */
+  | { do: 'wait'; seconds?: number; for?: string }
+  /** Guarda o texto da página (ou de um elemento) na saída, com o nome `as`. */
+  | { do: 'read'; as: string; target?: string }
+  /** Guarda uma lista: o texto (ou um atributo, ex.: href) de cada elemento do seletor. */
+  | { do: 'list'; as: string; target: string; attr?: string }
+  | { do: 'screenshot'; as: string };
+
+/** Navegador: abre uma página e faz as ações em ordem, na sessão (logins) do próprio Pipo. */
+export interface BrowserStep extends StepCommon {
+  kind: 'browser';
+  url: string;
+  actions: BrowserAction[];
+  timeoutSec?: number;
 }
 
 export interface McpStep extends StepCommon {
@@ -162,7 +191,7 @@ export interface HandoffStep extends StepCommon {
   run: boolean;
 }
 
-export type PipoStep = ScriptStep | HttpStep | McpStep | SheetStep | AgentStep | ConfirmStep | BranchStep | NotifyStep | HandoffStep;
+export type PipoStep = ScriptStep | HttpStep | BrowserStep | McpStep | SheetStep | AgentStep | ConfirmStep | BranchStep | NotifyStep | HandoffStep;
 
 export interface MetricDef {
   key: string;

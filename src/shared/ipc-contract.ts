@@ -198,6 +198,8 @@ export interface InvokeHandlers {
   'pipos:link': (fromId: number, toId: number, delayMin: number) => void;
   'pipos:unlink': (fromId: number, toId: number) => void;
   'pipos:wouldCycle': (fromId: number, toId: number) => boolean;
+  /** Abre a janela do navegador do Pipo (a sessão em que ele usa os sites) para o usuário entrar com a senha dele. */
+  'pipos:openBrowser': (id: number) => boolean;
 }
 
 export type InvokeChannel = keyof InvokeHandlers;

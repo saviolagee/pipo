@@ -35,6 +35,7 @@ Cada passo tem uma `key` (usada nos templates) e um `title`. Tipos:
 |---|---|
 | `script` | Roda um arquivo de `scripts/` do Pipo (node, python, powershell, pwsh, bash, sh). Recebe os segredos como variáveis de ambiente, a entrada em `PIPO_INPUT` e `PIPO_DRY_RUN=1` no ensaio. Imprime JSON. |
 | `http` | Chamada de API (GET/POST/…). Resposta JSON vira a saída. |
+| `browser` | Abre uma página num navegador de verdade e faz as ações em ordem (clicar, preencher, ler). Veja [Navegador](#navegador). |
 | `mcp` | Ferramenta de um servidor MCP declarado no `mcp.json` do Pipo. |
 | `sheet` | Ler, adicionar ou atualizar linhas no Google Sheets (conexão das Configurações). |
 | `agent` | Julgamento: escrever, classificar, resumir. Pode pedir JSON e consultar outro Pipo. |
@@ -50,8 +51,8 @@ Cada passo tem uma `key` (usada nos templates) e um `title`. Tipos:
   `{{entrada.saidas.<passo>}}` traz a saída de cada passo do anterior, além de `{{entrada.resumo}}` e
   `{{entrada.metricas}}`.
 - `{{pipo.nome}}`, `{{agora.data}}`, `{{agora.hora}}`, `{{execucao.seco}}`.
-- `{{segredo.NOME}}`: só em `script`, `http` e `mcp`. O valor nunca aparece em logs nem no histórico
-  (mostrado como `••••`).
+- `{{segredo.NOME}}`: só em `script`, `http`, `browser` e `mcp`. O valor nunca aparece em logs nem no
+  histórico (mostrado como `••••`).
 - Filtros: `| length`, `| json`, `| first`, `| last`, `| join:, `, `| default:x`, `| upper`, `| lower`,
   `| number`, `| novos:<passo>`.
 
@@ -75,6 +76,45 @@ se a execução cair no meio:
 A saída é `{enviados, pulados, falhas, resultados}`. O filtro `| novos:enviar` tira de uma lista quem
 o passo `enviar` já atendeu. Use-o para a confirmação mostrar só os novos e para encerrar cedo:
 `{{passos.leads.saida | novos:enviar | length}} == 0` → `end`.
+
+### Navegador
+
+Para sites sem API. O passo `browser` usa o Chromium embutido no app, numa janela fora da tela, com a
+**sessão do próprio Pipo** (cookies e logins separados dos outros Pipos e do seu navegador):
+
+```json
+{
+  "kind": "browser", "key": "precos", "title": "Ler os preços", "url": "https://loja.com/",
+  "actions": [
+    { "do": "fill", "target": "Buscar", "value": "{{entrada.termo}}" },
+    { "do": "submit", "target": "Buscar" },
+    { "do": "wait", "for": ".resultado" },
+    { "do": "list", "as": "nomes", "target": ".resultado h2" },
+    { "do": "list", "as": "links", "target": ".resultado a", "attr": "href" },
+    { "do": "screenshot", "as": "retrato" }
+  ]
+}
+```
+
+- Ações: `goto`, `click`, `fill`, `submit` (envia o formulário, como Enter), `press`, `wait`
+  (`seconds` ou `for`), `read`, `list` e `screenshot`. `target` é um seletor CSS ou o texto visível do
+  botão, link ou campo (`css=…` e `texto=…` tiram a dúvida).
+- A saída é um objeto com cada `as`, mais `url` e `titulo`. O retrato vai para a pasta da execução e
+  aparece na galeria do painel.
+- Passo que preenche, envia ou aperta tecla conta como externo: pede confirmação e, no ensaio, só é
+  descrito (nada é enviado). Passo que só lê roda de verdade no ensaio.
+- **Login:** o botão **Navegador** no detalhe do Pipo abre a janela do navegador dele. Você entra no
+  site com a sua senha uma vez e a sessão fica guardada. O Pipo não digita senha de login, e se
+  aparecer captcha é você quem resolve nessa janela.
+- Downloads, câmera, microfone, localização e avisos do site ficam bloqueados.
+- Use `http` quando o site tem API: é mais rápido e quebra menos. Respeite os termos de uso de cada
+  site.
+
+O **Pipo branco** também navega, pelo chat: pesquisa (`web_search`), abre e lê páginas (`web_open`,
+`web_read`) e age em sites (`web_click`, `web_fill`). Ler não pede confirmação. Clicar num botão,
+preencher um campo ou abrir um endereço que você não citou (e que não veio de uma busca ou de uma
+página já aberta) pede. Ele nunca digita senha: para login, abre a janela do navegador para você
+(`web_show`). O que está escrito numa página é tratado como dado, não como ordem.
 
 ### Limites e segurança
 

@@ -2,6 +2,7 @@
 import type { TokenUsage } from '@shared/pipos';
 import type { AgentEffort, AgentEvent, AgentModel, Task } from '@shared/types';
 import { parseCapture } from '@shared/parse-capture';
+import { webGuard } from '../browser/guard';
 import { emit } from '../bus';
 import { listClients } from '../db/repos/clients';
 import {
@@ -130,6 +131,8 @@ export async function sendMessage(opts: { conversationId: number | null; text: s
   const conv = opts.conversationId ? (getConversation(opts.conversationId) ?? createConversation()) : createConversation();
   const atts = opts.attachmentIds ?? [];
   if (!opts.thinkMore) {
+    // Sites que o usuário cita podem ser abertos pelo navegador sem perguntar de novo.
+    webGuard.noteUserText(opts.text);
     addMessage(conv.id, 'user', opts.text, atts);
     setConversationTitle(conv.id, opts.text.split('\n')[0]);
   }

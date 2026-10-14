@@ -1,5 +1,5 @@
 // Validação e descrição do plano de execução (usado pelo construtor e pelo card do plano).
-import type { PipoPlaybook, PipoStep, StepKind } from './pipos';
+import type { BrowserAction, PipoPlaybook, PipoStep, StepKind } from './pipos';
 import { references } from './template';
 
 export interface PlanIssue {
@@ -8,8 +8,16 @@ export interface PlanIssue {
   message: string;
 }
 
-const KINDS: StepKind[] = ['script', 'http', 'mcp', 'sheet', 'agent', 'confirm', 'branch', 'notify', 'handoff'];
+const KINDS: StepKind[] = ['script', 'http', 'browser', 'mcp', 'sheet', 'agent', 'confirm', 'branch', 'notify', 'handoff'];
 const KEY = /^[a-z][a-z0-9_]{0,39}$/;
+const BROWSER_DO: Array<BrowserAction['do']> = ['goto', 'click', 'fill', 'submit', 'press', 'wait', 'read', 'list', 'screenshot'];
+/** Ações do navegador que podem enviar algo para o site. */
+const SENDS: Array<BrowserAction['do']> = ['fill', 'submit', 'press'];
+
+/** O passo de navegador preenche, envia ou aperta tecla (pode mandar algo para o site)? */
+export function browserSends(s: PipoStep): boolean {
+  return s.kind === 'browser' && (s.actions ?? []).some((a) => SENDS.includes(a.do));
+}
 
 /** Marca como externa toda ação que sai da máquina, mesmo que o plano tenha esquecido. */
 export function normalizePlaybook(p: PipoPlaybook): PipoPlaybook {
@@ -17,6 +25,7 @@ export function normalizePlaybook(p: PipoPlaybook): PipoPlaybook {
     ...p,
     steps: p.steps.map((s) => {
       if (s.kind === 'http' && s.method !== 'GET') return { ...s, external: true };
+      if (browserSends(s)) return { ...s, external: true };
       if (s.kind === 'sheet' && s.action !== 'read') return { ...s, external: true };
       if (s.kind === 'handoff') return { ...s, external: false };
       return s;
@@ -32,6 +41,8 @@ function textsOf(s: PipoStep): string[] {
       return [...s.args, ...Object.values(s.env ?? {})];
     case 'http':
       return [s.url, s.body ?? '', ...Object.values(s.headers ?? {}), s.each ?? '', s.onceBy ?? ''];
+    case 'browser':
+      return [s.url, ...(s.actions ?? []).flatMap((a) => Object.values(a).filter((v): v is string => typeof v === 'string'))];
     case 'mcp':
       return [s.args];
     case 'sheet':
@@ -70,7 +81,7 @@ export function validatePlaybook(p: PipoPlaybook, env: { secrets: string[]; scri
         if (m && !earlier.has(m[1])) issues.push({ level: 'error', step: at, message: `Usa {{${ref}}}, mas o passo "${m[1]}" não vem antes.` });
         const sec = /^segredo\.([A-Z0-9_]+)/.exec(ref);
         if (sec) {
-          if (!['script', 'http', 'mcp'].includes(s.kind)) issues.push({ level: 'error', step: at, message: 'Segredos só podem ser usados em passos script, http e mcp.' });
+          if (!['script', 'http', 'browser', 'mcp'].includes(s.kind)) issues.push({ level: 'error', step: at, message: 'Segredos só podem ser usados em passos script, http, browser e mcp.' });
           else if (!env.secrets.includes(sec[1])) issues.push({ level: 'warn', step: at, message: `Falta guardar o segredo ${sec[1]} (use request_secret).` });
         }
       }
@@ -88,6 +99,16 @@ export function validatePlaybook(p: PipoPlaybook, env: { secrets: string[]; scri
         if (s.onceBy && !s.each) issues.push({ level: 'error', step: at, message: '"onceBy" só funciona junto com "each".' });
         if (s.each && s.external && !s.onceBy) issues.push({ level: 'warn', step: at, message: 'Envio por item sem "onceBy": rodar de novo pode repetir o envio.' });
         break;
+      case 'browser': {
+        if (!/^https?:\/\//.test((s.url ?? '').replace(/\{\{[^}]+\}\}/g, 'x'))) issues.push({ level: 'error', step: at, message: 'URL inválida.' });
+        if (!Array.isArray(s.actions)) issues.push({ level: 'error', step: at, message: 'O passo browser precisa de "actions" (uma lista, pode ser vazia).' });
+        for (const a of s.actions ?? []) {
+          if (!BROWSER_DO.includes(a.do)) issues.push({ level: 'error', step: at, message: `Ação de navegador desconhecida: ${String(a.do)}.` });
+          else if ((a.do === 'click' || a.do === 'fill' || a.do === 'list') && !a.target?.trim()) issues.push({ level: 'error', step: at, message: `A ação "${a.do}" precisa de "target".` });
+          else if ((a.do === 'read' || a.do === 'list' || a.do === 'screenshot') && !/^[a-z][a-z0-9_]*$/.test(a.as ?? '')) issues.push({ level: 'error', step: at, message: `A ação "${a.do}" precisa de "as" (nome minúsculo, sem espaço).` });
+        }
+        break;
+      }
       case 'mcp':
         if (!env.mcpServers.includes(s.server)) issues.push({ level: 'warn', step: at, message: `Servidor MCP "${s.server}" ainda não foi adicionado (add_mcp_server).` });
         break;
@@ -125,6 +146,7 @@ export function validatePlaybook(p: PipoPlaybook, env: { secrets: string[]; scri
 const KIND_LABEL: Record<StepKind, string> = {
   script: 'script',
   http: 'chamada de API',
+  browser: 'navegador',
   mcp: 'ferramenta MCP',
   sheet: 'planilha',
   agent: 'IA',
@@ -140,6 +162,8 @@ function detailOf(s: PipoStep): string {
       return `${s.command} ${s.args.join(' ')}`;
     case 'http':
       return `${s.method} ${s.url.replace(/\{\{segredo\.[^}]+\}\}/g, '••••')}${s.each ? ` · um por item${s.onceBy ? ', sem repetir' : ''}` : ''}`;
+    case 'browser':
+      return `${s.url}${s.actions?.length ? ` · ${s.actions.length} ${s.actions.length === 1 ? 'ação' : 'ações'}` : ''}`;
     case 'mcp':
       return `${s.server} → ${s.tool}`;
     case 'sheet':

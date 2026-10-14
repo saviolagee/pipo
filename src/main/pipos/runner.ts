@@ -3,7 +3,8 @@
 // métricas declaradas, pausa após 3 falhas e no máximo 2 execuções ao mesmo tempo (1 por Pipo).
 import { mkdirSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
-import type { AgentStep, Pipo, PipoPlaybook, PipoRun, PipoStep, TokenUsage } from '@shared/pipos';
+import { browserSends } from '@shared/plan-check';
+import type { AgentStep, BrowserStep, Pipo, PipoPlaybook, PipoRun, PipoStep, TokenUsage } from '@shared/pipos';
 import { evaluate, render, renderText, SENT_KEY, type TemplateCtx } from '@shared/template';
 import type { AgentEffort, AgentModel } from '@shared/types';
 import { setLive } from './live';
@@ -27,6 +28,8 @@ export interface RunnerDeps {
   fetch: typeof fetch;
   handoff: (o: { from: Pipo; to: string; payload: unknown; run: boolean; runId: number }) => Promise<string>;
   askPipo: (o: { from: Pipo; slug: string; question: string; signal: AbortSignal; onUsage?: (u: TokenUsage) => void }) => Promise<string>;
+  /** Passo `browser`: só existe no app (precisa do Chromium embutido). */
+  browser?: (step: BrowserStep, env: StepEnv, pipo: Pipo) => Promise<unknown>;
   update: (runId: number) => void;
 }
 
@@ -186,7 +189,8 @@ export async function execute(req: RunRequest, deps: RunnerDeps, onStart: (runId
 
   const gate = async (step: PipoStep): Promise<boolean> => {
     // Ação com efeito fora da máquina: precisa de um "confirmar" antes, ou de "sempre permitir".
-    if (dryRun || !step.external || approvedInRun || step.kind === 'confirm') return true;
+    // Passo de navegador que preenche ou envia conta como externo mesmo que o plano não tenha marcado.
+    if (dryRun || !(step.external || browserSends(step)) || approvedInRun || step.kind === 'confirm') return true;
     if (getPermission(pipo.id, step.key).alwaysAllow) return true;
     setLive(pipo.id, 'waiting', run.id, step.title);
     setStep(run.id, step.key, { status: 'waiting' });
@@ -204,6 +208,9 @@ export async function execute(req: RunRequest, deps: RunnerDeps, onStart: (runId
         return { output: await runScript(step, env) };
       case 'http':
         return { output: await runHttp(step, env, deps.fetch) };
+      case 'browser':
+        if (!deps.browser) throw new StepError('O navegador não está disponível aqui.');
+        return { output: await deps.browser(step, env, pipo) };
       case 'mcp':
         return { output: await runMcp(step, env) };
       case 'sheet':

@@ -521,6 +521,10 @@ ausências.
   - **Pipos coloridos:** novo passo de navegador nos planos (abrir página, clicar, preencher, ler).
   - **Pipo branco, no chat:** também pode usar o navegador quando o usuário pede (pesquisar, abrir
     e ler páginas, agir em sites), com confirmação antes de qualquer ação que envie algo.
+  - **Implementado** (ver [pipos.md](pipos.md#navegador)): passo `browser` com o Chromium embutido e
+    uma sessão por Pipo, botão "Navegador" para o usuário fazer login, ferramentas `inspect_page` e
+    `open_site_login` no construtor, e `web_search`, `web_open`, `web_read`, `web_click`, `web_fill`
+    e `web_show` no chat do branco. Nenhum deles digita senha de login nem resolve captcha.
 - **Dashboard personalizado por Pipo:** cada Pipo tem o seu painel, montado a partir do que ele faz
   e do que resultou (ex.: um Pipo de vídeo mostra quantos vídeos fez). Os cartões vêm das métricas
   do plano dele e são propostos na criação; o usuário ajusta. **Implementado** (ver

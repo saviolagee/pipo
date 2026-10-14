@@ -177,6 +177,7 @@ export function PipoDetail({ p, onBack }: { p: PipoSummary; onBack: () => void }
 
   const version = d?.versions.find((v) => v.version === p.activeVersion) ?? null;
   const steps = version ? describePlaybook(version.playbook) : [];
+  const usesSite = !!version?.playbook.steps.some((s) => s.kind === 'browser' || (s.kind === 'http' && s.capturedFrom));
   const working = p.live.state === 'working' || p.live.state === 'waiting';
   const act = async (fn: () => Promise<unknown>, ok?: string): Promise<void> => {
     try {
@@ -204,6 +205,12 @@ export function PipoDetail({ p, onBack }: { p: PipoSummary; onBack: () => void }
           <p className="truncate text-[12px] text-fg-2">{p.live.stepLabel ?? p.personality.mission}</p>
         </div>
         <span className="text-[11.5px] text-fg-2">{msg}</span>
+        {usesSite && (
+          // Os sites que o Pipo usa: é nesta janela que o usuário entra com a senha dele.
+          <Button size="sm" variant="tertiary" title={tt.browserHint} onClick={() => void api.invoke('pipos:openBrowser', p.id)}>
+            {tt.browser}
+          </Button>
+        )}
         {/* O painel do Pipo abre na janela de dashboards (o notch é pequeno para gráficos). */}
         <Button size="sm" variant="tertiary" disabled={!p.activeVersion} onClick={() => void api.invoke('dash:open', `pipo:${p.id}`)}>
           {tt.dashboard}

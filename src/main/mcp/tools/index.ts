@@ -39,8 +39,8 @@ export interface ToolDef {
   modes?: Array<ToolCtx['mode']>;
   description: string;
   inputSchema: Record<string, unknown>;
-  /** Altera dados → confirmação (exceto quando liberado). */
-  confirm?: (args: Args, ctx: ToolCtx) => ConfirmSpec | null;
+  /** Altera dados → confirmação (exceto quando liberado). Pode consultar algo antes de decidir (ex.: a página aberta). */
+  confirm?: (args: Args, ctx: ToolCtx) => ConfirmSpec | null | Promise<ConfirmSpec | null>;
   run: (args: Args, ctx: ToolCtx) => Promise<unknown> | unknown;
 }
 
@@ -482,7 +482,7 @@ export async function callTool(name: string, args: Args, ctx: ToolCtx): Promise<
   if (!tool) return { text: `Ferramenta desconhecida: ${name}`, isError: true };
   if (!availableIn(tool, ctx.mode)) return { text: `A ferramenta ${name} não está disponível nesta conversa.`, isError: true };
   try {
-    const spec = tool.confirm?.(args, ctx);
+    const spec = await tool.confirm?.(args, ctx);
     if (spec) {
       const ok = await confirmAction(name, spec);
       if (!ok) return { text: 'O usuário recusou esta ação. Não tente de novo sem ele pedir.', isError: false };

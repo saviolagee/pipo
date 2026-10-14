@@ -3,6 +3,7 @@ import { copyFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { PIPO_COLORS, type Pipo, type PipoRun } from '@shared/pipos';
 import { runRaw } from '../agent/service';
+import { runBrowser } from '../browser/step';
 import { emit } from '../bus';
 import { showCard, takeCardPayload } from '../cards';
 import { randomUUID } from 'node:crypto';
@@ -175,6 +176,7 @@ export const realDeps: RunnerDeps = {
   notify,
   gfetch: googleFetch,
   fetch: (...a) => fetch(...a),
+  browser: (step, env, pipo) => runBrowser(step, env, pipo.slug),
   handoff,
   askPipo,
   update: (runId) => {

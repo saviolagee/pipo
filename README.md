@@ -19,6 +19,9 @@ logado com a sua assinatura** — sem chave de API.
   cofre de segredos e um plano de execução fixo e versionado, que roda sob demanda, num horário, por
   evento ou depois de outro Pipo. Na pill, os mini-Pipos acendem enquanto trabalham. Veja
   [docs/pipos.md](docs/pipos.md).
+- **Navegador:** os Pipos usam sites que não têm API (abrir, clicar, preencher, ler), cada um com a
+  sua sessão; você faz o login uma vez na janela do navegador dele. No chat, o Pipo branco pesquisa
+  na web, lê páginas e age em sites, pedindo confirmação antes de enviar qualquer coisa.
 - **Dashboards:** horas vs meta, foco, distração, melhores horários, clientes (valor/hora), métricas
   dos Pipos e dinheiro (Stripe), com exportação CSV/PDF e "pergunte ao dashboard". Cada Pipo tem um
   painel próprio com o que ele produziu, falhas, custo em tokens e comparação entre períodos.

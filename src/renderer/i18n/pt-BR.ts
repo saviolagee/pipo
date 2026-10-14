@@ -159,6 +159,8 @@ export const t = {
                 : 'manual',
     cancel: 'Parar',
     dashboard: 'Painel',
+    browser: 'Navegador',
+    browserHint: 'Abre o navegador deste Pipo. Entre aqui nos sites que ele usa: o login fica guardado só para ele.',
     run: 'Rodar',
     rehearse: 'Ensaiar',
     rehearsing: 'Ensaiando em modo seco…',

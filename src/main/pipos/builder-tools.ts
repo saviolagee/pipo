@@ -34,13 +34,13 @@ export const builderHooks: {
   introduce: (pipoId: number, text: string) => void;
 } = { applyTriggers: () => [], introduce: () => undefined };
 
-function draftOf(ctx: ToolCtx): Draft {
+export function draftOf(ctx: ToolCtx): Draft {
   const d = ctx.draftId ? getDraft(ctx.draftId) : null;
   if (!d) throw new Error('Não há rascunho de Pipo nesta conversa.');
   return d;
 }
 
-function pipoOf(d: Draft): NonNullable<ReturnType<typeof getPipo>> {
+export function pipoOf(d: Draft): NonNullable<ReturnType<typeof getPipo>> {
   const p = d.data.pipoId ? getPipo(d.data.pipoId) : null;
   if (!p) throw new Error('Primeiro defina nome e cor do Pipo com draft_pipo.');
   return p;
