@@ -11,6 +11,8 @@ import { dismissCard } from '../cards';
 import { handle } from '../ipc';
 import { buildBuilderPrompt } from './builder-prompt';
 import { builderHooks, emitDraft, registerBuilderTools } from './builder-tools';
+import { mcpBuilderTools } from './mcp-tools';
+import { registerTools } from '../mcp/tools';
 import { emit } from '../bus';
 import { createDraft, draftForConversation, getDraft, openDrafts } from './drafts';
 import { pipesChanged } from './ipc';
@@ -22,6 +24,7 @@ import { VAULT_UNAVAILABLE, vaultAvailable } from '../secrets';
 
 export function registerBuilder(): void {
   registerBuilderTools();
+  registerTools(mcpBuilderTools);
   // Até o chat próprio de cada Pipo existir (Fase 20), a apresentação aparece como aviso.
   builderHooks.introduce = (_id, text) => emit('toast:show', { id: `intro:${Date.now()}`, text, durationMs: 8000 });
   promptHooks.builder = (draftId) => {
