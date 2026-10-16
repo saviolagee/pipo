@@ -59,7 +59,7 @@ export interface PipoPersonality {
 
 // ---------- Plano de execução ----------
 
-export type StepKind = 'script' | 'http' | 'browser' | 'mcp' | 'sheet' | 'agent' | 'decide' | 'confirm' | 'branch' | 'notify' | 'handoff';
+export type StepKind = 'script' | 'http' | 'browser' | 'research' | 'mcp' | 'sheet' | 'agent' | 'decide' | 'confirm' | 'branch' | 'notify' | 'handoff';
 
 interface StepCommon {
   /** Identificador estável usado nos templates: {{passos.<key>.saida}}. */
@@ -124,6 +124,20 @@ export interface BrowserStep extends StepCommon {
   url: string;
   actions: BrowserAction[];
   timeoutSec?: number;
+}
+
+/**
+ * Pesquisa na web (só leitura): busca, abre as melhores fontes e devolve o texto de cada uma,
+ * para os passos seguintes trabalharem com referências reais em vez de inventar.
+ */
+export interface ResearchStep extends StepCommon {
+  kind: 'research';
+  /** O que buscar (aceita templates). */
+  query: string;
+  /** Quantas fontes abrir: 1 a 5 (padrão 3). */
+  sources?: number;
+  /** Só nestes sites (ex.: ["business.instagram.com", "newsroom.tiktok.com"]). */
+  sites?: string[];
 }
 
 export interface McpStep extends StepCommon {
@@ -206,7 +220,7 @@ export interface HandoffStep extends StepCommon {
   run: boolean;
 }
 
-export type PipoStep = ScriptStep | HttpStep | BrowserStep | McpStep | SheetStep | AgentStep | DecideStep | ConfirmStep | BranchStep | NotifyStep | HandoffStep;
+export type PipoStep = ScriptStep | HttpStep | BrowserStep | ResearchStep | McpStep | SheetStep | AgentStep | DecideStep | ConfirmStep | BranchStep | NotifyStep | HandoffStep;
 
 export interface MetricDef {
   key: string;

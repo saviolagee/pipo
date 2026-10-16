@@ -5,7 +5,7 @@ import { readFileSync, writeFileSync } from 'node:fs';
 import { BrowserWindow, dialog } from 'electron';
 import { deleteModel, exportPipo, getModel, importPipo, insertModel, listModels, modelFromPipo, writeFiles } from './models';
 import { promptHooks } from '../agent/service';
-import { createConversation, getConversation } from '../db/repos/conversations';
+import { addMessage, createConversation, getConversation } from '../db/repos/conversations';
 import { getProfile } from '../db/repos/profile';
 import { dismissCard } from '../cards';
 import { handle } from '../ipc';
@@ -21,6 +21,9 @@ import { activePlaybook, createPipo, getPipo, listPipos } from './repo';
 import { takeSecretCard } from './secret-cards';
 import { setPipoSecret } from './secrets';
 import { VAULT_UNAVAILABLE, vaultAvailable } from '../secrets';
+
+/** Primeira fala do construtor: sai na hora, sem esperar o modelo. */
+export const BUILDER_GREETING = 'Me conta numa frase o que esse Pipo vai fazer, do jeito que vier. Eu planejo o resto (nome, passos, ferramentas e ensaio) e só pergunto o que não der para adivinhar.';
 
 export function registerBuilder(): void {
   registerBuilderTools();
@@ -75,6 +78,7 @@ export function registerBuilder(): void {
       return { conversationId: conv.id, draftId: d.id, resumed: false, name: p.name };
     }
     const d = createDraft(conv.id);
+    if (opts.greet) addMessage(conv.id, 'assistant', BUILDER_GREETING);
     emitDraft(d);
     return { conversationId: conv.id, draftId: d.id, resumed: false, name: null };
   });

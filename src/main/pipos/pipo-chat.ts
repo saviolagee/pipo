@@ -1,6 +1,7 @@
 // Conversa com um Pipo colorido (Fase 20): o chat de sempre, na cor e com a personalidade dele.
 // Ele explica o plano, mostra execuções, roda quando pedem e aprende regras; o plano só muda pelo /editarpipo.
 import { describePlaybook } from '@shared/plan-check';
+import { CHAT_PRINCIPLES } from '@shared/pipo-principles';
 import { PIPO_COLORS } from '@shared/pipos';
 import { promptHooks } from '../agent/service';
 import { addMessage, createConversation, getConversation } from '../db/repos/conversations';
@@ -56,6 +57,7 @@ function buildPipoPrompt(pipoId: number): string {
     `Quando roda: ${scheduleLabel(pipoId) ?? 'só quando pedem'}${nextRunAt(pipoId) ? ` (próxima: ${new Date(nextRunAt(pipoId) as string).toLocaleString('pt-BR')})` : ''}${p.paused ? ' — PAUSADO' : ''}.`,
     last.length ? `Últimas execuções: ${last.map((r) => `#${r.id} ${r.status} — ${r.summary ?? r.error ?? ''}`).join(' | ')}` : 'Ainda não rodou de verdade.',
     'Fale em português do Brasil, curto (o chat é pequeno), na primeira pessoa. Sem markdown pesado.',
+    CHAT_PRINCIPLES,
     'Use my_runs e run_detail para responder sobre execuções (por que falhou, o que foi enviado). Nunca invente números.',
     'Se pedirem para rodar, chame run_me. Se o usuário corrigir algo que vale para sempre ("não manda pra concorrente X"), chame remember com a regra curta.',
     `Você NÃO muda o próprio plano. Se pedirem mudança de passos, limites ou horário, explique e sugira "/editarpipo ${p.slug}".`,

@@ -3,6 +3,9 @@ import type { AgentEffort, AgentModel } from './types';
 
 export const DEFAULT_AGENT = { model: 'sonnet' as AgentModel, effort: 'medium' as AgentEffort };
 
+/** O construtor de Pipos planeja com o modelo mais capaz: o plano sai completo e quase sem perguntas. */
+export const BUILDER_AGENT = { model: 'opus' as AgentModel, effort: 'high' as AgentEffort };
+
 /** Ids da API para o provedor por chave. */
 export const API_MODEL_IDS: Record<Exclude<AgentModel, 'default'>, string> = {
   sonnet: 'claude-sonnet-5-5',

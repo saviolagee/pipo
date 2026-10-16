@@ -9,7 +9,7 @@ export interface PlanIssue {
   message: string;
 }
 
-const KINDS: StepKind[] = ['script', 'http', 'browser', 'mcp', 'sheet', 'agent', 'decide', 'confirm', 'branch', 'notify', 'handoff'];
+const KINDS: StepKind[] = ['script', 'http', 'browser', 'research', 'mcp', 'sheet', 'agent', 'decide', 'confirm', 'branch', 'notify', 'handoff'];
 const KEY = /^[a-z][a-z0-9_]{0,39}$/;
 const BROWSER_DO: Array<BrowserAction['do']> = ['goto', 'click', 'fill', 'submit', 'press', 'wait', 'read', 'list', 'screenshot'];
 /** Ações do navegador que podem enviar algo para o site. */
@@ -44,6 +44,8 @@ function textsOf(s: PipoStep): string[] {
       return [s.url, s.body ?? '', ...Object.values(s.headers ?? {}), s.each ?? '', s.onceBy ?? ''];
     case 'browser':
       return [s.url, ...(s.actions ?? []).flatMap((a) => Object.values(a).filter((v): v is string => typeof v === 'string'))];
+    case 'research':
+      return [s.query ?? '', ...(s.sites ?? [])];
     case 'mcp':
       return [s.args];
     case 'sheet':
@@ -112,6 +114,11 @@ export function validatePlaybook(p: PipoPlaybook, env: { secrets: string[]; scri
         }
         break;
       }
+      case 'research':
+        if (!s.query?.trim()) issues.push({ level: 'error', step: at, message: 'A pesquisa precisa de "query" (o que buscar).' });
+        if (s.sources !== undefined && !(s.sources >= 1 && s.sources <= 5)) issues.push({ level: 'error', step: at, message: '"sources" vai de 1 a 5.' });
+        if (s.sites !== undefined && !Array.isArray(s.sites)) issues.push({ level: 'error', step: at, message: '"sites" é uma lista de endereços.' });
+        break;
       case 'mcp':
         if (!env.mcpServers.includes(s.server)) issues.push({ level: 'warn', step: at, message: `Servidor MCP "${s.server}" ainda não foi adicionado (add_mcp_server).` });
         break;
@@ -156,6 +163,7 @@ const KIND_LABEL: Record<StepKind, string> = {
   script: 'script',
   http: 'chamada de API',
   browser: 'navegador',
+  research: 'pesquisa',
   mcp: 'ferramenta MCP',
   sheet: 'planilha',
   agent: 'IA',
@@ -174,6 +182,8 @@ function detailOf(s: PipoStep): string {
       return `${s.method} ${s.url.replace(/\{\{segredo\.[^}]+\}\}/g, '••••')}${s.each ? ` · um por item${s.onceBy ? ', sem repetir' : ''}` : ''}`;
     case 'browser':
       return `${s.url}${s.actions?.length ? ` · ${s.actions.length} ${s.actions.length === 1 ? 'ação' : 'ações'}` : ''}`;
+    case 'research':
+      return `"${s.query}" · ${s.sources ?? 3} fontes${s.sites?.length ? ` em ${s.sites.join(', ')}` : ''}`;
     case 'mcp':
       return `${s.server} → ${s.tool}`;
     case 'sheet':

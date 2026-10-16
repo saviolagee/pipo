@@ -23,6 +23,8 @@ export interface DraftData {
   interview: Record<string, string>;
   /** Último ensaio (id da execução em modo seco) e se passou. */
   rehearsal: { runId: number; ok: boolean } | null;
+  /** Apresentação do Pipo, na voz dele, para quando for contratado pelo botão do card. */
+  intro: string | null;
 }
 
 export interface Draft {
@@ -50,6 +52,7 @@ export const EMPTY_DRAFT: DraftData = {
   triggers: { schedule: null, after: null, events: [] },
   interview: {},
   rehearsal: null,
+  intro: null,
 };
 
 const toDraft = (r: Row): Draft => ({

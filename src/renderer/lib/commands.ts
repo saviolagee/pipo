@@ -30,18 +30,27 @@ function markDays(kind: DayKind, label: string, defaultArgs: string): (args: str
   };
 }
 
-/** /criarpipo [descrição | novo]: abre (ou retoma) a conversa de criação com o Pipo branco. */
+/**
+ * /criarpipo [descrição | novo]: abre a conversa de criação com o Pipo branco.
+ * Com descrição, começa um rascunho novo e já manda o pedido; sem, retoma o que ficou pela metade.
+ */
 async function createPipo(args: string): Promise<void> {
   const a = args.trim();
-  const fresh = /^novo$/i.test(a);
-  const r = await api.invoke('pipos:startDraft', { fresh });
+  const describe = /^novo$/i.test(a) ? '' : a;
+  // Sem descrição, a saudação sai do próprio app, na hora (sem esperar o modelo).
+  const r = await api.invoke('pipos:startDraft', { fresh: !!a, greet: !describe });
   useUi.getState().setTab('chat');
   await useChat.getState().openConversation(r.conversationId);
   if (r.resumed) {
     toast(t.team.resumed(r.name));
     return;
   }
-  await useChat.getState().send(a && !fresh ? a : t.team.createFirstMessage);
+  if (describe) await useChat.getState().send(describe);
+}
+
+/** "quero um Pipo que…": abre a criação já com o pedido. */
+export async function startPipoFromText(text: string): Promise<void> {
+  await createPipo(text);
 }
 
 function findPipo(arg: string): { id: number; name: string; slug: string } | null {

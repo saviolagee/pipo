@@ -80,7 +80,7 @@ describe('rascunho e versões', () => {
   });
 
   it('diff legível entre versões do plano', async () => {
-    const { planDiff } = await import('../src/main/pipos/builder-tools');
+    const { planDiff } = await import('../src/main/pipos/plan-card');
     const a = { ...EMPTY_PLAYBOOK, steps: [{ kind: 'notify' as const, key: 'a', title: 'Avisar' }, { kind: 'notify' as const, key: 'b', title: 'Tchau' }] };
     const b = { ...EMPTY_PLAYBOOK, steps: [{ kind: 'notify' as const, key: 'a', title: 'Avisar', body: 'novo' }, { kind: 'notify' as const, key: 'c', title: 'Oi' }] };
     expect(planDiff(a, b)).toEqual(['+ Oi', '− Tchau', '~ Avisar']);

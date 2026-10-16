@@ -8,21 +8,43 @@ O app não traz nenhum Pipo pronto. Ele traz só a estrutura, e a equipe é sua.
 
 ## Criar: `/criarpipo`
 
-No chat, digite `/criarpipo` e descreva o trabalho:
+No chat, digite `/criarpipo` e descreva o trabalho numa frase (ou só escreva "quero um Pipo
+que…" no chat do Pipo branco):
 
-> /criarpipo Quero um Pipo que puxa leads do Apify, manda um e-mail de apresentação pelo Resend,
-> atualiza minha planilha e me avisa quantos foram.
+> /criarpipo Quero que me ajude a criar uma comunidade de fotografia de rua.
 
-O Pipo conduz a conversa em etapas, mostradas na barra do rascunho:
+A criação roda no **Opus** e acontece **numa volta só**: da sua frase, o Pipo branco faz tudo sem
+parar para perguntar, e as etapas aparecem na barra do rascunho:
 
-1. **Entrevista:** o que ele faz, com que frequência, de onde vêm os dados, o que nunca pode fazer.
-2. **Conexões:** chaves de API são pedidas num **campo seguro** no notch e vão direto para o cofre
+1. **Identidade e roteiro:** nome, cor, acessório, missão e tom; o que ele assumiu (horário,
+   limites, avisos, permissões) fica anotado e aparece no resumo para você ajustar.
+2. **Referências:** quando o trabalho é de marketing, conteúdo, vendas ou comunidade, ele pesquisa
+   antes de planejar (guias oficiais, casos reais) e põe passos `research` no plano.
+3. **Conexões:** chaves de API são pedidas num **campo seguro** no notch e vão direto para o cofre
    daquele Pipo. Nunca cole uma chave no chat. Se você já tem um script, arraste o arquivo no chat;
    se não tem, ele escreve um.
-3. **Plano:** ele monta os passos e mostra o plano num card, com avisos de validação.
-4. **Ensaio:** roda tudo em modo seco. Leituras acontecem, mas nada sai da máquina: e-mails não são
-   enviados e a planilha não é alterada.
-5. **Contratar:** o Pipo entra na equipe com o plano v1.
+4. **Plano e ensaio:** o plano completo, até o objetivo final, roda em modo seco. Leituras
+   acontecem, mas nada sai da máquina: e-mails não são enviados e a planilha não é alterada. Se o
+   ensaio falhar, ele corrige sozinho e ensaia de novo.
+5. **Contratar:** o card do plano tem o botão **Contratar**. Um clique e o Pipo entra na equipe com
+   o plano v1. Quer mudar algo antes? É só pedir na conversa ("não posta no TikTok"): ele ajusta,
+   ensaia e o card volta com o botão.
+
+Ele só pergunta o que é impossível adivinhar (ex.: o produto que você vende), no máximo uma vez.
+
+**O que todo Pipo já sabe** (a não ser que você peça outra coisa):
+
+- **Trabalho completo até o objetivo final.** "Me ajuda a criar uma comunidade" vira: montar e
+  cuidar da plataforma da comunidade, criar e postar conteúdo no Instagram e no TikTok, responder
+  as pessoas e medir o crescimento. Para fazer menos, diga ("só os textos", "eu mesmo posto").
+- **Marketing começa por referências validadas:** antes de criar posts, roteiros, anúncios ou
+  estratégia, ele pesquisa o que já funciona e escreve citando as fontes. Nada de números
+  inventados.
+- **A ferramenta certa para cada parte:** API oficial (ou servidor MCP) primeiro, depois "site vira
+  API", e o navegador só quando não há outro jeito; script para processar dados e gerar arquivos;
+  `decide` para escolhas repetidas; IA só onde precisa escrever ou julgar.
+- **Redes sociais pela API oficial** de cada plataforma, respeitando os termos de uso.
+- **Tudo que é público pede confirmação** na primeira versão; você libera com "Sempre permitir".
 
 Para mudar depois, abra o Pipo na aba **Equipe** e clique em **Editar plano**. Cada mudança aprovada
 vira uma nova versão, com a diferença entre elas.
@@ -36,6 +58,7 @@ Cada passo tem uma `key` (usada nos templates) e um `title`. Tipos:
 | `script` | Roda um arquivo de `scripts/` do Pipo (node, python, powershell, pwsh, bash, sh). Recebe os segredos como variáveis de ambiente, a entrada em `PIPO_INPUT` e `PIPO_DRY_RUN=1` no ensaio. Imprime JSON. |
 | `http` | Chamada de API (GET/POST/…). Resposta JSON vira a saída. |
 | `browser` | Abre uma página num navegador de verdade e faz as ações em ordem (clicar, preencher, ler). Veja [Navegador](#navegador). |
+| `research` | Pesquisa na web, só leitura: busca (`query`, com `sites` opcionais), abre as melhores fontes (`sources`, 1 a 5) e devolve o texto de cada uma em `fontes`. Roda até no ensaio. Use antes dos passos de IA que criam conteúdo. |
 | `mcp` | Ferramenta de um servidor MCP declarado no `mcp.json` do Pipo. |
 | `sheet` | Ler, adicionar ou atualizar linhas no Google Sheets (conexão das Configurações). |
 | `agent` | Julgamento: escrever, classificar, resumir. Pode pedir JSON e consultar outro Pipo. |

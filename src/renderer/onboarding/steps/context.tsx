@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { DEFAULT_DISTRACTIONS } from '@shared/config';
 import type { DistractionSettings } from '@shared/types';
 import { Button } from '../../components/Button';
-import { Chip, Label, TagInput, TextField } from '../../components/Form';
+import { Chip, TagInput, TextField } from '../../components/Form';
 import { IconX } from '../../components/Icons';
 import { t } from '../../i18n/pt-BR';
 import type { StepProps } from '../draft';

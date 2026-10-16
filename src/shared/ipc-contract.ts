@@ -192,7 +192,7 @@ export interface InvokeHandlers {
   'pipos:runDetail': (runId: number) => { run: PipoRun; steps: PipoRunStep[] } | null;
   'pipos:runs': (id: number) => PipoRun[];
   'pipos:saveVersion': (id: number, playbook: PipoPlaybook, changelog: string) => PipoVersion;
-  'pipos:startDraft': (opts: { editSlug?: string; fromModelId?: number; fresh?: boolean }) => { conversationId: number; draftId: number; resumed: boolean; name: string | null };
+  'pipos:startDraft': (opts: { editSlug?: string; fromModelId?: number; fresh?: boolean; greet?: boolean }) => { conversationId: number; draftId: number; resumed: boolean; name: string | null };
   'pipos:draftFor': (conversationId: number) => DraftInfo | null;
   'pipos:submitSecret': (cardId: string, value: string) => { ok: boolean; error: string | null };
   'pipos:saveModel': (id: number) => PipoModel;
@@ -262,6 +262,8 @@ export interface MainEvents {
   'pipos:handoff': { fromPipoId: number; toPipoId: number };
   'pipos:draft': DraftInfo;
   'pipos:hired': { pipoId: number; version: number };
+  /** Mensagens novas numa conversa que não vieram do agente (ex.: contratado pelo botão do card). */
+  'chat:changed': { conversationId: number };
   'ui:openPipoRun': { pipoId: number; runId: number };
 }
 

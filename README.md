@@ -17,9 +17,11 @@ logado com a sua assinatura** — sem chave de API.
   adiantou, a trilha chega mais cedo. O Início mostra a ação do dia; as horas ficam na revisão do dia.
 - **Modo miniatura:** `Ctrl+Shift+M` encolhe o Pipo para uma bolinha no canto inferior direito, para
   liberar o topo da tela.
-- **Equipe de Pipos coloridos:** crie ajudantes conversando (`/criarpipo`). Cada um tem personalidade,
-  cofre de segredos e um plano de execução fixo e versionado, que roda sob demanda, num horário, por
-  evento ou depois de outro Pipo. Na pill, os mini-Pipos acendem enquanto trabalham. Veja
+- **Equipe de Pipos coloridos:** crie ajudantes conversando (`/criarpipo` ou "quero um Pipo que…").
+  Basta uma frase: o Opus planeja o Pipo inteiro, até o objetivo final, pesquisa referências quando
+  é marketing, ensaia e mostra o plano com o botão Contratar. Cada um tem personalidade, cofre de
+  segredos e um plano de execução fixo e versionado, que roda sob demanda, num horário, por evento
+  ou depois de outro Pipo. Na pill, os mini-Pipos acendem enquanto trabalham. Veja
   [docs/pipos.md](docs/pipos.md).
 - **Navegador:** os Pipos usam sites que não têm API (abrir, clicar, preencher, ler), cada um com a
   sua sessão; você faz o login uma vez na janela do navegador dele. No chat, o Pipo branco pesquisa

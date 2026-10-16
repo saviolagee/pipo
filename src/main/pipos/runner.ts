@@ -5,7 +5,8 @@ import { mkdirSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { normalizeOptions, type DecideResult } from '@shared/decide';
 import { browserSends } from '@shared/plan-check';
-import type { AgentStep, BrowserStep, Pipo, PipoPlaybook, PipoRun, PipoStep, TokenUsage } from '@shared/pipos';
+import { STEP_PRINCIPLES } from '@shared/pipo-principles';
+import type { AgentStep, BrowserStep, Pipo, PipoPlaybook, PipoRun, PipoStep, ResearchStep, TokenUsage } from '@shared/pipos';
 import { evaluate, render, renderText, SENT_KEY, type TemplateCtx } from '@shared/template';
 import type { AgentEffort, AgentModel } from '@shared/types';
 import { setLive } from './live';
@@ -31,6 +32,8 @@ export interface RunnerDeps {
   askPipo: (o: { from: Pipo; slug: string; question: string; signal: AbortSignal; onUsage?: (u: TokenUsage) => void }) => Promise<string>;
   /** Passo `browser`: só existe no app (precisa do Chromium embutido). */
   browser?: (step: BrowserStep, env: StepEnv, pipo: Pipo) => Promise<unknown>;
+  /** Passo `research`: pesquisa na web pelo navegador embutido (só leitura). */
+  research?: (step: ResearchStep, env: StepEnv, pipo: Pipo) => Promise<unknown>;
   /** Passo `decide`: escolhe uma opção e registra o exemplo da atividade. */
   decide?: (o: { activity: string; state: string; question: string; options: Record<string, string>; pipo: Pipo; runId: number; signal: AbortSignal; onUsage: (u: TokenUsage) => void }) => Promise<DecideResult>;
   update: (runId: number) => void;
@@ -62,6 +65,7 @@ export function pipoSystemPrompt(pipo: Pipo, rules: string[], json: boolean): st
     p.never.length ? `Você nunca: ${p.never.join('; ')}.` : null,
     rules.length ? `Regras que o usuário te ensinou (sempre siga):\n${rules.map((r) => `- ${r}`).join('\n')}` : null,
     'Faça só o que o passo pede. Não invente dados. Escreva em português do Brasil.',
+    STEP_PRINCIPLES,
     json ? 'Responda APENAS com JSON válido, sem markdown e sem texto antes ou depois.' : 'Responda só com o resultado, sem narrar o que vai fazer.',
   ]
     .filter(Boolean)
@@ -214,6 +218,9 @@ export async function execute(req: RunRequest, deps: RunnerDeps, onStart: (runId
       case 'browser':
         if (!deps.browser) throw new StepError('O navegador não está disponível aqui.');
         return { output: await deps.browser(step, env, pipo) };
+      case 'research':
+        if (!deps.research) throw new StepError('A pesquisa na web não está disponível aqui.');
+        return { output: await deps.research(step, env, pipo) };
       case 'mcp':
         return { output: await runMcp(step, env) };
       case 'sheet':

@@ -484,6 +484,27 @@ ausências.
   perguntas, só as essenciais (o que faz, de onde vêm os dados, para onde vai o resultado). O resto do
   roteiro (`builder-prompt.ts`: limites, avisos, permissões, folgas, dependências) vira padrão
   sensato, mostrado na proposta do plano para o usuário ajustar se quiser. **Implementado.**
+- **Criação numa tacada só (pedido em 16/10/2026):** criar um Pipo tem que ser rápido e natural. O
+  Opus planeja tudo a partir de uma frase, sem depender do usuário no meio. **Implementado** (ver
+  [pipos.md](pipos.md#criar-criarpipo)):
+  - **Opus no construtor:** a conversa de criação roda no Opus com effort alto, qualquer que seja o
+    modelo escolhido nas Configurações.
+  - **Uma volta só:** da primeira frase o construtor dá nome e cara ao Pipo, assume o roteiro,
+    pesquisa referências quando precisa, escreve os scripts, monta o plano completo, ensaia (e
+    corrige sozinho até 3 vezes) e mostra o card. Pergunta só o que é impossível adivinhar, no
+    máximo uma vez, e mesmo assim deixa o plano pronto.
+  - **Botão "Contratar" no card do plano:** com o ensaio passando, um clique contrata (ou salva a
+    nova versão no `/editarpipo`), sem mais uma volta na conversa.
+  - **Começo na hora:** `/criarpipo` cumprimenta na hora, sem esperar o modelo; "quero um Pipo
+    que…" no chat do Pipo branco já abre a criação com o pedido.
+  - **Pré-conhecimentos de todo Pipo** (`src/shared/pipo-principles.ts`), no construtor, no chat de
+    cada Pipo e nos passos de IA: a não ser que o usuário peça outra coisa, fazer o trabalho
+    completo até o objetivo final (ex.: "criar uma comunidade" = montar e cuidar da plataforma,
+    criar e postar conteúdo no Instagram e no TikTok, responder as pessoas e medir); em marketing,
+    puxar referências validadas antes de criar; usar a ferramenta certa para cada parte (API
+    oficial, site vira API, navegador, script, decisão, IA); redes sociais pela API oficial.
+  - **Passo `research`:** pesquisa na web dentro do plano (busca, abre as melhores fontes e traz o
+    texto delas), só leitura, roda até no ensaio. O construtor também pesquisa antes de planejar.
 - **Trilha de objetivos (nova lógica de produtividade):** o centro deixa de ser horas vs meta e passa
   a ser o plano e o avanço nele. Substitui "Projetos com marcos".
   - **Criar plano:** o usuário diz o resultado que quer e a data desejada; o branco desmembra em

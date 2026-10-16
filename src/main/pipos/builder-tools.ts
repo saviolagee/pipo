@@ -5,16 +5,17 @@ import { describePlaybook, normalizePlaybook, validatePlaybook, type PlanIssue }
 import { PIPO_COLORS, type EventSpec, type MetricDef, type PipoAccessory, type PipoColor, type PipoPlaybook, type PipoStep } from '@shared/pipos';
 import type { AgentEffort, AgentModel } from '@shared/types';
 import { emit } from '../bus';
-import { dismissCard, showCard } from '../cards';
+import { showCard } from '../cards';
 import { confirmAction } from '../mcp/confirm-bridge';
 import { registerTools, type ToolCtx, type ToolDef } from '../mcp/tools';
 import { paths } from '../paths';
 import { startRun } from './deps';
-import { closeDraft, getDraft, STAGES, updateDraft, type Draft, type DraftStage } from './drafts';
+import { getDraft, STAGES, updateDraft, type Draft, type DraftStage } from './drafts';
 import { pipesChanged } from './ipc';
 import { setLive } from './live';
 import { readMcpConfig } from './mcp-client';
-import { activePlaybook, addVersion, createPipo, ensurePipoDirs, getPipo, listPipos, pipoDir, runSteps, updatePipo } from './repo';
+import { activePlaybook, createPipo, ensurePipoDirs, getPipo, listPipos, pipoDir, runSteps, updatePipo } from './repo';
+import { hireBlocker, hireDraft, planDiff, showPlanCard } from './plan-card';
 import { runDone } from './runner';
 import { forgetSecretCard, trackSecretCard } from './secret-cards';
 import { secretNames, validSecretName } from './secrets';
@@ -60,7 +61,7 @@ function scriptsOf(slug: string): string[] {
   return existsSync(dir) ? readdirSync(dir) : [];
 }
 
-function checkPlan(d: Draft, plan: PipoPlaybook): PlanIssue[] {
+export function checkPlan(d: Draft, plan: PipoPlaybook): PlanIssue[] {
   const p = d.data.pipoId ? getPipo(d.data.pipoId) : null;
   return validatePlaybook(plan, {
     secrets: p ? secretNames(p.slug) : [],
@@ -90,38 +91,6 @@ function savePlan(d: Draft, plan: PipoPlaybook): Draft {
 function asSteps(v: unknown): PipoStep[] {
   if (!Array.isArray(v)) throw new Error('steps precisa ser uma lista de passos.');
   return v as PipoStep[];
-}
-
-let planCardId: string | null = null;
-
-/** Card do plano no chat (não bloqueia a conversa). */
-function showPlanCard(d: Draft, plan: PipoPlaybook): void {
-  const p = pipoOf(d);
-  if (planCardId) dismissCard(planCardId, 'replaced');
-  const t = d.data.triggers;
-  const when = [t.schedule ? `quando: ${t.schedule}` : null, t.after ? `depois de @${t.after.from}${t.after.delayMin ? ` (+${t.after.delayMin} min)` : ''}` : null, 'ou quando você pedir'].filter(Boolean).join(' · ');
-  const issues = checkPlan(d, plan);
-  planCardId = `plan:${d.id}:${Date.now()}`;
-  void showCard({
-    id: planCardId,
-    kind: 'pipo_plan',
-    glow: 'none',
-    mascot: 'happy',
-    pipoColor: PIPO_COLORS[p.color],
-    label: `plano de execução · ${p.name}`,
-    subject: when,
-    list: describePlaybook(plan),
-    body: [
-      plan.metrics.length ? `Conta: ${plan.metrics.map((m) => m.label).join(', ')}` : null,
-      `Tempo máximo: ${plan.limits.maxRunMinutes} min${plan.limits.window ? ` · só entre ${plan.limits.window.start} e ${plan.limits.window.end}` : ''}`,
-      issues.length ? issues.map((i) => `${i.level === 'error' ? '✕' : '!'} ${i.step ? `${i.step}: ` : ''}${i.message}`).join('\n') : null,
-    ]
-      .filter(Boolean)
-      .join('\n'),
-    buttons: [{ id: 'ok', label: 'Ok', variant: 'secondary' }],
-  }).then(() => {
-    planCardId = null;
-  });
 }
 
 async function dryRun(d: Draft, plan: PipoPlaybook, upTo?: string): Promise<Record<string, unknown>> {
@@ -215,19 +184,24 @@ const TOOLS: ToolDef[] = [
     name: 'save_interview',
     modes: ['builder'],
     description:
-      'Guarda um item do roteiro (o_que_fazer, origem_dos_dados, destino, gatilho, limites, quando_avisar, quando_pedir_permissao, folgas, depende_de_outro), respondido pelo usuário ou assumido por você pelo padrão. Só os três primeiros podem virar pergunta. Use "não se aplica" quando for o caso.',
-    inputSchema: { type: 'object', properties: { item: { type: 'string' }, answer: { type: 'string' } }, required: ['item', 'answer'] },
+      'Guarda itens do roteiro (o_que_fazer, origem_dos_dados, destino, gatilho, limites, quando_avisar, quando_pedir_permissao, folgas, depende_de_outro), ditos pelo usuário ou assumidos por você pelo padrão. Passe todos de uma vez em items ({"gatilho": "seg–sex 9h", ...}). Use "não se aplica" quando for o caso.',
+    inputSchema: {
+      type: 'object',
+      properties: { items: { type: 'object', additionalProperties: { type: 'string' } }, item: { type: 'string' }, answer: { type: 'string' } },
+    },
     run: (a, ctx) => {
       const d = draftOf(ctx);
+      const given: Record<string, string> = {};
+      if (a.items && typeof a.items === 'object') for (const [k, v] of Object.entries(a.items as Args)) if (k.trim()) given[k.trim()] = String(v ?? '');
       const item = str(a.item);
-      if (!item) throw new Error('item vazio');
-      const interview = { ...d.data.interview, [item]: String(a.answer ?? '') };
+      if (item) given[item] = String(a.answer ?? '');
+      if (!Object.keys(given).length) throw new Error('Passe os itens em items.');
+      const interview = { ...d.data.interview, ...given };
       const next = updateDraft(d.id, { data: { interview }, stage: stageAtLeast(d, 'interview') });
       emitDraft(next);
-      // Só o essencial pode virar pergunta; o resto o construtor assume e mostra na proposta do plano.
-      const essential = ['o_que_fazer', 'origem_dos_dados', 'destino'];
-      const defaults = ['gatilho', 'limites', 'quando_avisar', 'quando_pedir_permissao', 'folgas', 'depende_de_outro'];
-      return { respondidos: Object.keys(interview), faltam: essential.filter((r) => !(r in interview)), assumir_sem_perguntar: defaults.filter((r) => !(r in interview)) };
+      // Nada vira pergunta: o que faltar o construtor assume pelo padrão e mostra no resumo.
+      const all = ['o_que_fazer', 'origem_dos_dados', 'destino', 'gatilho', 'limites', 'quando_avisar', 'quando_pedir_permissao', 'folgas', 'depende_de_outro'];
+      return { guardados: Object.keys(interview), assumir_pelo_padrao: all.filter((r) => !(r in interview)) };
     },
   },
   {
@@ -383,7 +357,6 @@ const TOOLS: ToolDef[] = [
         subject: `scripts/${file} (${content.split('\n').length} linhas)`,
         title: content.split('\n').slice(0, 3).join(' ⏎ ').slice(0, 140),
         confirm: 'Salvar script',
-        allowAlways: false,
       });
       if (!ok) return { salvo: false, motivo: 'O usuário recusou.' };
       writeFileSync(join(ensurePipoDirs(p.slug), 'scripts', file), content);
@@ -452,12 +425,16 @@ const TOOLS: ToolDef[] = [
   {
     name: 'propose_plan',
     modes: ['builder'],
-    description: 'Mostra o plano de execução como um card legível no chat (passos numerados, confirmações, limites, gatilhos).',
-    inputSchema: { type: 'object', properties: {} },
-    run: (_a, ctx) => {
-      const d = draftOf(ctx);
+    description:
+      'Mostra o plano de execução como um card no chat (passos numerados, confirmações, limites, gatilhos). Se o ensaio já passou, o card tem o botão "Contratar": um clique do usuário contrata. Chame por último, depois do ensaio, e passe a apresentação do Pipo em intro.',
+    inputSchema: { type: 'object', properties: { intro: { type: 'string', description: 'Apresentação curta do Pipo, na voz dele (o que faz, quando roda e como chamar com @slug). Aparece no chat dele ao ser contratado.' } } },
+    run: (a, ctx) => {
+      let d = draftOf(ctx);
+      const intro = str(a.intro);
+      if (intro) d = updateDraft(d.id, { data: { intro } });
       showPlanCard(d, d.data.plan);
-      return planReply(d, d.data.plan);
+      const blocker = hireBlocker(d);
+      return { ...planReply(d, d.data.plan), botao_contratar: blocker ? `não (${blocker})` : 'sim: o usuário contrata com um clique' };
     },
   },
   {
@@ -469,9 +446,8 @@ const TOOLS: ToolDef[] = [
       const d = draftOf(ctx);
       const p = pipoOf(d);
       const plan = d.data.plan;
-      const errors = checkPlan(d, plan).filter((i) => i.level === 'error');
-      if (errors.length) return { contratado: false, problemas: errors };
-      if (!d.data.rehearsal?.ok) return { contratado: false, motivo: 'Faça um ensaio (rehearse) que passe antes de contratar.' };
+      const blocker = hireBlocker(d);
+      if (blocker) return { contratado: false, motivo: blocker, problemas: checkPlan(d, plan).filter((i) => i.level === 'error') };
       const prev = d.data.editing ? activePlaybook(p.id) : null;
       const diff = prev ? planDiff(prev.playbook, plan) : null;
       const answer = await showCard(
@@ -491,18 +467,8 @@ const TOOLS: ToolDef[] = [
         { timeoutMs: 10 * 60_000, timeoutValue: 'no' },
       );
       if (answer !== 'yes') return { contratado: false, motivo: 'O usuário quer ajustar mais.' };
-      if (planCardId) dismissCard(planCardId, 'hired');
-      const v = addVersion(p.id, plan, str(a.changelog) ?? (d.data.editing ? (diff?.join('; ') ?? 'ajustes') : 'primeira versão'));
-      const triggers = builderHooks.applyTriggers(p.id, d.data.triggers);
-      updateDraft(d.id, { stage: 'hire' });
-      closeDraft(d.id);
-      emitDraft({ ...d, stage: 'hire' });
-      setLive(p.id, 'done');
-      pipesChanged();
-      emit('pipos:hired', { pipoId: p.id, version: v.version });
-      const intro = str(a.intro) ?? `Oi, sou o ${p.name}. ${p.personality.mission} Me chama com @${p.slug}.`;
-      builderHooks.introduce(p.id, intro);
-      return { contratado: true, versao: v.version, gatilhos: triggers, slug: p.slug };
+      const r = hireDraft(d, { changelog: str(a.changelog), intro: str(a.intro) });
+      return { contratado: true, versao: r.versao, gatilhos: r.gatilhos, slug: r.slug };
     },
   },
   {
@@ -513,23 +479,6 @@ const TOOLS: ToolDef[] = [
     run: () => listPipos().map((p) => ({ slug: p.slug, nome: p.name, cor: p.color, missao: p.personality.mission, pausado: p.paused, contratado: !!p.activeVersion })),
   },
 ];
-
-/** Resumo legível do que mudou entre duas versões do plano. */
-export function planDiff(a: PipoPlaybook, b: PipoPlaybook): string[] {
-  const out: string[] = [];
-  const ka = new Map(a.steps.map((s) => [s.key, s]));
-  const kb = new Map(b.steps.map((s) => [s.key, s]));
-  for (const s of b.steps) if (!ka.has(s.key)) out.push(`+ ${s.title}`);
-  for (const s of a.steps) if (!kb.has(s.key)) out.push(`− ${s.title}`);
-  for (const s of b.steps) {
-    const old = ka.get(s.key);
-    if (old && JSON.stringify(old) !== JSON.stringify(s)) out.push(`~ ${s.title}`);
-  }
-  if (a.steps.map((s) => s.key).join() !== b.steps.map((s) => s.key).join() && !out.length) out.push('ordem dos passos');
-  if (JSON.stringify(a.metrics) !== JSON.stringify(b.metrics)) out.push('métricas');
-  if (JSON.stringify(a.limits) !== JSON.stringify(b.limits)) out.push('limites');
-  return out;
-}
 
 export function registerBuilderTools(): void {
   registerTools(TOOLS);

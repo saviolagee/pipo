@@ -1,9 +1,9 @@
 import { create } from 'zustand';
 import type { DraftInfo, PipoAccessory } from '@shared/pipos';
 import type { AgentErrorCode, Attachment, ChatMessage } from '@shared/types';
-import { isFocusNextIntent } from '@shared/intents';
+import { isCreatePipoIntent, isFocusNextIntent } from '@shared/intents';
 import { api } from '../lib/api';
-import { matchCommand, runAtMention } from '../lib/commands';
+import { matchCommand, runAtMention, startPipoFromText } from '../lib/commands';
 import { focusNext } from '../lib/focus';
 import { usePipos } from './pipos';
 import { play } from '../sound/sfx';
@@ -74,6 +74,11 @@ export const useChat = create<ChatState>((set, get) => ({
       await focusNext();
       return;
     }
+    // "quero um Pipo que…" no chat do Pipo branco: vai direto para a criação, com o pedido.
+    if (!get().draft && !get().owner && !get().pending.length && isCreatePipoIntent(t)) {
+      await startPipoFromText(t);
+      return;
+    }
     const atts = get().pending;
     const optimistic: ChatMessage = { id: tempId--, conversationId: get().conversationId ?? 0, role: 'user', text: t, attachments: atts, createdAt: new Date().toISOString() };
     set((s) => ({ messages: [...s.messages, optimistic], pending: [], busy: true, streaming: '', error: null, tool: null, lastPrompt: t }));
@@ -112,6 +117,9 @@ export function bindAgentEvents(): () => void {
   const offDraft = api.on('pipos:draft', (d) => {
     if (d.conversationId !== null && d.conversationId === useChat.getState().conversationId) useChat.setState({ draft: d.stage === 'hire' ? { ...d } : d });
   });
+  const offChanged = api.on('chat:changed', ({ conversationId }) => {
+    if (conversationId === useChat.getState().conversationId) void useChat.getState().reload();
+  });
   const off = api.on('agent:event', (e) => {
     const s = useChat.getState();
     if (s.conversationId !== null && e.conversationId !== s.conversationId && e.type !== 'start') return;
@@ -147,5 +155,6 @@ export function bindAgentEvents(): () => void {
   return () => {
     off();
     offDraft();
+    offChanged();
   };
 }

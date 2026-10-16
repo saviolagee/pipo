@@ -229,7 +229,8 @@ export function ChatScreen({ mood, accessories, state }: { mood: number; accesso
                 <Rich text={m.text} />
                 <div className="mt-[3px] flex h-[16px] items-center gap-[10px] text-[10.5px] text-fg-3">
                   {m.model && <span title={m.model}>{prettyModel(m.model)}</span>}
-                  {i === chat.messages.length - 1 && !chat.busy && (
+                  {/* Só respostas do modelo podem ser refeitas (a saudação e os avisos do app não). */}
+                  {m.model && i === chat.messages.length - 1 && !chat.busy && (
                     <button type="button" onClick={() => void chat.thinkMore()} className="flex items-center gap-[4px] text-fg-3 transition-colors hover:text-fg" title={c.thinkMoreHint}>
                       <IconSpark size={9} /> {c.thinkMore}
                     </button>

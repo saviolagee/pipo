@@ -1,6 +1,7 @@
 // Orquestra as conversas com o agente: provedor, prompt de sistema, contexto MCP, streaming e persistência.
 import type { TokenUsage } from '@shared/pipos';
 import type { AgentEffort, AgentEvent, AgentModel, Task } from '@shared/types';
+import { BUILDER_AGENT } from '@shared/models';
 import { parseCapture } from '@shared/parse-capture';
 import { webGuard } from '../browser/guard';
 import { emit } from '../bus';
@@ -161,7 +162,7 @@ export async function sendMessage(opts: { conversationId: number | null; text: s
       pipoId: special?.pipoId,
       sessionId: conv.claudeSessionId,
       signal: ac.signal,
-      ...(opts.thinkMore ? { model: 'opus' as const, effort: 'high' as const } : {}),
+      ...(opts.thinkMore ? { model: 'opus' as const, effort: 'high' as const } : special?.mode === 'builder' ? BUILDER_AGENT : {}),
       onEvent: (e) => {
         if (e.type === 'model') model = e.model;
         else if (e.type === 'delta') {
