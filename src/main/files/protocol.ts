@@ -10,7 +10,7 @@ import { MIME } from './mime';
 export const FILE_SCHEME = 'pipo-file';
 
 /** Endereço de um anexo para a janela do Pipo. */
-export const fileUrl = (path: string): string => `${FILE_SCHEME}://anexo/${encodeURIComponent(basename(path))}`;
+export const fileUrl = (path: string): string => `${FILE_SCHEME}://anexo/${encodeURIComponent(path.split(/[\\/]/).pop() ?? '')}`;
 
 export function registerFileScheme(): void {
   protocol.registerSchemesAsPrivileged([{ scheme: FILE_SCHEME, privileges: { standard: true, secure: true, stream: true, supportFetchAPI: true, corsEnabled: true } }]);
