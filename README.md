@@ -17,6 +17,10 @@ logado com a sua assinatura** — sem chave de API.
   uma ação por dia. Dá para ajustar à mão (criar, editar, reordenar, mudar o dia, apagar) ou pedir ao
   Pipo no chat. Se uma ação fica para depois, as seguintes e a data final andam junto, sem punição;
   adiantou, a trilha chega mais cedo. O Início mostra a ação do dia; as horas ficam na revisão do dia.
+- **Vídeos, imagens e documentos:** arraste PDF, imagens, vídeos (mp4, mov, webm, até 2 GB), texto ou
+  .docx para qualquer Pipo. O vídeo ele assiste no seu computador: tira 8 quadros ao longo dele e
+  transcreve a fala dos primeiros 3 minutos, e a IA lê isso e abre os quadros. Mandado no chat de um
+  Pipo colorido, o arquivo entra na execução dele.
 - **Modo miniatura:** `Ctrl+Shift+M` encolhe o Pipo para uma bolinha no canto inferior direito, para
   liberar o topo da tela.
 - **Equipe de Pipos coloridos:** crie ajudantes conversando (`/criarpipo` ou "quero um Pipo que…").

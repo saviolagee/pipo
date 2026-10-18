@@ -1,9 +1,10 @@
 import { AnimatePresence, motion } from 'motion/react';
 import { Fragment, useEffect, useRef, useState } from 'react';
-import type { Accessory, Attachment, Card, MascotState } from '@shared/types';
+import type { Accessory, Card, MascotState } from '@shared/types';
 import { Button } from '../components/Button';
 import { usePinOnFocus } from '../components/Form';
-import { IconArrowUp, IconFile, IconMic, IconPlus, IconSpark, IconX } from '../components/Icons';
+import { FileChip } from '../components/FileChip';
+import { IconArrowUp, IconMic, IconPlus, IconSpark } from '../components/Icons';
 import { t } from '../i18n/pt-BR';
 import { prettyModel } from '@shared/models';
 import { PIPO_COLORS, pipoAccessoryLayers, type DraftInfo, type PipoModel } from '@shared/pipos';
@@ -41,22 +42,6 @@ function Rich({ text }: { text: string }): React.JSX.Element {
         return <div key={i}>{inline(l.replace(/^#+\s*/, ''), i)}</div>;
       })}
     </div>
-  );
-}
-
-function FileChip({ a, onRemove }: { a: Attachment; onRemove?: () => void }): React.JSX.Element {
-  const ext = a.filename.split('.').pop()?.toLowerCase() ?? '';
-  const color = ext === 'pdf' ? '#EF4444' : /png|jpe?g|gif|webp/.test(ext) ? '#22C55E' : /docx?/.test(ext) ? '#3B82F6' : '#A1A1AA';
-  return (
-    <span className="inline-flex h-[26px] max-w-[200px] items-center gap-[6px] rounded-[8px] pl-[7px] pr-[9px] text-[12px] text-fg" style={{ background: 'var(--bg-card-hover)' }}>
-      <IconFile size={14} color={color} />
-      <span className="truncate">{a.filename}</span>
-      {onRemove && (
-        <button type="button" aria-label={`${t.common.remove} ${a.filename}`} onClick={onRemove} className="text-fg-3 hover:text-fg">
-          <IconX size={9} />
-        </button>
-      )}
-    </span>
   );
 }
 

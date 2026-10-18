@@ -80,3 +80,9 @@ export function insertAttachment(a: Omit<Attachment, 'id' | 'createdAt'>): Attac
   const { lastId } = db().run('INSERT INTO attachments (conversation_id, filename, mime, path, created_at) VALUES (?, ?, ?, ?, ?)', a.conversationId, a.filename, a.mime, a.path, new Date().toISOString());
   return getAttachments([lastId])[0];
 }
+
+/** Anexo pelo caminho guardado (o agente se refere aos arquivos pelo caminho). */
+export function attachmentByPath(path: string): Attachment | null {
+  const r = db().get<AttRow>('SELECT * FROM attachments WHERE path = ? ORDER BY id DESC LIMIT 1', path);
+  return r ? toAttachment(r) : null;
+}

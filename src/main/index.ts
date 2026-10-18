@@ -4,6 +4,7 @@ import { app, ipcMain, powerMonitor, safeStorage, session } from 'electron';
 import { APP_ID, APP_NAME } from '@shared/config';
 import { emit } from './bus';
 import { registerBootstrapIpc } from './bootstrap';
+import { handleFileProtocol, registerFileScheme } from './files/protocol';
 import { quickCheckClaude } from './agent/detect-claude';
 import { openDb } from './db';
 import { paths } from './paths';
@@ -52,7 +53,8 @@ if (process.platform === 'linux') {
   // Janelas transparentes no Linux (útil para desenvolvimento).
   app.commandLine.appendSwitch('enable-transparent-visuals');
 }
-
+// Anexos (vídeo, imagem) abertos pela janela do Pipo: precisa ser registrado antes do app ficar pronto.
+registerFileScheme();
 
 // Teste de fumaça/E2E: perfil isolado, sem tocar nos dados do usuário.
 if (process.env.PIPO_USER_DATA && (!app.isPackaged || process.env.PIPO_E2E === '1')) app.setPath('userData', process.env.PIPO_USER_DATA);
@@ -83,6 +85,7 @@ app.whenReady().then(() => {
   // Nunca no app empacotado; os segredos não sobrevivem a reiniciar.
   if (!app.isPackaged && process.platform === 'linux' && process.env.PIPO_DEV_MEMORY_VAULT === '1') safeStorage.setUsePlainTextEncryption(true);
   mkdirSync(paths.files, { recursive: true });
+  handleFileProtocol();
   mkdirSync(paths.workspace, { recursive: true });
   openDb(join(paths.userData, 'pipo.db'));
   session.defaultSession.setSpellCheckerEnabled(false);

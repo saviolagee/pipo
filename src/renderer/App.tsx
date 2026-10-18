@@ -33,6 +33,7 @@ import { useData } from './store/data';
 import { useUi } from './store/ui';
 import { useWake } from './voice/wake';
 import { useEmbedBridge } from './local/embed';
+import { useMediaBridge } from './local/media';
 
 function useLook(hovered: boolean): { x: number; y: number } | null {
   const [look, setLook] = useState<{ x: number; y: number } | null>(null);
@@ -81,6 +82,7 @@ export function App(): React.JSX.Element {
   const mascot = useMascot(hovered);
   useWake();
   useEmbedBridge();
+  useMediaBridge();
   const clicks = useRef<number[]>([]);
   // No chat, cards de ação aparecem inline na conversa (seção 8.7).
   // O card do plano de um Pipo só existe no chat; ações e chaves seguras ficam inline lá.

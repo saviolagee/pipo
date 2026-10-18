@@ -6,6 +6,7 @@ import { join } from 'node:path';
 import { normalizeOptions, type DecideResult } from '@shared/decide';
 import { browserSends } from '@shared/plan-check';
 import { STEP_PRINCIPLES } from '@shared/pipo-principles';
+import { stageInputFiles } from './input-files';
 import type { AgentStep, BrowserStep, Pipo, PipoPlaybook, PipoRun, PipoStep, ResearchStep, TokenUsage } from '@shared/pipos';
 import { evaluate, render, renderText, SENT_KEY, type TemplateCtx } from '@shared/template';
 import type { AgentEffort, AgentModel } from '@shared/types';
@@ -161,11 +162,13 @@ export async function execute(req: RunRequest, deps: RunnerDeps, onStart: (runId
   onStart(run.id);
   const runDir = join(pipoDir, 'runs', String(run.id));
   mkdirSync(runDir, { recursive: true });
+  // Arquivos que o usuário mandou (imagem, vídeo, documento) entram na pasta da execução.
+  const input = stageInputFiles(req.input ?? null, runDir);
   const secrets = pipoSecrets(pipo.slug);
   const mask = (s: string): string => maskSecrets(s, secrets);
   const now = new Date();
   const ctx: TemplateCtx & { passos: Record<string, { saida: unknown }> } = {
-    entrada: req.input ?? null,
+    entrada: input,
     passos: {},
     pipo: { nome: pipo.name, slug: pipo.slug },
     execucao: { id: run.id, seco: dryRun },
@@ -176,7 +179,7 @@ export async function execute(req: RunRequest, deps: RunnerDeps, onStart: (runId
       playbook.steps.flatMap((s) => (s.kind === 'http' && s.each && s.onceBy ? [[s.key, { by: s.onceBy, done: [...readOnce(pipoDir, s.key)] }]] : [])),
     ),
   };
-  const env: StepEnv = { pipoDir, runDir, ctx, secrets, dryRun, signal: ac.signal, input: req.input ?? null };
+  const env: StepEnv = { pipoDir, runDir, ctx, secrets, dryRun, signal: ac.signal, input };
   const rules = listMemory(pipo.id).map((m) => m.rule);
   let notified = false;
   const timeout = setTimeout(() => ac.abort(), Math.max(1, playbook.limits.maxRunMinutes) * 60_000);

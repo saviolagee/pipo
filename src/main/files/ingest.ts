@@ -1,5 +1,6 @@
 // Anexos (seção 9.12): copiados para userData/files/ (a única pasta que o agente pode ler).
-// .docx vira .md com o mammoth antes, para o Claude conseguir ler.
+// .docx vira .md com o mammoth antes, para o Claude conseguir ler; vídeo é "assistido" (quadros e
+// fala, ver video.ts) para todo Pipo entender o que tem nele.
 import { randomBytes } from 'node:crypto';
 import { createReadStream, createWriteStream, statSync, writeFileSync } from 'node:fs';
 import { basename, extname, join } from 'node:path';
@@ -7,23 +8,13 @@ import type { Attachment } from '@shared/types';
 import { emit } from '../bus';
 import { insertAttachment } from '../db/repos/conversations';
 import { paths } from '../paths';
-
-const MIME: Record<string, string> = {
-  '.pdf': 'application/pdf',
-  '.png': 'image/png',
-  '.jpg': 'image/jpeg',
-  '.jpeg': 'image/jpeg',
-  '.gif': 'image/gif',
-  '.webp': 'image/webp',
-  '.txt': 'text/plain',
-  '.md': 'text/markdown',
-  '.csv': 'text/csv',
-  '.json': 'application/json',
-  '.docx': 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-};
+import { isVideoMime, MIME } from './mime';
+import { analyzeVideo } from './video';
 
 export const SUPPORTED = Object.keys(MIME);
 const MAX_BYTES = 30 * 1024 * 1024;
+/** Vídeo é grande por natureza. */
+const MAX_VIDEO_BYTES = 2 * 1024 * 1024 * 1024;
 
 function safeName(name: string): string {
   return name.replace(/[^\p{L}\p{N}._ -]+/gu, '_').slice(0, 120);
@@ -63,8 +54,9 @@ async function docxToMarkdown(src: string, dest: string): Promise<void> {
 export async function ingestFile(src: string): Promise<Attachment> {
   const ext = extname(src).toLowerCase();
   const original = basename(src);
-  if (!MIME[ext]) throw new Error(`Formato não suportado: ${ext || original}. Use PDF, imagens, texto ou .docx.`);
-  if (statSync(src).size > MAX_BYTES) throw new Error(`${original} é grande demais (máx. 30 MB).`);
+  if (!MIME[ext]) throw new Error(`Formato não suportado: ${ext || original}. Use PDF, imagens, vídeos (mp4, mov, webm), texto ou .docx.`);
+  const video = isVideoMime(MIME[ext]);
+  if (statSync(src).size > (video ? MAX_VIDEO_BYTES : MAX_BYTES)) throw new Error(`${original} é grande demais (máx. ${video ? '2 GB' : '30 MB'}).`);
   const id = randomBytes(4).toString('hex');
   const stored = join(paths.files, `${id}-${safeName(original)}`);
   emit('files:progress', { attachmentId: null, filename: original, percent: 0, done: false });
@@ -79,6 +71,8 @@ export async function ingestFile(src: string): Promise<Attachment> {
     await copyWithProgress(src, stored, original);
     const a = insertAttachment({ conversationId: null, filename: original, mime: MIME[ext], path: stored });
     emit('files:progress', { attachmentId: a.id, filename: original, percent: 100, done: true });
+    // O Pipo já começa a assistir; quando a mensagem for enviada, a leitura costuma estar pronta.
+    if (video) analyzeVideo(a).catch((e) => console.warn('[vídeo] não consegui assistir:', e));
     return a;
   } catch (e) {
     emit('files:progress', { attachmentId: null, filename: original, percent: 0, done: true, error: e instanceof Error ? e.message : String(e) });

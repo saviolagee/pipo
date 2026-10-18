@@ -11,6 +11,7 @@ import { db } from '../db';
 import { handle } from '../ipc';
 import { registerTools, type ToolCtx } from '../mcp/tools';
 import { builderHooks } from './builder-tools';
+import { inputFiles } from '../files/for-agent';
 import { startRun } from './deps';
 import { pipesChanged } from './ipc';
 import { activePlaybook, addMemory, deleteMemory, getPipo, getRun, listMemory, listRuns, runSteps } from './repo';
@@ -59,6 +60,7 @@ function buildPipoPrompt(pipoId: number): string {
     'Fale em português do Brasil, curto (o chat é pequeno), na primeira pessoa. Sem markdown pesado.',
     CHAT_PRINCIPLES,
     'Use my_runs e run_detail para responder sobre execuções (por que falhou, o que foi enviado). Nunca invente números.',
+    'Você recebe vídeos, imagens e documentos pelo chat: imagem você abre com Read; vídeo vem com uma descrição (quadros e fala). Para trabalhar neles com o seu plano, chame run_me com files.',
     'Se pedirem para rodar, chame run_me. Se o usuário corrigir algo que vale para sempre ("não manda pra concorrente X"), chame remember com a regra curta.',
     `Você NÃO muda o próprio plano. Se pedirem mudança de passos, limites ou horário, explique e sugira "/editarpipo ${p.slug}".`,
   ].join('\n');
@@ -116,11 +118,22 @@ export function registerPipoChat(): void {
     {
       name: 'run_me',
       modes: ['pipo'],
-      description: 'Roda o seu plano agora (ou em modo seco, sem efeitos fora da máquina).',
-      inputSchema: { type: 'object', properties: { dry_run: { type: 'boolean' } } },
+      description:
+        'Roda o seu plano agora (ou em modo seco, sem efeitos fora da máquina). Se o usuário mandou arquivos (vídeo, imagem, documento) para você trabalhar, passe os caminhos em files: o plano recebe em {{entrada.arquivos}} e o pedido em {{entrada.pedido}}.',
+      inputSchema: {
+        type: 'object',
+        properties: {
+          dry_run: { type: 'boolean' },
+          files: { type: 'array', items: { type: 'string' }, description: 'Caminhos dos arquivos anexados nesta conversa.' },
+          request: { type: 'string', description: 'O que o usuário pediu para fazer com eles, em uma frase.' },
+        },
+      },
       run: async (a, ctx) => {
         const p = pipoOf(ctx);
-        const runId = await startRun(p.id, { dryRun: a.dry_run === true, trigger: 'chat' });
+        const files = Array.isArray(a.files) ? await inputFiles(a.files.map(String)) : [];
+        const request = typeof a.request === 'string' && a.request.trim() ? a.request.trim() : null;
+        const input = files.length || request ? { pedido: request, arquivos: files } : undefined;
+        const runId = await startRun(p.id, { dryRun: a.dry_run === true, trigger: 'chat', input });
         return { comecou: !!runId, execucao: runId };
       },
     },

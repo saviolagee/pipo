@@ -224,6 +224,10 @@ export interface MainEvents {
   'goals:changed': Goal[];
   /** O processo principal pede ao modelo de leitura (na janela do notch) os vetores de uns textos. */
   'embed:request': { id: string; texts: string[] };
+  /** O principal pede à janela do notch para "assistir" um vídeo anexado: quadros e, se der, a fala. */
+  'media:request': { id: string; url: string; frames: number; audio: boolean; audioMaxSec: number };
+  /** Andamento da leitura de um vídeo anexado (para o chip do arquivo no chat). */
+  'media:status': MediaStatus;
   'ui:navigate': { tab: 'home' | 'trail' | 'tasks' | 'chat' | 'add' | 'settings' | 'review'; expand: boolean; capture?: boolean; voice?: boolean; purpose?: 'meeting'; weekly?: boolean };
   'ui:toggle': null;
   'ui:collapse': null;
@@ -251,6 +255,14 @@ export interface MainEvents {
   'ui:openPipoRun': { pipoId: number; runId: number };
 }
 
+export interface MediaStatus {
+  attachmentId: number;
+  stage: 'quadros' | 'fala' | 'pronto' | 'erro';
+  percent: number;
+  done: boolean;
+  error?: string;
+}
+
 export type MainEventName = keyof MainEvents;
 
 export type SfxName = 'pop' | 'chime' | 'alert' | 'gulp' | 'boing' | 'tick';
@@ -260,6 +272,8 @@ export interface RendererEvents {
   'ui:ready': null;
   'ui:expandedChanged': boolean;
   'embed:result': { id: string; vectors?: Float32Array[]; error?: string };
+  'media:progress': { id: string; stage: 'quadros' | 'fala'; percent: number };
+  'media:result': { id: string; duration?: number; width?: number; height?: number; frames?: Array<{ t: number; data: ArrayBuffer }>; transcript?: string | null; noAudio?: string | null; error?: string };
 }
 
 export interface PipoBridge {

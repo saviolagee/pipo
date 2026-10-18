@@ -1,6 +1,5 @@
 // Simulações do painel de debug (Ctrl+Alt+D) para validar cards e reações sem esperar o mundo real.
 import { emit } from './bus';
-import { showCard } from './cards';
 import { createTask } from './db/repos/tasks';
 import { interruptions } from './interruptions/manager';
 import { simulateMeeting } from './insights/context-reactions';

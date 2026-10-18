@@ -74,6 +74,10 @@ Cada passo tem uma `key` (usada nos templates) e um `title`. Tipos:
 - `{{entrada}}`: o que outro Pipo entregou. Quando o Pipo roda "depois de" outro,
   `{{entrada.saidas.<passo>}}` traz a saída de cada passo do anterior, além de `{{entrada.resumo}}` e
   `{{entrada.metricas}}`.
+- `{{entrada.arquivos}}`: vídeos, imagens e documentos que você mandou no chat do Pipo, cada um com
+  `nome`, `caminho`, `tipo` (`video`, `imagem` ou `documento`) e `mime`; o vídeo traz também `leitura`
+  (descrição com quadros e fala), `quadros`, `duracaoSeg` e `fala`. `{{entrada.pedido}}` traz o que
+  você pediu. Scripts recebem tudo em `PIPO_INPUT`; os passos de IA abrem as imagens e os quadros.
 - `{{pipo.nome}}`, `{{agora.data}}`, `{{agora.hora}}`, `{{execucao.seco}}`.
 - `{{segredo.NOME}}`: só em `script`, `http`, `browser` e `mcp`. O valor nunca aparece em logs nem no
   histórico (mostrado como `••••`).
@@ -235,6 +239,13 @@ página já aberta) pede. Ele nunca digita senha: para login, abre a janela do n
 Clique em **Conversar** no Pipo. Ele responde com a personalidade dele, consulta o próprio plano e as
 execuções, roda o plano quando você pede e **aprende regras** ("nunca mande e-mail no fim de semana").
 As regras aparecem no detalhe do Pipo, onde dá para editar, apagar ou adicionar à mão.
+
+Dá para **mandar arquivos** para qualquer Pipo: arraste um vídeo, imagem ou documento no chat dele e
+diga o que quer ("corta esse vídeo em 3 Reels"). Imagem ele vê na hora. Vídeo ele assiste no seu
+computador: tira 8 quadros ao longo do vídeo e transcreve a fala dos primeiros 3 minutos (o chip do
+arquivo mostra "assistindo…"). Para trabalhar no arquivo, ele roda o plano com ele, que chega em
+`{{entrada.arquivos}}`; os arquivos vão para a pasta da execução (o vídeo em si fica onde está e os
+scripts leem pelo caminho).
 
 ## Painel de cada Pipo
 

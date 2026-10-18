@@ -4,6 +4,7 @@ import type { AgentEffort, AgentEvent, AgentModel, Task } from '@shared/types';
 import { BUILDER_AGENT } from '@shared/models';
 import { parseCapture } from '@shared/parse-capture';
 import { webGuard } from '../browser/guard';
+import { attachmentsPrompt } from '../files/for-agent';
 import { emit } from '../bus';
 import { listClients } from '../db/repos/clients';
 import {
@@ -116,13 +117,6 @@ async function run(opts: {
   return result;
 }
 
-function promptWithAttachments(text: string, attachmentIds: number[]): string {
-  const atts = getAttachments(attachmentIds);
-  if (!atts.length) return text;
-  const list = atts.map((a) => `- ${a.filename} (${a.mime}): ${a.path}`).join('\n');
-  return `${text}\n\nArquivos anexados (leia com a ferramenta Read):\n${list}`;
-}
-
 /** "Pensar mais": refaz a última resposta com o modelo mais capaz e effort alto. */
 export const THINK_MORE_PROMPT = 'Refaça sua última resposta com mais cuidado: revise o raciocínio, confira os dados com as ferramentas se precisar e responda de novo, completa.';
 
@@ -152,9 +146,12 @@ export async function sendMessage(opts: { conversationId: number | null; text: s
     let text = '';
     let model: string | null = null;
     const special = promptHooks.modeFor?.(conv.id) ?? null;
+    // Vídeo anexado: espera o Pipo terminar de assistir (quadros e fala) antes de mandar ao modelo.
+    const files = opts.thinkMore ? '' : await attachmentsPrompt(getAttachments(atts), () => send({ type: 'tool', conversationId: conv.id, name: 'watch_video' }));
+    if (ac.signal.aborted) return;
     const result = await run({
       conversationId: conv.id,
-      prompt: opts.thinkMore ? THINK_MORE_PROMPT : promptWithAttachments(opts.text, atts),
+      prompt: opts.thinkMore ? THINK_MORE_PROMPT : opts.text + files,
       mode: special?.mode ?? 'chat',
       draftId: special?.draftId,
       pipoId: special?.pipoId,

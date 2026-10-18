@@ -476,7 +476,7 @@ export const t = {
   },
   drop: {
     title: 'Solte seus arquivos',
-    kinds: ['PDF', 'Imagens', 'Texto', 'Docs'],
+    kinds: ['PDF', 'Imagens', 'Vídeos', 'Texto', 'Docs'],
     reading: (name: string, p: number) => `Lendo ${name} · ${p}%`,
     hint: 'Ou arraste um arquivo até o Pipo, mesmo com ele fechado.',
   },
@@ -488,6 +488,9 @@ export const t = {
     thinkMore: 'Pensar mais',
     thinkMoreHint: 'Refaz a resposta com o Opus, pensando com mais cuidado',
     thinking: 'Pensando…',
+    watchingVideo: (p: number) => `assistindo ${p}%`,
+    listeningVideo: 'ouvindo a fala…',
+    videoFailed: 'não abriu',
     usingTool: (name: string) => `${name}…`,
     toolNames: {
       get_context: 'Olhando o contexto',
@@ -506,6 +509,7 @@ export const t = {
       get_patterns: 'Procurando padrões',
       get_window_titles: 'Lendo histórico',
       Read: 'Lendo o arquivo',
+      watch_video: 'Assistindo ao vídeo',
       web_search: 'Pesquisando na web',
       web_open: 'Lendo uma página',
       web_read: 'Lendo uma página',

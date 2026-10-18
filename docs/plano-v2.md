@@ -505,6 +505,15 @@ ausências.
     oficial, site vira API, navegador, script, decisão, IA); redes sociais pela API oficial.
   - **Passo `research`:** pesquisa na web dentro do plano (busca, abre as melhores fontes e traz o
     texto delas), só leitura, roda até no ensaio. O construtor também pesquisa antes de planejar.
+- **Vídeos e imagens para todos os Pipos (pedido em 18/10/2026):** qualquer Pipo recebe mp4 e
+  imagens. **Implementado:** anexos aceitam vídeo (mp4, m4v, mov, webm, até 2 GB) além de PDF, imagens,
+  texto e .docx. Como a IA não abre vídeo, o Pipo "assiste" no computador: a janela do Pipo abre o
+  vídeo por um protocolo próprio (`pipo-file://`, só a pasta de anexos, com pedaços para pular no
+  vídeo), tira 8 quadros ao longo dele e transcreve a fala dos primeiros 3 minutos com o Whisper local;
+  a descrição e os quadros ficam ao lado do anexo e a IA lê os dois. No chat de um Pipo colorido, ele
+  roda o plano com os arquivos (`run_me` com `files` → `{{entrada.arquivos}}` e `{{entrada.pedido}}`),
+  e os arquivos vão para a pasta da execução para os passos de IA enxergarem. No teste: vídeo de 17 s
+  assistido em 6 s, cenas e fala descritas certinho.
 - **Sem modo foco (pedido em 17/10/2026):** o Pipo não "ativa" mais quando a pessoa marca que está
   fazendo uma tarefa. Tarefas têm só cadastrar e marcar como feita. **Implementado:**
   - **Saiu:** o botão Focar (Início, pill, Tarefas, bandeja e `Ctrl+Shift+F`), o cronômetro e as fases do
