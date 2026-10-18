@@ -38,8 +38,8 @@ describe('atualizar da V1', () => {
     expect(s.volume).toBe(0.2);
     expect(s.muted).toBe(true);
     expect(s.shortcuts.toggle).toBe('Alt+Space');
-    // Atalho novo da V2 entra com o padrão, sem apagar os da V1.
-    expect(s.shortcuts.focusNext).toBe('CommandOrControl+Shift+F');
+    // Atalho novo entra com o padrão, sem apagar os da V1.
+    expect(s.shortcuts.mini).toBe('CommandOrControl+Shift+M');
     expect(s.agent.model).toBe('sonnet');
     // Tabelas novas existem e começam vazias: nenhum Pipo vem instalado.
     expect(db().get<{ n: number }>('SELECT COUNT(*) AS n FROM pipos')?.n).toBe(0);

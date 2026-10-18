@@ -1,7 +1,7 @@
-import type { EnergyPeak, FocusPreset, Weekday } from '@shared/types';
+import type { EnergyPeak, Weekday } from '@shared/types';
 import { Chip, Label, NumberField, Option, Slider, TextField, TimeField, YesNo } from '../../components/Form';
 import { t } from '../../i18n/pt-BR';
-import { fmtGoal, PRESETS, setProfile, type StepProps } from '../draft';
+import { fmtGoal, setProfile, type StepProps } from '../draft';
 
 const o = t.onboarding;
 const DAYS: Weekday[] = [1, 2, 3, 4, 5, 6, 0];
@@ -103,30 +103,6 @@ export function EnergyStep({ draft, set }: StepProps): React.JSX.Element {
       {ids.map((id) => (
         <Option key={id} on={draft.profile.energyPeak === id} onClick={() => set(setProfile({ energyPeak: id }))} title={o.energy[id].title} desc={o.energy[id].desc} />
       ))}
-    </div>
-  );
-}
-
-export function FocusStep({ draft, set }: StepProps): React.JSX.Element {
-  const fp = draft.profile.focusPreset;
-  const ids: FocusPreset['id'][] = ['p25', 'p50', 'deep90', 'custom'];
-  const pick = (id: FocusPreset['id']): void => set(setProfile({ focusPreset: id === 'custom' ? { ...fp, id: 'custom' } : { ...PRESETS[id] } }));
-  const patch = (k: keyof Omit<FocusPreset, 'id'>, v: number): void => set(setProfile({ focusPreset: { ...fp, id: 'custom', [k]: v } }));
-  return (
-    <div className="flex flex-col gap-[10px]">
-      <div className="grid grid-cols-2 gap-[8px]">
-        {ids.map((id) => (
-          <Option key={id} on={fp.id === id} onClick={() => pick(id)} title={o.presets[id].title} desc={o.presets[id].desc} />
-        ))}
-      </div>
-      {fp.id === 'custom' && (
-        <div className="flex flex-wrap gap-[14px]">
-          <NumberField ariaLabel={o.focusMin} value={fp.focusMin} min={5} max={180} suffix={`${t.common.min} ${o.focusMin.toLowerCase()}`} onChange={(v) => patch('focusMin', v)} />
-          <NumberField ariaLabel={o.breakMin} value={fp.breakMin} min={1} max={60} suffix={`${t.common.min} ${o.breakMin.toLowerCase()}`} onChange={(v) => patch('breakMin', v)} />
-          <NumberField ariaLabel={o.longBreakMin} value={fp.longBreakMin} min={1} max={90} suffix={`${t.common.min} ${o.longBreakMin.toLowerCase()}`} onChange={(v) => patch('longBreakMin', v)} />
-          <NumberField ariaLabel={o.cycles} value={fp.cycles} min={1} max={12} suffix={o.cycles.toLowerCase()} onChange={(v) => patch('cycles', v)} />
-        </div>
-      )}
     </div>
   );
 }

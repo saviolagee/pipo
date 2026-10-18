@@ -10,7 +10,7 @@ import { getKV, setKV } from '../db/repos/settings';
 import { every } from '../scheduler';
 import { dayKey, hmToMin, minutesOfDay } from '../time';
 import { builderHooks } from './builder-tools';
-import { flushHeldReports, startRun } from './deps';
+import { startRun } from './deps';
 import { pipesChanged, pipoHooks } from './ipc';
 import { activePlaybook, addTrigger, deleteTrigger, getPipo, listTriggers, markTriggerFired } from './repo';
 import { isRunning } from './runner';
@@ -150,8 +150,6 @@ export function registerTriggers(): void {
     setKV('pipos:triggersCheckedAt', now);
     if (fired) pipesChanged();
   });
-  // Relatórios de execuções agendadas que esperaram o foco acabar.
-  every('pipoHeldReports', 15_000, () => flushHeldReports());
   // A "próxima execução" dos cartões da Equipe muda com o tempo.
   every('pipoNextRun', 5 * 60_000, () => pipesChanged());
 }

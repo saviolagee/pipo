@@ -10,7 +10,6 @@ import { getSettings } from '../db/repos/settings';
 import { macPermissions } from '../system';
 import { isIgnored } from '../activity/classifier';
 import { musicApi } from './index';
-import { localPlaying } from './fallback';
 
 const TICK_MS = 5_000;
 /** A API do Spotify é consultada a cada 3 ciclos (15s) para não gastar rede à toa. */
@@ -84,11 +83,6 @@ function publish(next: NowPlaying | null): void {
 /** Uma leitura. `forceApi` refaz a consulta à API (ex.: logo depois de play/pause pelo Pipo). */
 export async function refreshNowPlaying(forceApi = false): Promise<NowPlaying | null> {
   const s = getSettings();
-  const local = localPlaying();
-  if (local) {
-    publish({ track: local, artist: '', playing: true, source: 'local' });
-    return current;
-  }
   const spotify = musicApi();
   if (spotify?.isConnected()) {
     if (forceApi || tick % API_EVERY === 0) {

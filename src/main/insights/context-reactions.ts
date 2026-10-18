@@ -1,15 +1,14 @@
-// Reações ao que o usuário está fazendo (seções 9.6, 9.8 e o guardião de distração do foco).
+// Reações ao que o usuário está fazendo (seções 9.6 e 9.8).
 import { pickNextTask } from '@shared/suggest';
 import type { CurrentActivity, Task } from '@shared/types';
 import { activityListeners } from '../activity/tracker';
 import { agentAvailable } from '../agent/service';
-import { emit } from '../bus';
+import { bus, emit } from '../bus';
 import { showCard } from '../cards';
 import { isAbsent } from '../db/repos/days';
 import { getProfile } from '../db/repos/profile';
-import { getSettings, patchSettings } from '../db/repos/settings';
-import { getTask, listTasks, snoozeTask } from '../db/repos/tasks';
-import { addDistracted, focusState, startFocus } from '../focus/session';
+import { getSettings } from '../db/repos/settings';
+import { completeTask, getTask, listTasks, snoozeTask } from '../db/repos/tasks';
 import { interruptions } from '../interruptions/manager';
 import { agentHooks } from '../mcp/tools';
 import { dayFlag, every, setDayFlag } from '../scheduler';
@@ -18,59 +17,6 @@ import { fmtDue } from '@shared/format';
 import { dayKey, hmToMin, minutesOfDay } from '../time';
 
 const POLL_SEC = 5;
-
-// ---------- Guardião de distração (durante o foco) ----------
-let distractedSince: number | null = null;
-let distractionItem: string | null = null;
-const snoozedUntil = new Map<string, number>();
-let guardianOpen = false;
-
-async function onDistraction(a: CurrentActivity | null, item: string | null): Promise<void> {
-  const f = focusState();
-  const inFocus = !!f && f.phase === 'focus' && !f.paused;
-  if (!inFocus || !a || a.category !== 'distraction' || !item) {
-    distractedSince = null;
-    distractionItem = null;
-    return;
-  }
-  addDistracted(POLL_SEC);
-  if (distractionItem !== item) {
-    distractionItem = item;
-    distractedSince = Date.now();
-  }
-  const tolerance = getSettings().distractions.toleranceSec * 1000;
-  if (guardianOpen || Date.now() - (distractedSince ?? Date.now()) < tolerance) return;
-  if ((snoozedUntil.get(item) ?? 0) > Date.now()) return;
-  guardianOpen = true;
-  const mins = Math.max(1, Math.round((Date.now() - (distractedSince ?? Date.now())) / 60_000));
-  try {
-    const answer = await interruptions.request({
-      type: 'distraction',
-      queueable: false,
-      fallbackExpression: 'looking',
-      card: {
-        kind: 'distraction',
-        glow: 'attention',
-        mascot: 'attention',
-        label: 'distração no foco',
-        subject: `${item} há ${mins} min`,
-        buttons: [
-          { id: 'more', label: 'Mais 5 min', kbd: 'N', variant: 'secondary' },
-          { id: 'back', label: 'Voltar ao foco', kbd: 'Y', variant: 'primary' },
-          { id: 'allow', label: 'Sempre permitir', variant: 'tertiary' },
-        ],
-      },
-    });
-    if (answer === 'more') snoozedUntil.set(item, Date.now() + 5 * 60_000);
-    else if (answer === 'allow') {
-      const s = getSettings();
-      patchSettings({ distractions: { ...s.distractions, allowed: [...new Set([...s.distractions.allowed, item])] } });
-    } else snoozedUntil.set(item, Date.now() + 2 * 60_000);
-  } finally {
-    guardianOpen = false;
-    distractedSince = Date.now();
-  }
-}
 
 // ---------- Reunião ----------
 let meeting = false;
@@ -155,7 +101,7 @@ async function onGmail(a: CurrentActivity | null): Promise<void> {
   if (answer === 'yes') emit('chat:send', { text: 'Lista curta do que falta responder no meu e-mail (não lidos), com o que é mais urgente primeiro.' });
 }
 
-// ---------- Destravar sozinho (15 min sem foco alternando distrações) ----------
+// ---------- Destravar sozinho (15 min alternando distrações) ----------
 const window15: Array<{ at: number; cat: string }> = [];
 let lastUnstuck = 0;
 
@@ -182,7 +128,7 @@ async function onUnstuck(a: CurrentActivity | null): Promise<void> {
   const now = Date.now();
   window15.push({ at: now, cat: a?.category ?? 'none' });
   while (window15.length && now - window15[0].at > 15 * 60_000) window15.shift();
-  if (focusState() || !inWorkHours() || !getSettings().reactions.unstuck) return;
+  if (!inWorkHours() || !getSettings().reactions.unstuck) return;
   if (now - lastUnstuck < 60 * 60_000 || !looksStuck(window15, now)) return;
   lastUnstuck = now;
   const task = pickNextTask(listTasks('open'), new Date(), getProfile()?.energyPeak ?? 'varies', true);
@@ -200,18 +146,17 @@ async function onUnstuck(a: CurrentActivity | null): Promise<void> {
       subject: task.subtasks.find((s) => !s.done)?.title ?? step,
       buttons: [
         { id: 'no', label: 'Agora não', kbd: 'N', variant: 'secondary' },
-        { id: 'go', label: 'Bora', kbd: 'Y', variant: 'primary' },
+        { id: 'go', label: 'Ver a tarefa', kbd: 'Y', variant: 'primary' },
       ],
     },
   });
-  if (answer === 'go') await startFocus({ taskId: task.id, minutes: 5, microStep: task.subtasks.find((s) => !s.done)?.title ?? step });
+  if (answer === 'go') emit('ui:navigate', { tab: 'tasks', expand: true });
 }
 
 // ---------- Prazo vencendo ----------
 async function checkDeadlines(): Promise<void> {
   const now = Date.now();
-  const f = focusState();
-  const due = listTasks('open').filter((t) => t.dueAt && Date.parse(t.dueAt) > now && Date.parse(t.dueAt) - now < 3 * 3_600_000 && t.id !== f?.taskId && t.status !== 'doing');
+  const due = listTasks('open').filter((t) => t.dueAt && Date.parse(t.dueAt) > now && Date.parse(t.dueAt) - now < 3 * 3_600_000);
   for (const t of due) {
     if (dayFlag(`deadline:${t.id}`)) continue;
     setDayFlag(`deadline:${t.id}`);
@@ -236,19 +181,22 @@ async function deadlineCard(t: Task): Promise<void> {
       subject: `${t.title} · vence ${fmtDue(t.dueAt as string)}`,
       buttons: [
         { id: 'tomorrow', label: 'Amanhã', kbd: 'N', variant: 'secondary' },
-        { id: 'start', label: 'Começar agora', kbd: 'Y', variant: 'primary' },
+        { id: 'done', label: 'Já fiz', kbd: 'Y', variant: 'primary' },
       ],
     },
   });
   if (answer === 'tomorrow') {
     snoozeTask(t.id);
     tasksChanged();
-  } else if (answer === 'start') await startFocus({ taskId: t.id });
+  } else if (answer === 'done') {
+    completeTask(t.id, true);
+    bus.emit('task:completed', { taskId: t.id });
+    tasksChanged();
+  }
 }
 
 export function registerContextReactions(): void {
-  activityListeners.push((a, item) => {
-    void onDistraction(a, item);
+  activityListeners.push((a) => {
     onMeeting(a);
     void onGmail(a);
     void onUnstuck(a);

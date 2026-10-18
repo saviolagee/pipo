@@ -17,7 +17,6 @@ import {
   setConversationTitle,
 } from '../db/repos/conversations';
 import { goalForDate, getProfile } from '../db/repos/profile';
-import { listRituals } from '../db/repos/rituals';
 import { getKV, getSettings, setKV } from '../db/repos/settings';
 import { createTask, listTasks } from '../db/repos/tasks';
 import { handle } from '../ipc';
@@ -65,7 +64,6 @@ function systemPrompt(mode: 'chat' | 'capture' | 'builder' | 'pipo', ctx?: ToolC
   if (mode === 'pipo' && ctx?.pipoId && promptHooks.pipo) return promptHooks.pipo(ctx.pipoId);
   return buildSystemPrompt({
     profile: getProfile(),
-    rituals: listRituals(),
     clients: listClients(),
     goalTodayMin: goalForDate(getProfile(), new Date()),
     now: new Date(),

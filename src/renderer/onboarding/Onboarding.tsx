@@ -9,11 +9,10 @@ import { play } from '../sound/sfx';
 import { useData } from '../store/data';
 import { useUi } from '../store/ui';
 import { defaultDraft, type Draft, type StepProps } from './draft';
-import { EnergyStep, FocusStep, GoalStep, NameStep, RoutineStep } from './steps/basics';
+import { EnergyStep, GoalStep, NameStep, RoutineStep } from './steps/basics';
 import { ClaudeStep, GoogleStep, PermissionsStep } from './steps/connections';
 import { ClientsStep, DistractionsStep } from './steps/context';
 import { AutostartStep, PersonalityStep } from './steps/personality';
-import { CustomRitualStep, hasRitual, MusicStep, RitualsStep } from './steps/rituals';
 
 const o = t.onboarding;
 
@@ -33,10 +32,6 @@ const STEPS: StepDef[] = [
   { id: 'routine', say: () => o.routineSay, canNext: (d) => d.profile.workDays.length > 0 && d.profile.endTime > d.profile.startTime, render: (p) => <RoutineStep {...p} /> },
   { id: 'goal', say: () => o.goalSay, render: (p) => <GoalStep {...p} /> },
   { id: 'energy', say: () => o.energySay, render: (p) => <EnergyStep {...p} /> },
-  { id: 'focus', say: () => o.focusSay, render: (p) => <FocusStep {...p} /> },
-  { id: 'rituals', say: () => o.ritualsSay, skippable: true, render: (p) => <RitualsStep {...p} /> },
-  { id: 'music', say: () => o.musicSay, mascot: 'listening', skippable: true, when: (d) => hasRitual(d, 'music'), render: (p) => <MusicStep {...p} /> },
-  { id: 'custom', say: () => o.customSay, skippable: true, when: (d) => hasRitual(d, 'custom'), render: (p) => <CustomRitualStep {...p} /> },
   { id: 'distractions', say: () => o.distractionsSay, render: (p) => <DistractionsStep {...p} /> },
   { id: 'clients', say: () => o.clientsSay, skippable: true, render: (p) => <ClientsStep {...p} /> },
   { id: 'google', say: () => o.googleSay, skippable: true, render: () => <GoogleStep /> },
@@ -52,7 +47,6 @@ export function initialDraft(): Draft {
   const base = defaultDraft();
   return {
     profile: s.profile ? { ...s.profile } : base.profile,
-    rituals: s.rituals.length ? s.rituals.map(({ id: _id, ...r }) => r) : base.rituals,
     clients: s.clients.length ? s.clients.map((c) => ({ ...c })) : base.clients,
     distractions: s.settings?.distractions ?? base.distractions,
   };
@@ -61,10 +55,9 @@ export function initialDraft(): Draft {
 /** Salva o rascunho no banco e atualiza o store. */
 export async function persistDraft(d: Draft, finishOnboarding: boolean): Promise<void> {
   const profile = await api.invoke('profile:save', { ...d.profile, onboardedAt: finishOnboarding ? new Date().toISOString() : d.profile.onboardedAt });
-  const rituals = await api.invoke('rituals:save', d.rituals);
   const clients = await api.invoke('clients:save', d.clients);
   const settings = await api.invoke('settings:patch', { distractions: d.distractions });
-  useData.getState().set({ profile, rituals, clients, settings });
+  useData.getState().set({ profile, clients, settings });
 }
 
 export function OnboardingProgress({ index, total }: { index: number; total: number }): React.JSX.Element {

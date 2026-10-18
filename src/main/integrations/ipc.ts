@@ -7,7 +7,7 @@ import { getIntegration } from '../db/repos/integrations';
 import { meetingHooks } from '../insights/context-reactions';
 import { handle } from '../ipc';
 import { agentHooks } from '../mcp/tools';
-import { musicApi, setMusicApi, startMusic } from '../music';
+import { musicApi, setMusicApi } from '../music';
 import { nowPlaying, refreshNowPlaying, startNowPlaying } from '../music/now-playing';
 import { connectStripe, currentIncome, disconnectStripe, refreshIncome, registerStripeTools } from './stripe';
 import { connectSpotify, disconnectSpotify, setSpotifyClientId, spotifyApi } from '../music/spotify';
@@ -118,9 +118,6 @@ export function registerIntegrations(): void {
     return refreshNowPlaying(true);
   });
   handle('music:nowPlaying', () => nowPlaying());
-  handle('music:test', async () => {
-    await startMusic();
-  });
 
   every('calendar', 5 * 60_000, async () => {
     if (!googleConnected()) return;

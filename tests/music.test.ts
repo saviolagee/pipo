@@ -23,12 +23,11 @@ describe('isSpotifyWindow', () => {
 });
 
 describe('Pipo dança com música', () => {
-  it('dança acima do foco, mas abaixo de reunião, voz, agente e pausa', async () => {
+  it('dança abaixo de reunião, voz, agente e pausa', async () => {
     const { deriveMascotState } = await import('../src/shared/mascot-state');
-    const base = { now: 0, transient: null, cardMascot: null, agentBusy: false, dragOver: false, listening: false, inMeeting: false, paused: false, music: true, focus: null, hovered: false, outsideWorkHours: false, idleLong: false, overGoalRatio: 0 };
+    const base = { now: 0, transient: null, cardMascot: null, agentBusy: false, dragOver: false, listening: false, inMeeting: false, paused: false, music: true, hovered: false, outsideWorkHours: false, idleLong: false, overGoalRatio: 0 };
     expect(deriveMascotState(base)).toBe('dancing');
     expect(deriveMascotState({ ...base, outsideWorkHours: true })).toBe('dancing');
-    expect(deriveMascotState({ ...base, focus: { phase: 'focus', paused: false } as never })).toBe('dancing');
     expect(deriveMascotState({ ...base, inMeeting: true })).toBe('shh');
     expect(deriveMascotState({ ...base, listening: true })).toBe('listening');
     expect(deriveMascotState({ ...base, agentBusy: true })).toBe('thinking');
@@ -37,10 +36,3 @@ describe('Pipo dança com música', () => {
   });
 });
 
-describe('foca na próxima', () => {
-  it('reconhece o pedido curto e ignora o resto', async () => {
-    const { isFocusNextIntent } = await import('../src/shared/intents');
-    for (const ok of ['foca na próxima', 'Foca na proxima tarefa!', 'começar foco na próxima', 'bora focar na próxima', 'pipo, foca na próxima', 'iniciar o foco na próxima']) expect(isFocusNextIntent(ok)).toBe(true);
-    for (const no of ['foca na próxima reunião', 'focar no relatório', 'próxima', 'qual a próxima tarefa?']) expect(isFocusNextIntent(no)).toBe(false);
-  });
-});

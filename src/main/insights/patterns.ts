@@ -10,7 +10,8 @@ import { addDays, dayRange } from '../time';
 
 export interface PatternInput {
   tasks: Array<{ title: string; client: string | null; snoozeCount: number }>;
-  sessions: Array<{ startedAt: string; completed: boolean; focusedSec: number }>;
+  /** Quando cada atividade foi marcada como feita (ISO). */
+  completions: string[];
   days: Array<{ date: string; weekday: Weekday; distractedMin: number; workedMin: number }>;
 }
 
@@ -34,13 +35,12 @@ export function mostSnoozed(tasks: PatternInput['tasks']): { group: string; snoo
   return best ? { group: best.label, snoozes: best.snoozes, tasks: best.tasks } : null;
 }
 
-/** Hora do dia com mais minutos de foco completo. */
-export function bestFocusHour(sessions: PatternInput['sessions']): number | null {
+/** Hora do dia em que mais atividades são marcadas como feitas. */
+export function bestDoneHour(completions: string[]): number | null {
   const byHour = new Map<number, number>();
-  for (const s of sessions) {
-    if (!s.completed) continue;
-    const h = new Date(s.startedAt).getHours();
-    byHour.set(h, (byHour.get(h) ?? 0) + s.focusedSec);
+  for (const at of completions) {
+    const h = new Date(at).getHours();
+    byHour.set(h, (byHour.get(h) ?? 0) + 1);
   }
   const best = [...byHour.entries()].sort((a, b) => b[1] - a[1])[0];
   return best ? best[0] : null;
@@ -65,7 +65,7 @@ export function mostDistractedWeekday(days: PatternInput['days']): { weekday: We
 /** Sugestões em ordem de utilidade. Exportado para testes. */
 export function analyzePatterns(input: PatternInput): PatternSuggestion[] {
   const out: PatternSuggestion[] = [];
-  const hour = bestFocusHour(input.sessions) ?? 9;
+  const hour = bestDoneHour(input.completions) ?? 9;
   const distracted = mostDistractedWeekday(input.days);
   const snoozed = mostSnoozed(input.tasks);
   if (snoozed) {
@@ -74,11 +74,11 @@ export function analyzePatterns(input: PatternInput): PatternSuggestion[] {
     out.push({
       kind: snoozed.group === input.tasks.find((t) => t.client && norm(t.client) === norm(snoozed.group))?.client ? 'snoozed_client' : 'snoozed_word',
       text: `Você adia as tarefas de ${snoozed.group} toda semana. Bloqueio ${WEEKDAYS_LONG[weekday].replace('-feira', '')} ${hour}h–${hour + 1}h pra isso?`,
-      block: { weekday, hour, durationMin: 60, title: `Foco: ${snoozed.group}` },
+      block: { weekday, hour, durationMin: 60, title: `Bloco: ${snoozed.group}` },
     });
   }
-  if (input.sessions.filter((s) => s.completed).length >= 5) {
-    out.push({ kind: 'best_hour', text: `Seu foco rende mais às ${hour}h. Quer que eu coloque as tarefas difíceis nesse horário?`, block: null });
+  if (input.completions.length >= 5) {
+    out.push({ kind: 'best_hour', text: `Você conclui mais atividades por volta das ${hour}h. Quer que eu coloque as tarefas difíceis nesse horário?`, block: null });
   }
   if (distracted) {
     out.push({ kind: 'distracted_day', text: `${WEEKDAYS_LONG[distracted.weekday]} é seu dia mais distraído (${Math.round(distracted.ratio * 100)}% do tempo). Bora planejar tarefas mais curtas nesse dia?`, block: null });
@@ -92,9 +92,10 @@ export function patternInput(weeks: number, now = new Date()): PatternInput {
   const tasks = db()
     .all<{ title: string; client_id: number | null; snooze_count: number }>('SELECT title, client_id, snooze_count FROM tasks WHERE created_at >= ? OR updated_at >= ?', from, from)
     .map((t) => ({ title: t.title, client: t.client_id ? (clients.get(t.client_id) ?? null) : null, snoozeCount: t.snooze_count }));
-  const sessions = db()
-    .all<{ started_at: string; status: string; focused_sec: number }>('SELECT started_at, status, focused_sec FROM focus_sessions WHERE started_at >= ?', from)
-    .map((s) => ({ startedAt: s.started_at, completed: s.status === 'completed', focusedSec: s.focused_sec }));
+  const completions = [
+    ...db().all<{ at: string }>("SELECT completed_at AS at FROM tasks WHERE status = 'done' AND completed_at >= ?", from),
+    ...db().all<{ at: string }>('SELECT done_at AS at FROM goal_actions WHERE done_at >= ?', from),
+  ].map((r) => r.at);
   const days: PatternInput['days'] = [];
   for (let i = 1; i <= 7 * weeks; i++) {
     const d = addDays(now, -i);
@@ -102,7 +103,7 @@ export function patternInput(weeks: number, now = new Date()): PatternInput {
     if (isNeutral(st.date)) continue;
     days.push({ date: st.date, weekday: d.getDay() as Weekday, distractedMin: st.distractedMin, workedMin: st.workedMin });
   }
-  return { tasks, sessions, days };
+  return { tasks, completions, days };
 }
 
 export function patterns(weeks = 4): PatternSuggestion[] {
@@ -113,14 +114,14 @@ export function weeklySummary(now = new Date()): WeeklySummary {
   let worked = 0;
   let goal = 0;
   let distracted = 0;
-  let sessions = 0;
+  let done = 0;
   for (let i = 0; i < 7; i++) {
     const s = statsFor(addDays(now, -i));
     worked += s.workedMin;
     goal += s.goalMin;
     distracted += s.distractedMin;
-    sessions += s.focusSessionsCompleted;
+    done += s.activitiesDone;
   }
   const from = dayRange(addDays(now, -6)).start;
-  return { workedMin: worked, goalMin: goal, focusSessions: sessions, distractedMin: distracted, byClient: timeReport(from, new Date().toISOString(), 'client'), pattern: patterns(4)[0] ?? null };
+  return { workedMin: worked, goalMin: goal, activitiesDone: done, distractedMin: distracted, byClient: timeReport(from, new Date().toISOString(), 'client'), pattern: patterns(4)[0] ?? null };
 }

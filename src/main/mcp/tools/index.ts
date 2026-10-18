@@ -8,9 +8,7 @@ import { emit } from '../../bus';
 import { blocksBetween, setBlockClient } from '../../db/repos/activity';
 import { findClient, getClient, listClients, norm } from '../../db/repos/clients';
 import { getProfile } from '../../db/repos/profile';
-import { listRituals } from '../../db/repos/rituals';
 import { addSubtasks, completeTask, createTask, getTask, listTasks, updateTask } from '../../db/repos/tasks';
-import { focusState, startFocus } from '../../focus/session';
 import { statsFor, todayStats } from '../../stats';
 import { tasksChanged } from '../../tasks/ipc';
 import { dayRange } from '../../time';
@@ -107,13 +105,12 @@ const TOOLS: ToolDef[] = [
   {
     name: 'get_context',
     description:
-      'Contexto atual: data/hora local, dia da semana, perfil (meta, horário, energia, formato de foco, rituais, clientes), foco ativo, app em uso (sem título da janela), humor do Pipo e horas de hoje vs meta. Chame antes de interpretar datas relativas.',
+      'Contexto atual: data/hora local, dia da semana, perfil (meta, horário, energia, clientes), app em uso (sem título da janela), humor do Pipo, atividades feitas hoje e horas de hoje vs meta. Chame antes de interpretar datas relativas.',
     inputSchema: { type: 'object', properties: {} },
     run: () => {
       const now = new Date();
       const p = getProfile();
       const s = todayStats();
-      const f = focusState();
       const a = currentActivity();
       return {
         now: now.toISOString(),
@@ -126,11 +123,7 @@ const TOOLS: ToolDef[] = [
           lunch: `${p.lunchStart} (${p.lunchMin} min)`,
           daily_goal: fmtHM(s.goalMin),
           energy_peak: p.energyPeak,
-          focus: `${p.focusPreset.focusMin}/${p.focusPreset.breakMin} × ${p.focusPreset.cycles}`,
         },
-        rituals: listRituals()
-          .filter((r) => r.enabled)
-          .map((r) => r.label),
         clients: listClients().map((c) => c.name),
         today: {
           worked: fmtHM(s.workedMin),
@@ -138,10 +131,9 @@ const TOOLS: ToolDef[] = [
           planned: fmtHM(s.plannedMin),
           meetings: fmtHM(s.meetingMin),
           open_tasks: s.openTodayTasks,
-          focus_sessions_completed: s.focusSessionsCompleted,
+          activities_done: s.activitiesDone,
           next_meeting: s.nextMeeting ? `${s.nextMeeting.title} às ${new Date(s.nextMeeting.start).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}` : null,
         },
-        focus: f && { task: f.taskTitle, phase: f.phase, remaining_min: Math.round(f.remainingSec / 60), cycle: `${f.cycle}/${f.totalCycles}` },
         current_app: a ? { app: a.app, category: a.category, client: a.clientId ? getClient(a.clientId)?.name : null } : null,
         mood: agentHooks.mood?.() ?? null,
       };
@@ -287,7 +279,7 @@ const TOOLS: ToolDef[] = [
   {
     name: 'plan_day',
     description:
-      'Define a lista de Hoje (task_ids, em ordem) e, opcionalmente, blocos de foco na agenda (blocks: [{title, start, end}] em ISO). A soma das estimativas não pode passar da meta de horas menos as reuniões; tarefas a mais devem ficar para os próximos dias.',
+      'Define a lista de Hoje (task_ids, em ordem) e, opcionalmente, blocos de tempo na agenda (blocks: [{title, start, end}] em ISO). A soma das estimativas não pode passar da meta de horas menos as reuniões; tarefas a mais devem ficar para os próximos dias.',
     inputSchema: {
       type: 'object',
       properties: {
@@ -327,25 +319,6 @@ const TOOLS: ToolDef[] = [
     },
   },
   {
-    name: 'start_focus',
-    description:
-      'Inicia uma sessão de foco numa tarefa. minutes opcional (padrão: formato do usuário). micro_step = primeiro passo de 2 minutos para destravar (inicia um foco curto, use minutes=5).',
-    inputSchema: { type: 'object', properties: { task_id: { type: 'number' }, minutes: { type: 'number' }, micro_step: { type: 'string' } }, required: ['task_id'] },
-    confirm: (a) => {
-      const t = requireTask(a.task_id);
-      const micro = str(a.micro_step);
-      if (micro) return { label: 'destravar', title: 'Bora só isso?', subject: micro, cancel: 'Agora não', confirm: 'Bora', allowAlways: false };
-      return { label: 'foco', subject: `Focar em “${t.title}”${num(a.minutes) ? ` por ${num(a.minutes)} min` : ''}`, confirm: 'Começar' };
-    },
-    run: async (a) => {
-      const t = requireTask(a.task_id);
-      const micro = str(a.micro_step) ?? null;
-      const s = await startFocus({ taskId: t.id, minutes: num(a.minutes) ?? (micro ? 5 : undefined), microStep: micro });
-      emit('ui:navigate', { tab: 'home', expand: true });
-      return { started: true, task: t.title, phase: s.phase, minutes: Math.round(s.phaseDurationSec / 60) };
-    },
-  },
-  {
     name: 'get_calendar',
     description: 'Eventos da agenda (Google) entre from e to (ISO).',
     inputSchema: { type: 'object', properties: { from: { type: 'string' }, to: { type: 'string' } }, required: ['from', 'to'] },
@@ -357,7 +330,7 @@ const TOOLS: ToolDef[] = [
   },
   {
     name: 'create_calendar_block',
-    description: 'Cria um bloco na Google Agenda (ex.: foco). recurrence opcional em RRULE (ex.: "RRULE:FREQ=WEEKLY;BYDAY=TU").',
+    description: 'Cria um bloco na Google Agenda (ex.: tempo reservado para uma tarefa). recurrence opcional em RRULE (ex.: "RRULE:FREQ=WEEKLY;BYDAY=TU").',
     inputSchema: { type: 'object', properties: { title: { type: 'string' }, start: { type: 'string' }, end: { type: 'string' }, recurrence: { type: 'string' } }, required: ['title', 'start', 'end'] },
     confirm: (a) => ({
       label: 'agenda',
@@ -365,7 +338,7 @@ const TOOLS: ToolDef[] = [
     }),
     run: async (a) => {
       if (!agentHooks.createBlock) throw new Error('Google Agenda não conectada. Peça para o usuário conectar em Configurações → Integrações.');
-      const ev = await agentHooks.createBlock({ title: str(a.title) ?? 'Foco', start: str(a.start) ?? '', end: str(a.end) ?? '', recurrence: str(a.recurrence) });
+      const ev = await agentHooks.createBlock({ title: str(a.title) ?? 'Bloco', start: str(a.start) ?? '', end: str(a.end) ?? '', recurrence: str(a.recurrence) });
       return { created: true, id: ev.id, start: ev.start, end: ev.end };
     },
   },
@@ -447,7 +420,7 @@ const TOOLS: ToolDef[] = [
   },
   {
     name: 'get_patterns',
-    description: 'Padrões das últimas semanas: o que é mais adiado, horários de mais foco, dias de mais distração.',
+    description: 'Padrões das últimas semanas: o que é mais adiado, horários em que mais conclui, dias de mais distração.',
     inputSchema: { type: 'object', properties: { weeks: { type: 'number' } } },
     run: (a) => (agentHooks.patterns ? agentHooks.patterns(num(a.weeks) ?? 4) : []),
   },

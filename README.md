@@ -5,8 +5,10 @@ notch. Desktop (Windows + macOS), Electron + React 19 + TypeScript. O cérebro �
 logado com a sua assinatura** — sem chave de API.
 
 - **Sempre visível:** a pill fica no topo da tela e expande ao passar o mouse, com transição elástica.
-- **Sabe o que você está fazendo:** lê o app e o título da janela em foco (localmente) para registrar o
-  tempo por cliente, proteger o foco e reagir ao contexto.
+- **Tarefas sem cerimônia:** você cadastra e marca como feita. Não tem modo foco nem cronômetro: o que
+  conta é o que você fez, e os dias em que fez.
+- **Sabe o que você está fazendo:** lê o app e o título da janela ativa (localmente) para registrar o
+  tempo por cliente e reagir ao contexto.
 - **Tem emoção:** o humor do Pipo acompanha seu dia e sua semana; acessórios desbloqueiam com a sequência.
   O mascote é um boneco animado por código: pisca, olha em volta, acena, se espreguiça, pula e dá
   pirueta, com transição suave entre as expressões (`Ctrl+Alt+D` → Galeria mostra todas).
@@ -34,8 +36,10 @@ logado com a sua assinatura** — sem chave de API.
   responde em menos de 0,2 s sem gastar tokens e devolve para o Claude quando não tem certeza.
 - **REA para os Pipos:** o servidor MCP de engenharia reversa
   ([morluto/rea](https://github.com/morluto/rea)) entra em qualquer Pipo com uma confirmação.
-- **Dashboards:** horas vs meta, foco, distração, melhores horários, clientes (valor/hora), métricas
-  dos Pipos e dinheiro (Stripe), com exportação CSV/PDF e "pergunte ao dashboard". Cada Pipo tem um
+- **Dashboards:** contados pelo que foi feito: dias com atividade (calendário da semana, do mês e do
+  ano), atividades feitas por dia (tarefas e ações da trilha), o que você fez, quando e em que dia da
+  semana você mais conclui, atividades por cliente, planos da trilha, métricas dos Pipos e dinheiro
+  (Stripe), com exportação CSV/PDF e "pergunte ao dashboard". Cada Pipo tem um
   painel próprio com o que ele produziu, falhas, custo em tokens e comparação entre períodos.
 - **Dias não trabalhados:** folga, férias, doença e feriados (nacionais e estaduais) não quebram a
   sequência nem contam contra a meta.
@@ -70,15 +74,14 @@ Integrações (Google Agenda/Gmail, Spotify) e voz: veja [docs/integracoes.md](d
 | Atalho | Ação |
 |---|---|
 | `Ctrl/Cmd+Shift+Space` | Abrir/fechar o notch |
-| `Ctrl/Cmd+Shift+K` | Captura rápida (de novo com ela aberta: liga/desliga o microfone) |
-| `Ctrl/Cmd+Shift+F` | Começar foco na próxima tarefa sugerida (também no botão ▶ da pill) |
+| `Ctrl/Cmd+Shift+K` | Captura rápida (de novo com ela aberta: liga/desliga o microfone; também no "+" da pill) |
 | `Ctrl/Cmd+Shift+M` | Modo miniatura: o Pipo vira uma bolinha no canto inferior direito (de novo: volta ao topo) |
 | `Ctrl/Cmd+Shift+A` | Abrir os dashboards |
 | `Y` / `N` | Responder o card visível |
 | `Esc` | Fechar o notch |
 | `Ctrl+Alt+D` | Painel de debug do mascote (estados, humor, acessórios, simulações) |
 
-Os quatro primeiros são configuráveis em Configurações → Atalhos.
+Os três primeiros são configuráveis em Configurações → Atalhos.
 
 ## Arquitetura
 
@@ -89,12 +92,11 @@ src/
                    prompt de sistema, detecção/login do Claude, abrir/fechar o dia
     mcp/           servidor MCP "pipo": shim stdio (subido pelo Claude Code) ↔ socket local ↔
                    ferramentas no app; confirmação "Ação proposta" (Y/N, 2 min, Sempre permitir)
-    activity/      tracker da janela em foco (5s), ociosidade, classificador, horas trabalhadas, CSV
-    focus/         sessão de foco (pomodoro), rituais
+    activity/      tracker da janela ativa (5s), ociosidade, classificador, horas trabalhadas, CSV
     interruptions/ orçamento, intervalo mínimo, fila, prioridades, silenciamento
     insights/      humor, sequência/acessórios, padrões semanais, reações ao contexto
     integrations/  OAuth loopback + PKCE, Google Agenda, Gmail
-    music/         Spotify Web API e fallback (link / arquivo local); o Pipo dança com música
+    music/         Spotify Web API e o que está tocando; o Pipo dança com música
     days/          folgas, férias, feriados e as perguntas sobre dias sem registro
     pipos/         Pipos coloridos: repositório, cofre, executor de planos, /criarpipo (builder),
                    gatilhos (horário, eventos, webhook local), conexões, chat por Pipo, .pipo

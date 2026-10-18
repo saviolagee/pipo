@@ -11,18 +11,17 @@ import { api } from '../lib/api';
 import { Mascot } from '../mascot/Mascot';
 import type { Draft, StepProps } from '../onboarding/draft';
 import { initialDraft, persistDraft } from '../onboarding/Onboarding';
-import { EnergyStep, FocusStep, GoalStep, NameStep, RoutineStep } from '../onboarding/steps/basics';
+import { EnergyStep, GoalStep, NameStep, RoutineStep } from '../onboarding/steps/basics';
 import { ClaudeStep, GoogleStep, PermissionsStep } from '../onboarding/steps/connections';
 import { ClientsStep, DistractionsStep } from '../onboarding/steps/context';
 import { AutostartStep, PersonalityStep } from '../onboarding/steps/personality';
-import { CustomRitualStep, hasRitual, MusicStep, RitualsStep } from '../onboarding/steps/rituals';
 import { useData } from '../store/data';
 import { useUi } from '../store/ui';
 
 const s = t.settings;
 type SectionId = keyof typeof s.sections;
-const SECTIONS: SectionId[] = ['profile', 'goal', 'days', 'focus', 'rituals', 'distractions', 'clients', 'integrations', 'agent', 'personality', 'privacy', 'shortcuts', 'data'];
-const DRAFT_SECTIONS: SectionId[] = ['profile', 'goal', 'focus', 'rituals', 'distractions', 'clients', 'personality'];
+const SECTIONS: SectionId[] = ['profile', 'goal', 'days', 'energy', 'distractions', 'clients', 'integrations', 'agent', 'personality', 'privacy', 'shortcuts', 'data'];
+const DRAFT_SECTIONS: SectionId[] = ['profile', 'goal', 'energy', 'distractions', 'clients', 'personality'];
 
 function errText(e: unknown): string {
   return e instanceof Error ? e.message.replace(/^Error invoking remote method '[^']+': (Error: )?/, '') : String(e);
@@ -95,28 +94,11 @@ export function SettingsScreen(): React.JSX.Element {
         return <GoalStep {...p} />;
       case 'days':
         return <DaysSettings onMsg={setMsg} />;
-      case 'focus':
+      case 'energy':
         return (
-          <>
-            <Block title={t.onboarding.energySay}>
-              <EnergyStep {...p} />
-            </Block>
-            <Block title={t.onboarding.focusSay}>
-              <FocusStep {...p} />
-            </Block>
-          </>
-        );
-      case 'rituals':
-        return (
-          <>
-            <RitualsStep {...p} />
-            {hasRitual(draft, 'music') && (
-              <Block title={t.onboarding.musicSay}>
-                <MusicStep {...p} />
-              </Block>
-            )}
-            {hasRitual(draft, 'custom') && <CustomRitualStep {...p} />}
-          </>
+          <Block title={t.onboarding.energySay}>
+            <EnergyStep {...p} />
+          </Block>
         );
       case 'distractions':
         return <DistractionsStep {...p} />;

@@ -93,14 +93,14 @@ export interface BarDatum {
   tip: string[];
 }
 
-export function BarChart({ data, colors, height = 190, fmt, refLabel, unit = 1 }: { data: BarDatum[]; colors: readonly string[]; height?: number; fmt: (v: number) => string; refLabel?: string; /** Passo "redondo" do eixo (ex.: 60 para horas). */ unit?: number }): React.JSX.Element {
+export function BarChart({ data, colors, height = 190, fmt, refLabel, unit = 1, integer = false }: { data: BarDatum[]; colors: readonly string[]; height?: number; fmt: (v: number) => string; refLabel?: string; /** Passo "redondo" do eixo (ex.: 60 para horas). */ unit?: number; /** Contagens: marcas do eixo só em números inteiros. */ integer?: boolean }): React.JSX.Element {
   const [ref, w] = useWidth();
   const [tip, show, hide] = useTip();
   const padL = 40;
   const padB = 22;
   const padT = 8;
   const max = Math.max(1, ...data.map((d) => Math.max(d.values.reduce((a, b) => a + b, 0), d.ref ?? 0)));
-  const ticks = niceTicks(max / unit).map((x) => x * unit);
+  const ticks = integer ? intTicks(max) : niceTicks(max / unit).map((x) => x * unit);
   const top = ticks[ticks.length - 1];
   const plotH = height - padB - padT;
   const y = (v: number): number => padT + plotH - (v / top) * plotH;
@@ -157,6 +157,15 @@ export function BarChart({ data, colors, height = 190, fmt, refLabel, unit = 1 }
       <Tooltip tip={tip} />
     </div>
   );
+}
+
+/** Marcas inteiras (0, 1, 2… ou de 2 em 2, 5 em 5…), no máximo umas 5. */
+export function intTicks(max: number): number[] {
+  const step = Math.max(1, niceTicks(max)[1] ?? 1);
+  const whole = Math.ceil(step);
+  const out: number[] = [];
+  for (let v = 0; v < max + whole; v += whole) out.push(v);
+  return out;
 }
 
 export function niceTicks(max: number): number[] {
@@ -280,7 +289,7 @@ export function YearHeatmap({ year, cells, fmt }: { year: number; cells: Map<str
   const W = 28 + weeks * (size + gap);
   return (
     <div className="relative overflow-x-auto">
-      <svg width={W} height={7 * (size + gap) + 22} role="img" aria-label={`horas trabalhadas por dia em ${year}`}>
+      <svg width={W} height={7 * (size + gap) + 22} role="img" aria-label={`atividades feitas por dia em ${year}`}>
         <Hatch />
         {['seg', '', 'qua', '', 'sex', '', ''].map((l, i) => (
           <text key={i} x={0} y={18 + i * (size + gap) + size - 2} fontSize={10} fill={INK.muted}>
@@ -358,7 +367,7 @@ export function RhythmHeatmap({ grid, fmt }: { grid: number[][]; fmt: (v: number
   const cw = Math.max(10, (w - 40) / 24 - 2);
   return (
     <div ref={ref} className="relative w-full">
-      <svg width={w} height={7 * 22 + 20} role="img" aria-label="minutos trabalhados por dia da semana e hora">
+      <svg width={w} height={7 * 22 + 20} role="img" aria-label="atividades feitas por dia da semana e hora">
         {order.map((wd, r) => (
           <g key={wd}>
             <text x={0} y={r * 22 + 15} fontSize={10.5} fill={INK.muted}>

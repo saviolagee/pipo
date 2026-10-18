@@ -16,8 +16,6 @@ import { DebugPanel } from './screens/DebugPanel';
 import { Home } from './screens/Home';
 import { Onboarding } from './onboarding/Onboarding';
 import { SettingsScreen } from './screens/Settings';
-import { FocusCard } from './screens/FocusCard';
-import { RitualCheck } from './screens/RitualCheck';
 import { TasksScreen } from './screens/Tasks';
 import { DayReview } from './screens/DayReview';
 import { ChatScreen, INLINE_CARD_KINDS } from './screens/Chat';
@@ -26,7 +24,6 @@ import { TrailScreen } from './screens/Trail';
 import { bindGoalEvents } from './store/goals';
 import { bindPipoEvents, usePipos } from './store/pipos';
 import { bindAgentEvents, useChat } from './store/chat';
-import { LocalAudio } from './components/LocalAudio';
 import { Toasts } from './components/Toast';
 import { DropZone, ingestDropped } from './screens/DropZone';
 import { QuickCapture } from './screens/QuickCapture';
@@ -145,12 +142,6 @@ export function App(): React.JSX.Element {
         useChat.getState().newConversation();
         void useChat.getState().send(text);
       }),
-      api.on('focus:state', (focus) => {
-        const prev = useData.getState().focus;
-        useData.getState().set({ focus });
-        // Foco começou: abre o notch no Início (ritual ou card da sessão).
-        if (focus && !prev) useUi.getState().setTab('home');
-      }),
       api.on('tasks:changed', () => void useData.getState().refreshTasks()),
       api.on('stats:changed', (stats) => useData.getState().set({ stats })),
       api.on('activity:current', (activity) => useData.getState().set({ activity })),
@@ -196,10 +187,6 @@ export function App(): React.JSX.Element {
   useEffect(() => {
     useUi.getState().pin('card', !!topCard);
   }, [topCard]);
-  const ritualPhase = useData((s) => s.focus?.phase === 'ritual');
-  useEffect(() => {
-    useUi.getState().pin('ritual', ritualPhase);
-  }, [ritualPhase]);
   useEffect(() => {
     useUi.getState().pin('onboarding', onboarding);
     if (onboarding) useUi.getState().setExpanded(true);
@@ -269,7 +256,6 @@ export function App(): React.JSX.Element {
   }, []);
 
   const finishEntrance = useCallback(() => setEntering(false), []);
-  const focus = useData((s) => s.focus);
 
   useEffect(() => {
     if (ui.entranceKey > 0) setEntering(true);
@@ -305,8 +291,6 @@ export function App(): React.JSX.Element {
         if (ui.dragOver || ingest || swallowing) return <DropZone progress={ingest} swallowing={swallowing} />;
         return <QuickCapture key={ui.captureMode ? 'cap' : 'add'} autoVoice={ui.voiceRequested} />;
       default:
-        if (focus?.phase === 'ritual') return <RitualCheck />;
-        if (focus) return <FocusCard focus={focus} state={mascot.state} badge={mascot.badge} mood={mascot.mood} accessories={mascot.accessories} onMascotClick={onMascotClick} bump={bump} />;
         return (
           <Home
             state={mascot.state}
@@ -361,7 +345,6 @@ export function App(): React.JSX.Element {
         </div>
       </Notch>
       <AnimatePresence>{ui.debugOpen && <DebugPanel />}</AnimatePresence>
-      <LocalAudio />
       <Toasts top={ui.expanded ? 260 : 32} />
     </>
   );

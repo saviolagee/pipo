@@ -40,7 +40,7 @@ async function readWindow(): Promise<Reading | null> {
       activeWindow = mod.activeWindow;
     } catch (e) {
       loadFailed = true;
-      console.warn('[atividade] get-windows indisponível; o registro usará só as sessões de foco.', e);
+      console.warn('[atividade] get-windows indisponível; o registro de janelas fica desligado.', e);
     }
   }
   if (!activeWindow) return null;

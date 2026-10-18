@@ -12,7 +12,6 @@ import { emit } from '../bus';
 import { showCard, takeCardPayload } from '../cards';
 import { randomUUID } from 'node:crypto';
 import { db } from '../db';
-import { focusState } from '../focus/session';
 import { googleFetch } from '../integrations/google-auth';
 import { interruptions } from '../interruptions/manager';
 import { activePlaybook, ensurePipoDirs, getPipo, getRun, listMemory, runSteps } from './repo';
@@ -20,15 +19,6 @@ import { pipoSystemPrompt, requestRun, type ConfirmAnswer, type ConfirmResult, t
 
 /** Execuções que o próprio usuário pediu (o relatório final aparece na hora). */
 const USER_TRIGGERS = /^(manual|chat|rehearsal|ensaio)/;
-
-/** Relatórios de execuções agendadas esperam o foco acabar (Fase 19). */
-const heldReports: Array<() => Promise<void>> = [];
-
-export function flushHeldReports(): void {
-  if (focusState()) return;
-  const items = heldReports.splice(0);
-  for (const r of items) void r();
-}
 
 const TEXT_FIELDS = ['texto', 'body', 'corpo', 'mensagem', 'message', 'html', 'text'];
 const TITLE_FIELDS = ['titulo', 'title', 'assunto', 'subject', 'email', 'to', 'para', 'nome', 'name'];
@@ -134,10 +124,8 @@ async function notify(o: Parameters<RunnerDeps['notify']>[0]): Promise<void> {
     handle(await showCard(card));
     return;
   }
-  // Agendada/evento: não interrompe o foco, e o card entra no orçamento de interrupções.
-  const send = async (): Promise<void> => handle(await interruptions.request({ type: 'pipo', card, fallbackExpression: 'happy', queueable: true }));
-  if (focusState()) heldReports.push(send);
-  else await send();
+  // Agendada/evento: o card entra no orçamento de interrupções.
+  handle(await interruptions.request({ type: 'pipo', card, fallbackExpression: 'happy', queueable: true }));
 }
 
 async function handoff(o: Parameters<RunnerDeps['handoff']>[0]): Promise<string> {

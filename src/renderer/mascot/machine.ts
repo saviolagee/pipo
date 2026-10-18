@@ -1,7 +1,7 @@
 // Máquina de expressões do mascote (seção 6.2): deriva a expressão atual a partir do estado do app.
 import { useEffect, useState } from 'react';
 import { deriveMascotState } from '@shared/mascot-state';
-import type { Accessory, FocusState, GlowKind, MascotState, Profile } from '@shared/types';
+import type { Accessory, GlowKind, MascotState, Profile } from '@shared/types';
 import type { Badge } from './Mascot';
 import { useData } from '../store/data';
 import { useUi } from '../store/ui';
@@ -18,19 +18,17 @@ export function isWorkTime(profile: Profile | null, d = new Date()): boolean {
   return hm >= toMin(profile.startTime) && hm < toMin(profile.endTime);
 }
 
-export function badgeFor(state: MascotState, focus: FocusState | null): Badge {
+export function badgeFor(state: MascotState): Badge {
   if (state === 'attention') return 'attention';
   if (state === 'happy' || state === 'celebrating') return 'done';
-  if (focus && focus.phase === 'focus') return 'working';
   return null;
 }
 
-export function glowFor(state: MascotState, focus: FocusState | null, cardGlow: GlowKind | null): GlowKind {
+export function glowFor(state: MascotState, cardGlow: GlowKind | null): GlowKind {
   if (cardGlow && cardGlow !== 'none') return cardGlow;
   if (state === 'dizzy') return 'dizzy';
   if (state === 'eating') return 'done';
   if (state === 'attention') return 'attention';
-  if (focus && focus.phase === 'focus' && !focus.paused) return 'focus';
   return 'none';
 }
 
@@ -58,7 +56,6 @@ export function useMascot(hovered: boolean): { state: MascotState; accessories: 
     inMeeting: data.inMeeting,
     paused: data.settings?.paused ?? false,
     music: (data.settings?.reactions.music ?? true) && data.nowPlaying?.playing === true,
-    focus: data.focus,
     hovered,
     outsideWorkHours: !isWorkTime(data.profile),
     idleLong: data.activity?.category === 'idle',
@@ -66,7 +63,6 @@ export function useMascot(hovered: boolean): { state: MascotState; accessories: 
   });
 
   const accessories: Accessory[] = ui.debug.accessories ? [...ui.debug.accessories] : [...data.streak.equipped];
-  if (data.focus?.musicActive && data.focus.phase === 'focus') accessories.push('headphones');
   // Folga, férias, feriado ou doente: pijama (Fase 15).
   const today = data.today;
   if (today && ['off', 'vacation', 'holiday', 'sick'].includes(today.kind) && !ui.debug.accessories) accessories.push('pajama', 'nightcap');
@@ -76,8 +72,8 @@ export function useMascot(hovered: boolean): { state: MascotState; accessories: 
   return {
     state: finalState,
     accessories,
-    badge: badgeFor(finalState, data.focus),
-    glow: ui.glowOverride ?? glowFor(finalState, data.focus, topCard?.glow ?? null),
+    badge: badgeFor(finalState),
+    glow: ui.glowOverride ?? glowFor(finalState, topCard?.glow ?? null),
     mood: ui.debug.mood ?? data.mood.mood,
   };
 }

@@ -33,10 +33,11 @@ function setup(): void {
   });
 }
 
-/** Um dia bom: 6h30 de foco e uma sessão completa. */
+/** Um dia bom: duas tarefas marcadas como feitas. */
 async function goodDay(d: Date): Promise<void> {
   const { db } = await import('../src/main/db');
-  db().run("INSERT INTO focus_sessions (started_at, ended_at, preset_json, focused_sec, status) VALUES (?, ?, '{}', ?, 'completed')", d.toISOString(), d.toISOString(), 390 * 60);
+  for (const n of [1, 2])
+    db().run("INSERT INTO tasks (title, status, source, is_today, position, created_at, updated_at, completed_at, priority) VALUES (?, 'done', 'manual', 0, ?, ?, ?, ?, 2)", `feita ${n}`, n, d.toISOString(), d.toISOString(), d.toISOString());
 }
 
 describe('dias não trabalhados', () => {

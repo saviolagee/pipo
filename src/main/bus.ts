@@ -22,8 +22,6 @@ export function emit<K extends MainEventName>(event: K, payload: MainEvents[K]):
 export interface InternalEvents {
   'task:completed': { taskId: number };
   'task:changed': null;
-  'focus:completed': { sessionId: number; taskId: number | null };
-  'focus:changed': null;
   'activity:block': { category: string };
   'meeting:started': null;
   'meeting:ended': null;

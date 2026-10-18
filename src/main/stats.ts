@@ -1,6 +1,7 @@
 // Estatísticas do dia (linha de status do Início, anel da meta, rodapé de Tarefas).
 import type { CalendarEvent, DayStats } from '@shared/types';
 import { db } from './db';
+import { actionsDoneOn } from './db/repos/goals';
 import { offlineMinutes } from './db/repos/days';
 import { goalForDate, getProfile } from './db/repos/profile';
 import { listTasks } from './db/repos/tasks';
@@ -12,19 +13,16 @@ export const statsHooks: {
   meetings: ((start: string, end: string) => { meetingMin: number; next: CalendarEvent | null }) | null;
 } = { workedMin: null, meetings: null };
 
-export function focusMinutes(start: string, end: string): { focusMin: number; distractedMin: number; completed: number } {
-  const r = db().get<{ f: number | null; d: number | null; c: number | null }>(
-    "SELECT SUM(focused_sec) AS f, SUM(distracted_sec) AS d, SUM(CASE WHEN status = 'completed' THEN 1 ELSE 0 END) AS c FROM focus_sessions WHERE started_at >= ? AND started_at < ?",
-    start,
-    end,
-  );
-  return { focusMin: (r?.f ?? 0) / 60, distractedMin: (r?.d ?? 0) / 60, completed: r?.c ?? 0 };
+/** Atividades feitas no período: tarefas concluídas mais ações da trilha. */
+export function activitiesDone(start: string, end: string): { tasks: number; actions: number; total: number } {
+  const tasks = db().get<{ n: number }>("SELECT COUNT(*) AS n FROM tasks WHERE status = 'done' AND completed_at >= ? AND completed_at < ?", start, end)?.n ?? 0;
+  const actions = actionsDoneOn(start, end);
+  return { tasks, actions, total: tasks + actions };
 }
 
 export function statsFor(date: Date): DayStats {
   const { start, end } = dayRange(date);
-  const f = focusMinutes(start, end);
-  const worked = statsHooks.workedMin?.(start, end) ?? { workedMin: f.focusMin, distractedMin: f.distractedMin };
+  const worked = statsHooks.workedMin?.(start, end) ?? { workedMin: 0, distractedMin: 0 };
   const meetings = statsHooks.meetings?.(start, end) ?? { meetingMin: 0, next: null };
   const isToday = dayKey(date) === dayKey(new Date());
   const today = isToday ? listTasks('today') : [];
@@ -33,12 +31,11 @@ export function statsFor(date: Date): DayStats {
     // Horas informadas como "trabalhei fora do PC" somam às registradas.
     workedMin: Math.round(worked.workedMin + offlineMinutes(dayKey(date))),
     goalMin: goalForDate(getProfile(), date),
-    focusMin: Math.round(f.focusMin),
     distractedMin: Math.round(worked.distractedMin),
     meetingMin: Math.round(meetings.meetingMin),
     plannedMin: today.reduce((acc, t) => acc + (t.estimateMin ?? 30), 0),
     openTodayTasks: today.length,
-    focusSessionsCompleted: f.completed,
+    activitiesDone: activitiesDone(start, end).total,
     nextMeeting: meetings.next,
   };
 }

@@ -21,38 +21,6 @@ export function registerDebug(): void {
         simulateMeeting(true);
         setTimeout(() => simulateMeeting(false), 8000);
         break;
-      case 'pomodoro_end':
-        void showCard({
-          kind: 'pomodoro_end',
-          glow: 'attention',
-          mascot: 'attention',
-          label: 'fim do ciclo',
-          subject: '25 min · ciclo 2/4',
-          buttons: [
-            { id: 'continue', label: 'Continuar', kbd: 'N', variant: 'secondary' },
-            { id: 'break', label: 'Pausa', kbd: 'Y', variant: 'primary' },
-          ],
-        });
-        break;
-      case 'distraction':
-        void interruptions.request({
-          type: 'distraction',
-          queueable: false,
-          fallbackExpression: 'looking',
-          card: {
-            kind: 'distraction',
-            glow: 'attention',
-            mascot: 'attention',
-            label: 'distração no foco',
-            subject: 'YouTube há 1 min',
-            buttons: [
-              { id: 'more', label: 'Mais 5 min', kbd: 'N', variant: 'secondary' },
-              { id: 'back', label: 'Voltar ao foco', kbd: 'Y', variant: 'primary' },
-              { id: 'allow', label: 'Sempre permitir', variant: 'tertiary' },
-            ],
-          },
-        });
-        break;
       case 'deadline': {
         const t = createTask({ title: 'Enviar NF do mês', dueAt: new Date(Date.now() + 90 * 60_000).toISOString(), estimateMin: 15, isToday: true });
         tasksChanged();

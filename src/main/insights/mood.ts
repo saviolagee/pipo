@@ -4,15 +4,14 @@ import { emit } from '../bus';
 import { db } from '../db';
 import { isNeutral } from '../db/repos/days';
 import { getProfile } from '../db/repos/profile';
-import { focusMinutes, statsFor } from '../stats';
+import { activitiesDone, statsFor } from '../stats';
 import { addDays, dayKey, dayRange } from '../time';
 
 export interface DayInputs {
   plannedTasks: number;
   doneTasks: number;
-  focusCompleted: number;
-  focusAbandoned: number;
-  focusMin: number;
+  /** Atividades feitas no dia (tarefas concluídas e ações da trilha). */
+  activitiesDone: number;
   distractedMin: number;
   workedMin: number;
   goalMin: number;
@@ -21,18 +20,18 @@ export interface DayInputs {
 const clamp = (v: number, a = 0, b = 1): number => Math.max(a, Math.min(b, v));
 
 /** Humor do dia (0–100) e seus componentes. Funções puras: tests/mood.test.ts. */
-export function dayMood(d: DayInputs): { score: number; adherence: number; focusCompletion: number; distraction: number; overworkPenalty: number } {
+export function dayMood(d: DayInputs): { score: number; adherence: number; activity: number; distraction: number; overworkPenalty: number } {
   // Sem dado ainda, cada componente começa neutro (0.5) para o humor não despencar de manhã.
   const adherence = d.plannedTasks > 0 ? clamp(d.doneTasks / d.plannedTasks) : 0.5;
-  const sessions = d.focusCompleted + d.focusAbandoned;
-  const focusCompletion = sessions > 0 ? d.focusCompleted / sessions : 0.5;
-  const distraction = d.focusMin + d.distractedMin > 0 ? clamp(d.distractedMin / (d.focusMin + d.distractedMin)) : 0;
+  // Cada atividade feita anima o Pipo; três no dia já é o máximo. Sem nenhuma ainda, fica neutro.
+  const activity = d.activitiesDone > 0 ? clamp(0.5 + d.activitiesDone / 6) : 0.5;
+  const distraction = d.workedMin + d.distractedMin > 0 ? clamp(d.distractedMin / (d.workedMin + d.distractedMin)) : 0;
   const progress = d.goalMin > 0 ? clamp(d.workedMin / d.goalMin) : 0.5;
   // Passar muito da meta também baixa o humor: o Pipo quer a meta, não trabalho infinito.
   const ratio = d.goalMin > 0 ? d.workedMin / d.goalMin : 0;
   const overworkPenalty = ratio > 1.1 ? clamp((ratio - 1.1) * 1.5, 0, 0.6) : 0;
-  const base = 0.35 * adherence + 0.3 * focusCompletion + 0.2 * (1 - distraction) + 0.15 * progress;
-  return { score: Math.round(clamp(base - overworkPenalty) * 100), adherence, focusCompletion, distraction, overworkPenalty };
+  const base = 0.35 * adherence + 0.3 * activity + 0.2 * (1 - distraction) + 0.15 * progress;
+  return { score: Math.round(clamp(base - overworkPenalty) * 100), adherence, activity, distraction, overworkPenalty };
 }
 
 /** Mistura: 60% hoje, 40% média móvel de 7 dias. */
@@ -45,14 +44,14 @@ export function blendMood(today: number, last7: number[]): number {
 const PHRASES: Record<Tone, Record<'high' | 'normal' | 'low' | 'veryLow', string[]>> = {
   cute: {
     high: ['Tô animado, semana tá rendendo!', 'Que dia bom! Bora manter o ritmo?', 'A gente tá voando hoje.'],
-    normal: ['Bora fazer uma coisa de cada vez?', 'Tô aqui do seu lado.', 'Um foco por vez e a gente chega lá.'],
-    low: ['Hoje tá difícil né? Bora só uma tarefinha.', 'Devagar também é progresso.', 'Que tal um foco curtinho?'],
+    normal: ['Bora fazer uma coisa de cada vez?', 'Tô aqui do seu lado.', 'Uma tarefa de cada vez e a gente chega lá.'],
+    low: ['Hoje tá difícil né? Bora só uma tarefinha.', 'Devagar também é progresso.', 'Que tal riscar uma tarefinha?'],
     veryLow: ['Tá puxado... Bora começar com 2 minutos?', 'Respira. Uma coisa pequena e já melhora.', 'Tô contigo. Só o primeiro passo.'],
   },
   direct: {
     high: ['Semana rendendo. Mantém.', 'Bom ritmo hoje.', 'Tudo nos trilhos.'],
-    normal: ['Próxima tarefa?', 'Um foco por vez.', 'Bora.'],
-    low: ['Dia lento. Escolhe uma tarefa.', 'Comece pelo menor passo.', 'Um foco curto resolve.'],
+    normal: ['Próxima tarefa?', 'Uma tarefa por vez.', 'Bora.'],
+    low: ['Dia lento. Escolhe uma tarefa.', 'Comece pelo menor passo.', 'Uma tarefa curta resolve.'],
     veryLow: ['Dia difícil. 2 minutos e pronto.', 'Só o primeiro passo.', 'Uma coisa pequena agora.'],
   },
 };
@@ -78,14 +77,8 @@ export function dayInputs(date: Date): DayInputs {
       end,
     )?.n ?? 0;
   const done = db().get<{ n: number }>("SELECT COUNT(*) AS n FROM tasks WHERE status = 'done' AND completed_at >= ? AND completed_at < ?", start, end)?.n ?? 0;
-  const s = db().get<{ c: number | null; a: number | null }>(
-    "SELECT SUM(CASE WHEN status = 'completed' THEN 1 ELSE 0 END) AS c, SUM(CASE WHEN status = 'abandoned' THEN 1 ELSE 0 END) AS a FROM focus_sessions WHERE started_at >= ? AND started_at < ?",
-    start,
-    end,
-  );
-  const f = focusMinutes(start, end);
   const st = statsFor(date);
-  return { plannedTasks: planned, doneTasks: done, focusCompleted: s?.c ?? 0, focusAbandoned: s?.a ?? 0, focusMin: f.focusMin, distractedMin: st.distractedMin, workedMin: st.workedMin, goalMin: st.goalMin };
+  return { plannedTasks: planned, doneTasks: done, activitiesDone: activitiesDone(start, end).total, distractedMin: st.distractedMin, workedMin: st.workedMin, goalMin: st.goalMin };
 }
 
 function last7DayMoods(today: Date): number[] {
@@ -109,7 +102,7 @@ export function computeMood(now = new Date()): MoodInfo {
   const mood = blendMood(d.score, week);
   const components: MoodComponents = {
     adherence: d.adherence,
-    focusCompletion: d.focusCompletion,
+    activity: d.activity,
     distraction: d.distraction,
     overworkPenalty: d.overworkPenalty,
     today: d.score,

@@ -5,14 +5,12 @@ import type {
   Client,
   CurrentActivity,
   DayStats,
-  FocusState,
   IntegrationInfo,
   MoodInfo,
   NowPlaying,
   DayStatus,
   StripeIncome,
   Profile,
-  Ritual,
   Settings,
   StreakInfo,
   Task,
@@ -25,10 +23,8 @@ interface DataState {
   platform: string;
   profile: Profile | null;
   settings: Settings | null;
-  rituals: Ritual[];
   clients: Client[];
   tasks: Task[];
-  focus: FocusState | null;
   stats: DayStats | null;
   mood: MoodInfo;
   streak: StreakInfo;
@@ -54,12 +50,10 @@ export const useData = create<DataState>((set, get) => ({
   platform: 'linux',
   profile: null,
   settings: null,
-  rituals: [],
   clients: [],
   tasks: [],
-  focus: null,
   stats: null,
-  mood: { mood: 60, phrase: '', components: { adherence: 0.5, focusCompletion: 0.5, distraction: 0, overworkPenalty: 0, today: 60, weekAvg: 60 } },
+  mood: { mood: 60, phrase: '', components: { adherence: 0.5, activity: 0.5, distraction: 0, overworkPenalty: 0, today: 60, weekAvg: 60 } },
   streak: { currentDays: 0, bestDays: 0, unlocked: [], equipped: [] },
   integrations: [],
   claude: { state: 'checking' },
@@ -77,11 +71,9 @@ export const useData = create<DataState>((set, get) => ({
       platform: b.platform,
       profile: b.profile,
       settings: b.settings,
-      rituals: b.rituals,
       clients: b.clients,
       streak: b.streak,
       mood: b.mood,
-      focus: b.focus,
       integrations: b.integrations,
       claude: b.claude,
       today: b.today ?? null,

@@ -1,8 +1,6 @@
 import { Menu, Tray, app, nativeImage } from 'electron';
 import { APP_NAME } from '@shared/config';
-import { bus, emit } from './bus';
-import { focusState, startFocus } from './focus/session';
-import { nextSuggested } from './tasks/ipc';
+import { emit } from './bus';
 import { openDashboard } from './dashboard';
 import { getSettings, patchSettings } from './db/repos/settings';
 import { renderFace } from './icons';
@@ -30,20 +28,15 @@ export function setPaused(paused: boolean): void {
 function rebuildMenu(): void {
   if (!tray) return;
   const { paused, mini, shortcuts } = getSettings();
-  const focus = focusState();
-  const next = focus ? null : nextSuggested();
-  const short = (s: string): string => (s.length > 40 ? `${s.slice(0, 39)}…` : s);
   const menu = Menu.buildFromTemplate([
-    focus
-      ? { label: `Focando: ${short(focus.taskTitle)}`, enabled: false }
-      : {
-          label: next ? `▶ Focar na próxima: ${short(next.title)}` : '▶ Começar foco',
-          click: () => {
-            showNotch(true);
-            emit('ui:navigate', { tab: next ? 'home' : 'add', expand: true, capture: !next });
-            if (next) void startFocus({ taskId: next.id });
-          },
-        },
+    {
+      label: 'Anotar tarefa…',
+      accelerator: shortcuts.quickCapture || undefined,
+      click: () => {
+        showNotch(true);
+        emit('ui:navigate', { tab: 'add', expand: true, capture: true });
+      },
+    },
     { type: 'separator' },
     { label: 'Dashboards', accelerator: 'CommandOrControl+Shift+A', click: () => openDashboard() },
     {
@@ -73,10 +66,6 @@ export function createTray(): Tray {
   tray = new Tray(trayImage());
   tray.setToolTip(APP_NAME);
   rebuildMenu();
-  // O item "Focar na próxima" acompanha as tarefas e o foco.
-  bus.on('task:changed', rebuildMenu);
-  bus.on('focus:completed', rebuildMenu);
   miniHooks.changed = rebuildMenu;
-  setInterval(rebuildMenu, 30_000).unref();
   return tray;
 }

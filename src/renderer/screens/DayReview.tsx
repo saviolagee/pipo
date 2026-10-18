@@ -71,7 +71,7 @@ export function DayReview(): React.JSX.Element {
         <div className="mono mt-[10px] text-[22px] font-semibold">{fmtHM(stats.workedMin)}</div>
         <div className="text-[12px] text-fg-2">{r.ofGoal(fmtHM(stats.goalMin))}</div>
         <div className="mt-[10px] flex flex-col gap-[2px] text-[11.5px] text-fg-3">
-          <span>{r.focusSessions(stats.focusSessionsCompleted)}</span>
+          <span>{r.activitiesDone(stats.activitiesDone)}</span>
           <span>{r.distracted(fmtHM(stats.distractedMin))}</span>
           <span>{r.meetings(fmtHM(stats.meetingMin))}</span>
         </div>
@@ -106,7 +106,7 @@ export function DayReview(): React.JSX.Element {
           <>
             <section>
               <h3 className="mb-[6px] text-[11px] font-medium uppercase tracking-[0.04em] text-fg-3">{r.weekTitle}</h3>
-              <p className="text-[13px] text-fg">{r.weekLine(fmtHM(week.workedMin), fmtHM(week.goalMin), week.focusSessions, fmtHM(week.distractedMin))}</p>
+              <p className="text-[13px] text-fg">{r.weekLine(fmtHM(week.workedMin), fmtHM(week.goalMin), week.activitiesDone, fmtHM(week.distractedMin))}</p>
             </section>
             <section>
               <h3 className="mb-[8px] text-[11px] font-medium uppercase tracking-[0.04em] text-fg-3">{r.byClient}</h3>

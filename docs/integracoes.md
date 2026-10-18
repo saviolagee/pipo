@@ -40,7 +40,7 @@ apps de computador sem configuração extra. Para embutir as credenciais no buil
 O que o Pipo faz:
 - lê os eventos de hoje e dos próximos 7 dias (a cada 5 min) e avisa 5 min antes de cada
   reunião com o botão **Entrar** (abre o link do Meet/Zoom/Teams);
-- cria blocos de foco quando você aceita o plano do dia;
+- cria blocos de tempo na agenda quando você aceita o plano do dia;
 - lê e-mails não lidos (somente leitura) quando você pede ou na reação "e-mail longo".
 
 ## Spotify (opcional)
@@ -50,10 +50,9 @@ O que o Pipo faz:
 3. Copie o **Client ID** e cole em Configurações → Integrações → Spotify (ou `MAIN_VITE_SPOTIFY_CLIENT_ID`).
 4. Clique em **Conectar**.
 
-O Spotify Web API exige **Premium** e um dispositivo ativo (o app aberto em algum lugar). Sem isso,
-o Pipo cai no plano B: abre a playlist direto no app do Spotify (`spotify:playlist:...`).
-Sem conectar nada, você também pode colar o link de uma playlist (Spotify/YouTube) ou escolher um
-arquivo de áudio local no ritual de música.
+Conectado, o Pipo lê o que está tocando e dança junto. O Spotify Web API exige **Premium** e um
+dispositivo ativo (o app aberto em algum lugar); sem conectar, ele ainda percebe a música pelo título
+da janela do Spotify.
 
 ## Stripe (opcional): dinheiro entrando
 

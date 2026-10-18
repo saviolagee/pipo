@@ -8,23 +8,32 @@ export interface DashRange {
   to: string;
 }
 
+/** Um dia do período, contado pelo que foi feito (não por horas). */
 export interface DashDay {
   date: string;
   weekday: number;
-  workedMin: number;
-  goalMin: number;
-  focusMin: number;
-  distractedMin: number;
-  meetingMin: number;
+  /** Atividades feitas: tarefas concluídas mais ações da trilha. */
+  done: number;
   tasksDone: number;
-  tasksCreated: number;
+  actionsDone: number;
+  /** Tarefas cadastradas no dia. */
+  created: number;
   mood: number | null;
   status: DayKind | null;
   statusNote: string | null;
   /** Dia útil de verdade (não é folga/férias/feriado). */
   workday: boolean;
-  /** Trabalhado em folga/fim de semana. */
-  extraMin: number;
+}
+
+/** Uma atividade feita no período. */
+export interface DashActivity {
+  at: string;
+  date: string;
+  kind: 'task' | 'action';
+  title: string;
+  /** Cliente da tarefa ou plano da ação. */
+  where: string | null;
+  color: string | null;
 }
 
 export interface DashPipo {
@@ -44,26 +53,35 @@ export interface DashPipo {
 export interface DashData {
   range: DashRange;
   totals: {
-    workedMin: number;
-    goalMin: number;
-    focusMin: number;
-    distractedMin: number;
-    meetingMin: number;
+    done: number;
     tasksDone: number;
-    tasksCreated: number;
-    extraMin: number;
-    daysWorked: number;
+    actionsDone: number;
+    created: number;
+    /** Dias (até hoje) com pelo menos uma atividade feita. */
+    activeDays: number;
+    /** Dias úteis do período até hoje e quantos deles tiveram atividade. */
+    workdays: number;
+    activeWorkdays: number;
+    /** Média de atividades nos dias com atividade. */
+    perActiveDay: number;
+    bestDay: { date: string; done: number } | null;
+    /** Maior sequência de dias úteis seguidos com atividade dentro do período (folgas não quebram). */
+    longestRun: number;
     daysOff: number;
     vacationDays: number;
     holidays: number;
-    goalDays: number;
     moodAvg: number | null;
   };
   days: DashDay[];
-  /** [dia da semana 0–6][hora 0–23] = minutos trabalhados. */
+  /** [dia da semana 0–6][hora 0–23] = atividades feitas. */
   rhythm: number[][];
-  distractions: Array<{ label: string; minutes: number }>;
-  clients: Array<{ id: number | null; name: string; color: string; minutes: number; hourlyRate: number | null; monthlyValue: number | null; value: number | null; effectiveRate: number | null }>;
+  /** O que foi feito, da mais nova para a mais antiga. */
+  activities: DashActivity[];
+  /** Atividades que não couberam na lista. */
+  activitiesMore: number;
+  clients: Array<{ id: number | null; name: string; color: string; done: number; open: number }>;
+  /** Planos da trilha: o que andou no período e o total. */
+  goals: Array<{ id: number; title: string; status: string; doneInRange: number; done: number; total: number }>;
   team: DashPipo[];
   money: { currency: string; total: number; days: Array<{ date: string; amount: number }> } | null;
   streak: { current: number; best: number };
@@ -175,4 +193,16 @@ export function packPipoCards(ids: PipoCardId[]): Array<{ id: PipoCardId; wide: 
     } else out.push({ id, wide: true });
   }
   return out;
+}
+
+/** Maior sequência de dias úteis seguidos com atividade (a mesma regra da sequência): folga e fim de semana nem contam nem quebram. */
+export function longestRun(days: Array<Pick<DashDay, 'done' | 'workday'>>): number {
+  let best = 0;
+  let run = 0;
+  for (const d of days) {
+    if (!d.workday) continue;
+    if (d.done > 0) best = Math.max(best, ++run);
+    else run = 0;
+  }
+  return best;
 }

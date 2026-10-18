@@ -4,10 +4,9 @@ import { emit } from '../bus';
 import { showCard } from '../cards';
 import { isAbsent } from '../db/repos/days';
 import { getProfile } from '../db/repos/profile';
-import { focusHooks } from '../focus/session';
 import { dayFlag, every, setDayFlag } from '../scheduler';
 import { dayKey, hmToMin, minutesOfDay } from '../time';
-import { agentAvailable, proposeSubtasks } from './service';
+import { agentAvailable } from './service';
 
 function isWorkday(d = new Date()): boolean {
   const p = getProfile();
@@ -61,7 +60,6 @@ async function closeDayCheck(): Promise<void> {
 }
 
 export function registerDayFlows(): void {
-  focusHooks.proposeSubtasks = proposeSubtasks;
   // Primeira interação do dia (o notch abriu) depois do horário de início.
   ipcMain.on('ui:expandedChanged', (_e, expanded: boolean) => {
     if (expanded) void openDay();

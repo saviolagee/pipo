@@ -3,10 +3,9 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import type { Client, ParsedCapture, Task } from '@shared/types';
 import { Button } from '../components/Button';
 import { usePinOnFocus } from '../components/Form';
-import { IconChevron, IconGrip, IconPlay, IconX } from '../components/Icons';
+import { IconChevron, IconGrip, IconX } from '../components/Icons';
 import { t } from '../i18n/pt-BR';
 import { api, fmtDue, fmtHM } from '../lib/api';
-import { focusNext, useNextTask } from '../lib/focus';
 import { play } from '../sound/sfx';
 import { useData } from '../store/data';
 import { useUi } from '../store/ui';
@@ -145,8 +144,8 @@ function TaskDetail({ task }: { task: Task }): React.JSX.Element {
           style={{ background: 'var(--bg-input)' }}
         />
         <div className="flex flex-wrap items-center gap-[6px]">
-          <Button size="sm" variant="primary" onClick={() => void api.invoke('focus:start', { taskId: task.id }).then(() => useUi.getState().setTab('home'))}>
-            {tt.focusThis}
+          <Button size="sm" variant="primary" onClick={() => void toggleComplete(task, true)}>
+            {tt.markDone}
           </Button>
           <Button size="sm" onClick={() => void breakDown()} disabled={busy || !claudeOk} title={claudeOk ? undefined : tt.needsClaude}>
             {tt.breakDown}
@@ -184,23 +183,8 @@ function TaskRow({ task, client, open, onOpen, draggable }: { task: Task; client
         )}
         <Check done={done} label={`${done ? tt.reopen : tt.complete}: ${task.title}`} onToggle={() => void toggleComplete(task, !done)} />
         <span className={`min-w-0 flex-1 truncate text-[13px] ${done ? 'text-fg-3 line-through' : 'text-fg'}`}>
-          {task.status === 'doing' && <span className="mr-[6px] inline-block h-[6px] w-[6px] rounded-full bg-working align-middle" />}
           {task.title}
         </span>
-        {!done && (
-          <button
-            type="button"
-            aria-label={tt.focusRow(task.title)}
-            title={tt.focusRow(task.title)}
-            onClick={(e) => {
-              e.stopPropagation();
-              void focusNext(task.id);
-            }}
-            className="flex h-[20px] w-[20px] shrink-0 items-center justify-center rounded-full bg-white text-black opacity-0 transition-opacity focus-visible:opacity-100 group-hover/row:opacity-100"
-          >
-            <IconPlay size={8} />
-          </button>
-        )}
         <Meta task={task} client={client} />
       </div>
       <AnimatePresence initial={false}>{open && <TaskDetail task={task} />}</AnimatePresence>
@@ -285,8 +269,6 @@ export function TasksScreen({ focusTaskId }: { focusTaskId?: number | null }): R
   const [open, setOpen] = useState<number | null>(focusTaskId ?? null);
   const [doneOpen, setDoneOpen] = useState(false);
   const [order, setOrder] = useState<Task[]>([]);
-  const next = useNextTask();
-  const focusing = useData((s) => !!s.focus);
 
   const now = new Date();
   const endToday = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1).getTime();
@@ -312,18 +294,6 @@ export function TasksScreen({ focusTaskId }: { focusTaskId?: number | null }): R
   return (
     <div className="flex max-h-[372px] min-h-[190px] flex-col">
       <QuickAdd />
-      {next && !focusing && (
-        <div className="px-[16px] pb-[6px]">
-          <button
-            type="button"
-            onClick={() => void focusNext(next.id)}
-            className="inline-flex h-[24px] max-w-full items-center gap-[7px] rounded-full bg-white px-[10px] text-[12px] font-medium text-black transition-colors hover:bg-white/90"
-          >
-            <IconPlay size={8} />
-            <span className="truncate">{tt.focusNextHeader(next.title)}</span>
-          </button>
-        </div>
-      )}
       <div className="scroll-thin min-h-0 flex-1 overflow-y-auto px-[10px]">
         <Section title={tt.today} count={order.length}>
           <Reorder.Group axis="y" values={order} onReorder={setOrder} as="div" onPointerUp={() => void api.invoke('tasks:reorder', order.map((x) => x.id))}>

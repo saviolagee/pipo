@@ -34,30 +34,6 @@ export interface Profile {
   onboardedAt: string | null;
 }
 
-export type RitualKind = 'music' | 'coffee' | 'phone' | 'desk' | 'top3' | 'two_min' | 'tabs' | 'breathe' | 'custom';
-
-export type MusicSource = 'spotify' | 'link' | 'file';
-export interface MusicConfig {
-  source: MusicSource | null;
-  link: string | null;
-  filePath: string | null;
-  autoplay: boolean;
-  pauseOnBreak: boolean;
-}
-export interface CustomRitualConfig {
-  remind: boolean;
-}
-export type RitualConfig = MusicConfig | CustomRitualConfig | Record<string, never>;
-
-export interface Ritual {
-  id: number;
-  kind: RitualKind;
-  label: string;
-  enabled: boolean;
-  config: RitualConfig;
-  position: number;
-}
-
 export interface Client {
   id: number;
   name: string;
@@ -87,7 +63,7 @@ export interface ReactionSettings {
   music: boolean;
 }
 
-export type TaskStatus = 'todo' | 'doing' | 'done' | 'snoozed';
+export type TaskStatus = 'todo' | 'done' | 'snoozed';
 export type TaskSource = 'manual' | 'voice' | 'agent' | 'file' | 'clipboard';
 export type Priority = 1 | 2 | 3;
 
@@ -134,25 +110,6 @@ export type TaskPatch = Partial<Omit<Task, 'id' | 'createdAt' | 'updatedAt' | 's
 
 export type TaskFilter = 'today' | 'upcoming' | 'someday' | 'overdue' | 'done_today' | 'open';
 
-export type FocusPhase = 'ritual' | 'focus' | 'break' | 'longBreak';
-
-export interface FocusState {
-  sessionId: number;
-  taskId: number | null;
-  taskTitle: string;
-  phase: FocusPhase;
-  cycle: number;
-  totalCycles: number;
-  phaseStartedAt: number;
-  phaseDurationSec: number;
-  remainingSec: number;
-  paused: boolean;
-  microStep: string | null;
-  musicActive: boolean;
-  focusedSec: number;
-  distractedSec: number;
-}
-
 export type ActivityCategory = 'work' | 'distraction' | 'client' | 'idle' | 'meeting';
 
 export interface ActivityBlock {
@@ -180,12 +137,12 @@ export interface DayStats {
   date: string; // YYYY-MM-DD
   workedMin: number;
   goalMin: number;
-  focusMin: number;
   distractedMin: number;
   meetingMin: number;
   plannedMin: number;
   openTodayTasks: number;
-  focusSessionsCompleted: number;
+  /** Tarefas concluídas e ações da trilha feitas no dia. */
+  activitiesDone: number;
   nextMeeting: CalendarEvent | null;
 }
 
@@ -249,7 +206,8 @@ export interface MoodInfo {
 
 export interface MoodComponents {
   adherence: number;
-  focusCompletion: number;
+  /** Atividades feitas no dia (0–1). */
+  activity: number;
   distraction: number;
   overworkPenalty: number;
   today: number;
@@ -260,9 +218,7 @@ export type GlowKind = 'none' | 'focus' | 'attention' | 'done' | 'dizzy';
 
 export type CardKind =
   | 'meeting'
-  | 'pomodoro_end'
   | 'break_end'
-  | 'distraction'
   | 'deadline'
   | 'goal_reached'
   | 'goal_exceeded'
@@ -365,7 +321,7 @@ export interface NowPlaying {
   artist: string;
   playing: boolean;
   /** De onde veio a leitura: API do Spotify, título da janela do app do Spotify ou o arquivo do ritual. */
-  source?: 'spotify-api' | 'spotify-window' | 'local';
+  source?: 'spotify-api' | 'spotify-window';
 }
 
 export interface Attachment {
@@ -441,7 +397,7 @@ export interface Settings {
   volume: number;
   muted: boolean;
   paused: boolean;
-  shortcuts: Record<'toggle' | 'quickCapture' | 'focusNext' | 'mini', string>;
+  shortcuts: Record<'toggle' | 'quickCapture' | 'mini', string>;
   /** Modo miniatura: recolhido, o Pipo fica numa bolinha no canto inferior direito. */
   mini: boolean;
   distractions: DistractionSettings;
@@ -470,11 +426,9 @@ export interface Bootstrap {
   income?: StripeIncome | null;
   profile: Profile | null;
   settings: Settings;
-  rituals: Ritual[];
   clients: Client[];
   streak: StreakInfo;
   mood: MoodInfo;
-  focus: FocusState | null;
   integrations: IntegrationInfo[];
   claude: ClaudeStatus;
   firstRun: boolean;
@@ -491,7 +445,7 @@ export interface PatternSuggestion {
 export interface WeeklySummary {
   workedMin: number;
   goalMin: number;
-  focusSessions: number;
+  activitiesDone: number;
   distractedMin: number;
   byClient: TimeReportRow[];
   pattern: PatternSuggestion | null;

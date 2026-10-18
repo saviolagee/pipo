@@ -13,11 +13,10 @@ export function useIntegrationFlags(): Record<ChipId, boolean> {
   const claude = useData((s) => s.claude);
   const google = integrations.find((i) => i.provider === 'google')?.status === 'connected';
   const spotifyConnected = integrations.find((i) => i.provider === 'spotify')?.status === 'connected';
-  const musicLink = useData((s) => s.rituals.some((r) => r.kind === 'music' && r.enabled));
   return {
     google_calendar: google,
     gmail: google,
-    spotify: spotifyConnected || musicLink,
+    spotify: spotifyConnected,
     claude: claude.state === 'ok',
   };
 }

@@ -5,7 +5,7 @@ const { mapEvents, meetingUrlOf } = await import('../src/main/integrations/calen
 const { buildGoogleAuthUrl, GOOGLE_SCOPES } = await import('../src/main/integrations/google-auth');
 const { buildSpotifyAuthUrl, SPOTIFY_PORT } = await import('../src/main/music/spotify');
 const { loopbackAuth, pkcePair } = await import('../src/main/integrations/oauth');
-const { spotifyUri } = await import('../src/main/music/fallback');
+const { spotifyUri } = await import('../src/main/music/spotify');
 
 describe('Google Agenda', () => {
   it('acha o link de Meet/Zoom/Teams', () => {

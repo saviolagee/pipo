@@ -505,6 +505,20 @@ ausências.
     oficial, site vira API, navegador, script, decisão, IA); redes sociais pela API oficial.
   - **Passo `research`:** pesquisa na web dentro do plano (busca, abre as melhores fontes e traz o
     texto delas), só leitura, roda até no ensaio. O construtor também pesquisa antes de planejar.
+- **Sem modo foco (pedido em 17/10/2026):** o Pipo não "ativa" mais quando a pessoa marca que está
+  fazendo uma tarefa. Tarefas têm só cadastrar e marcar como feita. **Implementado:**
+  - **Saiu:** o botão Focar (Início, pill, Tarefas, bandeja e `Ctrl+Shift+F`), o cronômetro e as fases do
+    pomodoro, os rituais antes de focar (e a música do ritual), o guardião de distração do foco, o
+    "foca na próxima" por voz e no chat, a ferramenta `start_focus` do agente e o formato de foco nas
+    boas-vindas e nas Configurações. Tarefas que tinham ficado "fazendo" voltam a ser abertas
+    (migração `009_no_focus`).
+  - **No lugar:** "+" na pill para anotar uma tarefa, botão "Tarefas" no Início, "Marcar como feita"
+    no detalhe da tarefa e "Já fiz" no aviso de prazo. A sequência de dias, o humor e os padrões da
+    semana passam a contar atividades feitas (tarefas concluídas e ações da trilha) em vez de focos.
+  - **Dashboards em dias com atividade:** calendário da semana e do mês, mapa do ano, atividades
+    feitas por dia (tarefas e trilha), o que você fez, quando e em que dia da semana você mais
+    conclui, atividades por cliente e o avanço dos planos da trilha. As horas continuam só na
+    revisão do dia.
 - **Trilha de objetivos (nova lógica de produtividade):** o centro deixa de ser horas vs meta e passa
   a ser o plano e o avanço nele. Substitui "Projetos com marcos".
   - **Criar plano:** o usuário diz o resultado que quer e a data desejada; o branco desmembra em

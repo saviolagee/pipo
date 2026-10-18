@@ -21,7 +21,6 @@ import {
 import { getKV, setKV } from '../db/repos/settings';
 import { getProfile, goalForDate } from '../db/repos/profile';
 import { listTasks } from '../db/repos/tasks';
-import { focusState } from '../focus/session';
 import { debugHooks } from '../debug';
 import { handle } from '../ipc';
 import { providers } from '../bootstrap';
@@ -60,17 +59,17 @@ export function previousWorkday(now: Date): Date | null {
   return null;
 }
 
-/** Um dia útil ficou vazio: nenhum minuto registrado, nenhum foco e nenhum status. */
+/** Um dia útil ficou vazio: nenhum minuto registrado, nenhuma atividade feita e nenhum status. */
 export function wasEmpty(d: Date): boolean {
   if (dayStatus(dayKey(d))) return false;
   const st = statsFor(d);
-  return st.workedMin === 0 && st.focusSessionsCompleted === 0;
+  return st.workedMin === 0 && st.activitiesDone === 0;
 }
 
 let asking = false;
 
 async function askAboutYesterday(now = new Date()): Promise<void> {
-  if (asking || focusState()) return;
+  if (asking) return;
   const d = previousWorkday(now);
   if (!d || !wasEmpty(d)) return;
   const key = dayKey(d);

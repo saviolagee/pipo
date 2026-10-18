@@ -2,13 +2,11 @@ import { AnimatePresence, motion } from 'motion/react';
 import type { Accessory, MascotState } from '@shared/types';
 import { INTEGRATION_COLORS, MiniFace } from '../components/MiniFace';
 import { useIntegrationFlags } from '../components/IntegrationGrid';
-import { fmtTimer } from '../lib/api';
 import { fmtMoney } from '@shared/format';
 import { fmtDay, summarize } from '@shared/trail';
 import { useGoals, useToday } from '../store/goals';
-import { focusNext } from '../lib/focus';
 import { t } from '../i18n/pt-BR';
-import { IconPlay } from '../components/Icons';
+import { IconPlus } from '../components/Icons';
 import { PIPO_COLORS } from '@shared/pipos';
 import { MiniPipo } from '../mascot/MiniPipo';
 import { usePipos } from '../store/pipos';
@@ -27,7 +25,6 @@ interface Props {
 
 /** Pílula colapsada ~340×32 [Ref 7]. */
 export function Pill({ state, badge, mood, accessories, clipboardCandidate }: Props): React.JSX.Element {
-  const focus = useData((s) => s.focus);
   const flags = useIntegrationFlags();
   // O anel mostra o avanço no plano (ações feitas), não mais as horas do dia.
   const goal = useGoals((s) => s.list.find((g) => g.status === 'active') ?? null);
@@ -49,7 +46,7 @@ export function Pill({ state, badge, mood, accessories, clipboardCandidate }: Pr
   const order = { waiting: 0, working: 1, error: 2, done: 3, draft: 4, idle: 5 } as const;
   const minis = [...team].sort((a, b) => order[a.live.state] - order[b.live.state]);
   const shown = minis.slice(0, 4);
-  const statusDot = badge === 'attention' ? '#F59E0B' : badge === 'done' ? '#22C55E' : focus?.phase === 'focus' ? '#3B82F6' : null;
+  const statusDot = badge === 'attention' ? '#F59E0B' : badge === 'done' ? '#22C55E' : null;
 
   return (
     <div className="flex h-full w-full items-center justify-between px-[12px]">
@@ -95,21 +92,20 @@ export function Pill({ state, badge, mood, accessories, clipboardCandidate }: Pr
             {minis.length > 4 && <span className="mono ml-[1px] text-[9.5px] text-white/50">+{minis.length - 4}</span>}
           </div>
         )}
-        {!focus && (
-          // ▶ discreto: um clique começa o foco na próxima tarefa sem abrir nada antes.
-          <button
-            type="button"
-            aria-label={t.focusNext.pill}
-            title={t.focusNext.pill}
-            onClick={(e) => {
-              e.stopPropagation();
-              void focusNext();
-            }}
+        {/* "+" discreto: anota uma tarefa sem abrir nada antes. */}
+        <button
+          type="button"
+          aria-label={t.tasks.addFromPill}
+          title={t.tasks.addFromPill}
+          onClick={(e) => {
+            e.stopPropagation();
+            useUi.getState().setTab('add');
+            useUi.setState({ captureMode: true });
+          }}
             className="flex h-[18px] w-[18px] items-center justify-center rounded-full text-white/45 transition-colors hover:bg-white/15 hover:text-white"
-          >
-            <IconPlay size={8} />
-          </button>
-        )}
+        >
+          <IconPlus size={9} />
+        </button>
       </div>
 
       <div className="flex flex-1 items-center justify-center">
@@ -118,17 +114,6 @@ export function Pill({ state, badge, mood, accessories, clipboardCandidate }: Pr
             <motion.div key="clip" initial={{ opacity: 0, y: -4 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}>
               {clipboardCandidate}
             </motion.div>
-          ) : focus ? (
-            <motion.span
-              key="timer"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              className="mono text-[13px] font-medium"
-              style={{ color: focus.phase === 'focus' ? '#F4F4F5' : 'var(--status-done)' }}
-            >
-              {fmtTimer(focus.remainingSec)}
-            </motion.span>
           ) : showMoney ? (
             <motion.span
               key={`money-${moneyFlash}`}
@@ -147,7 +132,7 @@ export function Pill({ state, badge, mood, accessories, clipboardCandidate }: Pr
       </div>
 
       <div className="flex min-w-[64px] items-center justify-end gap-[8px]">
-        {showMoney && (focus || clipboardCandidate) && (
+        {showMoney && clipboardCandidate && (
           <span className="mono text-[11px]" title={moneyTitle} style={{ color: amount > 0 ? '#4ADE80' : '#A1A1AA' }}>
             {moneyText}
           </span>

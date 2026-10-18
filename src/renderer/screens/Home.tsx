@@ -1,7 +1,6 @@
 import { AnimatePresence, motion, useMotionValue, useTransform } from 'motion/react';
 import { useEffect, useState } from 'react';
 import type { Accessory, MascotState } from '@shared/types';
-import { FocusNextButton } from '../components/FocusNext';
 import { t } from '../i18n/pt-BR';
 import { fmtTime } from '../lib/api';
 import { Mascot, type Badge } from '../mascot/Mascot';
@@ -77,6 +76,7 @@ export function Home({ state, badge, mood, accessories, look, bump, onMascotClic
   const parts: string[] = [];
   if (stats) {
     parts.push(t.home.tasksCount(stats.openTodayTasks));
+    if (stats.activitiesDone) parts.push(t.home.doneCount(stats.activitiesDone));
     if (stats.nextMeeting) parts.push(t.home.nextMeeting(fmtTime(stats.nextMeeting.start)));
   }
 
@@ -103,7 +103,9 @@ export function Home({ state, badge, mood, accessories, look, bump, onMascotClic
         <button type="button" onClick={() => useUi.getState().setTab('review')} className="truncate text-left text-[12px] text-fg-2 hover:text-fg" title={t.home.review}>
           {parts.join(' · ')}
         </button>
-        <FocusNextButton />
+        <button type="button" onClick={() => useUi.getState().setTab('tasks')} className="pipo-btn inline-flex h-[30px] shrink-0 items-center rounded-full bg-white px-[14px] text-[13px] font-medium text-black transition-colors hover:bg-white/90">
+          {t.home.openTasks}
+        </button>
       </div>
     </div>
   );

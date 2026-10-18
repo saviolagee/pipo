@@ -94,8 +94,8 @@ export function registerInsights(): void {
   every('mood', 15 * 60_000, () => void refreshMood());
   every('streak', 15 * 60_000, () => void refreshStreak());
   every('weeklyPattern', 30 * 60_000, () => void weeklyPattern());
-  bus.on('task:completed', () => void refreshMood());
-  bus.on('focus:completed', () => {
+  // Marcar uma atividade como feita mexe no humor e na sequência de dias.
+  bus.on('task:completed', () => {
     refreshMood();
     void refreshStreak();
   });

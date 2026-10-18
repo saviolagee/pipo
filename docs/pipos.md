@@ -65,7 +65,7 @@ Cada passo tem uma `key` (usada nos templates) e um `title`. Tipos:
 | `decide` | Escolhe **uma** entre opções fixas (classificar, rotear, sim/não, qual link abrir). Veja [Decisões](#decisões). |
 | `confirm` | Pede sua confirmação no notch. Com `list`, vira **aprovação em lote**: um carrossel para revisar, editar e pular itens. |
 | `branch` | Condição simples (`{{x}} > 0`): encerra ou pula para outro passo. |
-| `notify` | Aviso no notch. Execuções agendadas esperam o foco acabar. |
+| `notify` | Aviso no notch. |
 | `handoff` | Entrega um pacote para outro Pipo (vira a `{{entrada}}` dele). |
 
 ### Templates

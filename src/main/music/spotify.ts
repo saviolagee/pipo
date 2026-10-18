@@ -1,11 +1,18 @@
 // Spotify Web API com OAuth PKCE (seção 9.4). Exige Premium e um dispositivo ativo; se falhar, o
-// controlador de música cai no link (app desktop).
+// Pipo usa para saber o que está tocando.
 import type { NowPlaying } from '@shared/types';
 import { getIntegration, saveIntegration } from '../db/repos/integrations';
 import { getKV, setKV } from '../db/repos/settings';
 import { loopbackAuth, pkcePair, postForm } from '../integrations/oauth';
-import { spotifyUri } from './fallback';
 import type { MusicApi } from './index';
+
+/** https://open.spotify.com/playlist/ID?si=… → spotify:playlist:ID */
+export function spotifyUri(link: string): string | null {
+  const m = /open\.spotify\.com\/(?:intl-[a-z]+\/)?(playlist|album|track|artist|show|episode)\/([A-Za-z0-9]+)/.exec(link);
+  if (m) return `spotify:${m[1]}:${m[2]}`;
+  if (/^spotify:[a-z]+:[A-Za-z0-9]+$/.test(link)) return link;
+  return null;
+}
 
 /** Porta fixa: o Spotify exige o redirect exato registrado no app (http://127.0.0.1:43821/callback). */
 export const SPOTIFY_PORT = 43821;

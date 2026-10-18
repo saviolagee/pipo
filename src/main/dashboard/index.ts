@@ -4,7 +4,6 @@ import { writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { BrowserWindow, dialog, shell } from 'electron';
 import type { DashData } from '@shared/dashboard';
-import { fmtHM } from '@shared/format';
 import { runRaw } from '../agent/service';
 import { emit } from '../bus';
 import { getKV, setKV } from '../db/repos/settings';
@@ -18,7 +17,7 @@ import { hmToMin, minutesOfDay } from '../time';
 import { getPipo, getRun, pipoDir, runSteps } from '../pipos/repo';
 import { showNotch } from '../window';
 import { nextRunAt, scheduleLabel } from '../pipos/triggers';
-import { clientEcon, dashboardData, dashHooks, rangeFor } from './data';
+import { dashboardData, dashHooks, rangeFor } from './data';
 import { pipoDashboard, pipoDashHooks, setPipoConfig } from './pipo';
 import { collectOutputs, opensDirectly } from './pipo-outputs';
 
@@ -82,16 +81,18 @@ export function summarizeForAgent(d: DashData): Record<string, unknown> {
   const weekdays = ['domingo', 'segunda', 'terça', 'quarta', 'quinta', 'sexta', 'sábado'];
   const byHour = new Array<number>(24).fill(0);
   const byDay = new Array<number>(7).fill(0);
-  d.rhythm.forEach((row, wd) => row.forEach((m, h) => ((byHour[h] += m), (byDay[wd] += m))));
-  const topHours = byHour.map((m, h) => ({ h, m })).sort((a, b) => b.m - a.m).filter((x) => x.m > 0).slice(0, 3);
+  d.rhythm.forEach((row, wd) => row.forEach((n, h) => ((byHour[h] += n), (byDay[wd] += n))));
+  const topHours = byHour.map((n, h) => ({ h, n })).sort((a, b) => b.n - a.n).filter((x) => x.n > 0).slice(0, 3);
   return {
     periodo: d.range,
-    totais: { ...d.totals, horas: fmtHM(d.totals.workedMin), meta: fmtHM(d.totals.goalMin) },
-    dias: d.days.map((x) => ({ data: x.date, horas_min: x.workedMin, meta_min: x.goalMin, foco_min: x.focusMin, distracao_min: x.distractedMin, tarefas: x.tasksDone, humor: x.mood, status: x.status })),
-    melhores_horarios: topHours.map((x) => `${x.h}h–${x.h + 1}h (${Math.round(x.m)} min)`),
-    minutos_por_dia_da_semana: Object.fromEntries(byDay.map((m, i) => [weekdays[i], Math.round(m)])),
-    distracoes: d.distractions,
+    totais: d.totals,
+    sequencia: d.streak,
+    dias: d.days.map((x) => ({ data: x.date, feitas: x.done, tarefas: x.tasksDone, trilha: x.actionsDone, cadastradas: x.created, humor: x.mood, status: x.status, dia_util: x.workday })),
+    horarios_em_que_mais_faz: topHours.map((x) => `${x.h}h–${x.h + 1}h (${x.n})`),
+    feitas_por_dia_da_semana: Object.fromEntries(byDay.map((n, i) => [weekdays[i], n])),
+    o_que_fez: d.activities.slice(0, 60).map((a) => ({ data: a.date, tipo: a.kind === 'task' ? 'tarefa' : 'trilha', titulo: a.title, onde: a.where })),
     clientes: d.clients,
+    planos: d.goals,
     equipe: d.team.map((p) => ({ nome: p.name, execucoes: p.runs, ok: p.ok, falhas: p.failed, metricas: p.metrics, versoes: p.versions })),
     dinheiro: d.money ? { moeda: d.money.currency, total: d.money.total } : null,
   };
@@ -108,7 +109,7 @@ async function weeklyReport(now = new Date()): Promise<void> {
   setKV('dash:weekly', r.from);
   const d = await dashboardData(r, now);
   const t = d.totals;
-  const best = summarizeForAgent(d).melhores_horarios as string[];
+  const best = summarizeForAgent(d).horarios_em_que_mais_faz as string[];
   const answer = await interruptions.request({
     type: 'pattern',
     card: {
@@ -116,8 +117,8 @@ async function weeklyReport(now = new Date()): Promise<void> {
       glow: 'done',
       mascot: 'happy',
       label: 'sua semana',
-      title: `${fmtHM(t.workedMin)} de ${fmtHM(t.goalMin)} · ${t.tasksDone} tarefas`,
-      body: [`Meta batida em ${t.goalDays} dia(s). Foco: ${fmtHM(t.focusMin)}. Distração: ${fmtHM(t.distractedMin)}.`, best[0] ? `Você rendeu mais ${best[0].split(' (')[0]}.` : null, d.money ? `Entrou ${d.money.currency} ${d.money.total.toLocaleString('pt-BR')}.` : null].filter(Boolean).join('\n'),
+      title: `${t.done} ${t.done === 1 ? 'atividade feita' : 'atividades feitas'} · ${t.activeWorkdays} de ${t.workdays} dias`,
+      body: [`Você fez algo em ${t.activeDays} ${t.activeDays === 1 ? 'dia' : 'dias'} da semana${t.bestDay ? `; o melhor teve ${t.bestDay.done}` : ''}.`, best[0] ? `Você mais conclui por volta das ${best[0].split('–')[0]}.` : null, d.money ? `Entrou ${d.money.currency} ${d.money.total.toLocaleString('pt-BR')}.` : null].filter(Boolean).join('\n'),
       buttons: [
         { id: 'ok', label: 'Boa', kbd: 'N', variant: 'secondary' },
         { id: 'open', label: 'Ver dashboard', kbd: 'Y', variant: 'primary' },
@@ -132,9 +133,6 @@ export function registerDashboard(): void {
   dashHooks.money = moneyByDay;
   handle('dash:open', (tab) => openDashboard(tab ?? undefined));
   handle('dash:data', (range) => dashboardData(range.kind === 'custom' ? range : rangeFor(range.kind, range.from ? new Date(`${range.from}T12:00:00`) : new Date())));
-  handle('dash:setClientEcon', (clientId, econ) => {
-    setKV('clients:econ', { ...clientEcon(), [String(clientId)]: econ });
-  });
   handle('dash:exportCsv', async (name, csv) => {
     const r = await dialog.showSaveDialog(win ?? (undefined as unknown as BrowserWindow), { defaultPath: `${name}.csv`, filters: [{ name: 'CSV', extensions: ['csv'] }] });
     if (r.canceled || !r.filePath) return null;
@@ -194,7 +192,7 @@ export function registerDashboard(): void {
       name: 'get_dashboard',
       modes: ['chat', 'pipo'],
       description:
-        'Números agregados de um período (today, week, month, year): horas por dia vs meta, foco, distração, tarefas, humor, melhores horários, minutos por dia da semana, clientes (valor/hora efetivo), métricas dos Pipos e dinheiro. Use para "em que horário eu rendo mais?", "como foi meu mês?".',
+        'Números de um período (today, week, month, year), contados pelo que foi feito: atividades feitas por dia (tarefas concluídas e ações da trilha), dias com atividade, sequência, o que foi feito, horários e dias da semana em que mais conclui, clientes, planos, humor, métricas dos Pipos e dinheiro. Use para "quantos dias eu fiz algo?", "como foi meu mês?".',
       inputSchema: { type: 'object', properties: { period: { type: 'string', enum: ['today', 'week', 'month', 'year'] } } },
       run: async (a) => summarizeForAgent(await dashboardData(rangeFor((a.period as 'today' | 'week' | 'month' | 'year') ?? 'week'))),
     },

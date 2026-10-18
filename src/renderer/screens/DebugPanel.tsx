@@ -11,7 +11,7 @@ const STATES: MascotState[] = ['idle', 'looking', 'happy', 'working', 'thinking'
 const ACCESSORIES: Accessory[] = ['headphones', 'glasses', 'coffee', 'nightcap', 'scarf', 'cool_glasses', 'hat', 'crown', 'cape', 'pajama'];
 const GLOWS: GlowKind[] = ['none', 'focus', 'attention', 'done', 'dizzy'];
 const SFX: SfxName[] = ['pop', 'chime', 'alert', 'gulp', 'boing', 'tick'];
-const SIMS = ['meeting', 'pomodoro_end', 'distraction', 'deadline', 'goal', 'pattern', 'unlock', 'seed4weeks', 'absence', 'vacationBack'] as const;
+const SIMS = ['meeting', 'deadline', 'goal', 'pattern', 'unlock', 'seed4weeks', 'absence', 'vacationBack'] as const;
 
 function Chip({ on, onClick, children }: { on: boolean; onClick: () => void; children: React.ReactNode }): React.JSX.Element {
   return (

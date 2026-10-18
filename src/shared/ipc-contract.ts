@@ -21,7 +21,6 @@ import type {
   CurrentActivity,
   DayReview,
   DayStats,
-  FocusState,
   IngestProgress,
   IntegrationInfo,
   MascotState,
@@ -29,7 +28,6 @@ import type {
   NowPlaying,
   ParsedCapture,
   Profile,
-  Ritual,
   Settings,
   StreakInfo,
   Task,
@@ -67,8 +65,6 @@ export interface InvokeHandlers {
   'settings:get': () => Settings;
   'settings:patch': (patch: Partial<Settings>) => Settings;
 
-  'rituals:list': () => Ritual[];
-  'rituals:save': (rituals: Omit<Ritual, 'id'>[]) => Ritual[];
 
   'clients:list': () => Client[];
   'clients:save': (clients: Array<Omit<Client, 'id'> & { id?: number }>) => Client[];
@@ -81,19 +77,11 @@ export interface InvokeHandlers {
   'tasks:delete': (id: number) => void;
   'tasks:reorder': (ids: number[]) => void;
   'tasks:snooze': (id: number) => Task;
-  'tasks:nextSuggested': () => Task | null;
   'tasks:parse': (text: string) => ParsedCapture;
   'subtasks:add': (taskId: number, titles: string[]) => Task;
   'subtasks:toggle': (subtaskId: number, done: boolean) => Task;
   'subtasks:delete': (subtaskId: number) => Task;
 
-  'focus:start': (opts: { taskId: number | null; minutes?: number; microStep?: string | null; skipRituals?: boolean }) => FocusState;
-  'focus:ritualDone': (skipToday?: boolean) => FocusState | null;
-  'focus:pause': () => FocusState | null;
-  'focus:resume': () => FocusState | null;
-  'focus:skipPhase': () => FocusState | null;
-  'focus:stop': (completed: boolean) => void;
-  'focus:get': () => FocusState | null;
 
   'stats:today': () => DayStats;
   'stats:dayReview': (date?: string) => DayReview;
@@ -135,12 +123,10 @@ export interface InvokeHandlers {
   'calendar:upcoming': () => CalendarEvent[];
   'music:toggle': () => NowPlaying | null;
   'music:nowPlaying': () => NowPlaying | null;
-  'music:test': () => void;
 
-  'debug:simulate': (what: 'meeting' | 'pomodoro_end' | 'distraction' | 'deadline' | 'goal' | 'pattern' | 'unlock' | 'seed4weeks' | 'absence' | 'vacationBack') => void;
+  'debug:simulate': (what: 'meeting' | 'deadline' | 'goal' | 'pattern' | 'unlock' | 'seed4weeks' | 'absence' | 'vacationBack') => void;
   'dash:open': (tab?: string | null) => void;
   'dash:data': (range: DashRange) => DashData;
-  'dash:setClientEcon': (clientId: number, econ: { hourlyRate?: number | null; monthlyValue?: number | null }) => void;
   'dash:exportCsv': (name: string, csv: string) => string | null;
   'dash:exportPdf': (name: string) => string | null;
   'dash:ask': (question: string, range: DashRange) => string;
@@ -220,7 +206,6 @@ export type InvokeResult<K extends InvokeChannel> = ReturnType<InvokeHandlers[K]
 
 /** Eventos main → renderer. */
 export interface MainEvents {
-  'focus:state': FocusState | null;
   'card:show': Card;
   'card:dismiss': { id: string };
   'toast:show': Toast;
@@ -235,7 +220,6 @@ export interface MainEvents {
   'claude:status': ClaudeStatus;
   'integrations:changed': IntegrationInfo[];
   'music:nowPlaying': NowPlaying | null;
-  'music:local': { action: 'play' | 'pause' | 'stop'; filePath?: string };
   'files:progress': IngestProgress;
   'goals:changed': Goal[];
   /** O processo principal pede ao modelo de leitura (na janela do notch) os vetores de uns textos. */

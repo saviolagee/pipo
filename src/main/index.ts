@@ -12,7 +12,6 @@ import { maybeDevCapture } from './dev-capture';
 import { handle } from './ipc';
 import { registerShortcuts, setFixedShortcuts, unregisterShortcuts } from './shortcuts';
 import { registerCardsIpc } from './cards';
-import { handleMediaProtocol, registerMediaScheme } from './music/fallback';
 import { registerActivity } from './activity/ipc';
 import { startScheduler } from './scheduler';
 import { registerAgentIpc } from './agent/service';
@@ -36,8 +35,7 @@ import { registerContextReactions } from './insights/context-reactions';
 import { startMcpBridge } from './mcp/server';
 import { registerSystemIpc, setAutostart } from './system';
 import { getProfile } from './db/repos/profile';
-import { nextSuggested, registerTasksIpc } from './tasks/ipc';
-import { startFocus } from './focus/session';
+import { registerTasksIpc } from './tasks/ipc';
 import { createTray, setPaused } from './tray';
 import { createNotchWindow, setInteractive, setMini, showNotch, toggleMini, toggleNotch } from './window';
 
@@ -55,7 +53,6 @@ if (process.platform === 'linux') {
   app.commandLine.appendSwitch('enable-transparent-visuals');
 }
 
-registerMediaScheme();
 
 // Teste de fumaça/E2E: perfil isolado, sem tocar nos dados do usuário.
 if (process.env.PIPO_USER_DATA && (!app.isPackaged || process.env.PIPO_E2E === '1')) app.setPath('userData', process.env.PIPO_USER_DATA);
@@ -98,7 +95,6 @@ app.whenReady().then(() => {
   registerSystemIpc();
   registerCardsIpc();
   registerTasksIpc();
-  handleMediaProtocol();
   registerActivity();
   startMcpBridge();
   registerAgentIpc();
@@ -136,12 +132,6 @@ app.whenReady().then(() => {
     quickCapture: () => {
       showNotch(true);
       emit('ui:navigate', { tab: 'add', expand: true, capture: true });
-    },
-    focusNext: () => {
-      showNotch(false);
-      const next = nextSuggested();
-      void startFocus({ taskId: next?.id ?? null });
-      emit('ui:navigate', { tab: 'home', expand: true });
     },
     mini: toggleMini,
   });

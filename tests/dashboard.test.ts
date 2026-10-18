@@ -32,39 +32,62 @@ function setup(): void {
   });
 }
 
-function focus(start: Date, min: number): void {
-  db().run("INSERT INTO focus_sessions (started_at, ended_at, preset_json, focused_sec, distracted_sec, status) VALUES (?, ?, '{}', ?, 300, 'completed')", start.toISOString(), new Date(start.getTime() + min * 60_000).toISOString(), min * 60);
+/** Uma tarefa marcada como feita em `when`. */
+function done(title: string, when: Date, clientId: number | null = null): void {
+  db().run(
+    "INSERT INTO tasks (title, status, source, is_today, position, created_at, updated_at, completed_at, priority, client_id) VALUES (?, 'done', 'manual', 0, 0, ?, ?, ?, 2, ?)",
+    title,
+    when.toISOString(),
+    when.toISOString(),
+    when.toISOString(),
+    clientId,
+  );
 }
 
 describe('dashboards', () => {
-  it('4 semanas com folga, férias e fim de semana trabalhado: cada número bate com o banco', async () => {
+  it('um mês com folga, férias, feriado e sábado: conta dias com atividade e o que foi feito', async () => {
     setup();
     days.setDay('2026-09-16', 'off');
     days.setRange('2026-09-21', '2026-09-25', 'vacation');
-    // Dias úteis: 5h de foco às 9h; sábado 12/09: 2h (extra); 07/09 é feriado.
+    const client = db().run("INSERT INTO clients (name, color, keywords_json, archived) VALUES ('Acme', '#d95926', '[]', 0)").lastId;
+    // Dias úteis: 2 tarefas às 9h; sábado 12/09: 1 tarefa às 10h (fora do expediente); 07/09 é feriado.
     for (let d = at(2026, 9, 1); d <= at(2026, 9, 30); d = new Date(d.getFullYear(), d.getMonth(), d.getDate() + 1, 9)) {
       const k = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
       const wd = d.getDay();
-      if (k === '2026-09-12') focus(new Date(d.getFullYear(), d.getMonth(), d.getDate(), 10), 120);
+      if (k === '2026-09-12') done('Sábado', new Date(d.getFullYear(), d.getMonth(), d.getDate(), 10));
       if (wd === 0 || wd === 6 || ['2026-09-07', '2026-09-16'].includes(k) || (k >= '2026-09-21' && k <= '2026-09-25')) continue;
-      focus(new Date(d.getFullYear(), d.getMonth(), d.getDate(), 9), 300);
+      done(`A ${k}`, new Date(d.getFullYear(), d.getMonth(), d.getDate(), 9), k === '2026-09-30' ? client : null);
+      done(`B ${k}`, new Date(d.getFullYear(), d.getMonth(), d.getDate(), 9, 30));
     }
+    // Um plano da trilha com 6 ações: 4 feitas de 01/09 a 04/09, às 14h.
+    const goal = db().run("INSERT INTO goals (title, created_at) VALUES ('Lançar o site', ?)", at(2026, 8, 30).toISOString()).lastId;
+    for (let i = 0; i < 6; i++) {
+      const doneAt = i < 4 ? at(2026, 9, 1 + i, 14).toISOString() : null;
+      db().run('INSERT INTO goal_actions (goal_id, title, position, day, planned_day, done_at) VALUES (?, ?, ?, ?, ?, ?)', goal, `Ação ${i + 1}`, i, '2026-09-0' + (i + 1), '2026-09-0' + (i + 1), doneAt);
+    }
+
     const r = await dashboardData(rangeFor('month', at(2026, 9, 15)), at(2026, 10, 1, 12));
-    // 22 dias úteis em set/2026 − feriado − folga − 5 de férias = 15 dias de 5h + 2h no sábado.
-    expect(r.totals.workedMin).toBe(15 * 300 + 120);
-    expect(r.totals.extraMin).toBe(120);
-    expect(r.totals.goalMin).toBe(15 * 360);
-    expect(r.totals.vacationDays).toBe(5);
-    expect(r.totals.daysOff).toBe(1);
-    expect(r.totals.holidays).toBe(1);
-    expect(r.days.find((d) => d.date === '2026-09-21')?.status).toBe('vacation');
-    expect(r.days.find((d) => d.date === '2026-09-12')?.extraMin).toBe(120);
-    // Ritmo: tudo entre 9h e 14h nos dias úteis; sábado às 10h.
+    const t = r.totals;
+    // 22 dias úteis em set/2026 − feriado − folga − 5 de férias = 15, todos com atividade; mais o sábado.
+    expect([t.workdays, t.activeWorkdays, t.activeDays]).toEqual([15, 15, 16]);
+    expect([t.tasksDone, t.actionsDone, t.done, t.created]).toEqual([31, 4, 35, 31]);
+    expect(t.bestDay).toEqual({ date: '2026-09-04', done: 3 });
+    // Folga, férias, feriado e fim de semana não quebram nem contam (como na sequência).
+    expect(t.longestRun).toBe(15);
+    expect([t.vacationDays, t.daysOff, t.holidays]).toEqual([5, 1, 1]);
+    expect(r.days.find((x) => x.date === '2026-09-21')?.status).toBe('vacation');
+    expect(r.days.find((x) => x.date === '2026-09-12')).toMatchObject({ done: 1, workday: false });
+    // Ritmo: 30 às 9h nos dias úteis, 1 sábado às 10h e as 4 ações às 14h.
     const byHour = new Array<number>(24).fill(0);
-    r.rhythm.forEach((row) => row.forEach((m, h) => (byHour[h] += m)));
-    expect(byHour[9]).toBe(15 * 60);
-    expect(r.rhythm[6][10]).toBe(60);
-    expect(byHour.reduce((a, b) => a + b, 0)).toBe(15 * 300 + 120);
+    r.rhythm.forEach((row) => row.forEach((n, h) => (byHour[h] += n)));
+    expect([byHour[9], byHour[10], byHour[14]]).toEqual([30, 1, 4]);
+    expect(r.rhythm[6][10]).toBe(1);
+    // O que foi feito: do mais novo para o mais antigo, com o cliente e o plano.
+    expect(r.activities[0]).toMatchObject({ date: '2026-09-30', title: 'B 2026-09-30', kind: 'task' });
+    expect(r.activities.find((x) => x.title === 'A 2026-09-30')?.where).toBe('Acme');
+    expect(r.activities.find((x) => x.kind === 'action')?.where).toBe('Lançar o site');
+    expect(r.clients.find((c) => c.name === 'Acme')).toMatchObject({ done: 1, open: 0 });
+    expect(r.goals).toEqual([{ id: goal, title: 'Lançar o site', status: 'active', doneInRange: 4, done: 4, total: 6 }]);
   });
 
   it('métricas em etapas viram funil, por versão', async () => {

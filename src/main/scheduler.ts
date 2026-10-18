@@ -4,7 +4,7 @@ import { getKV, setKV } from './db/repos/settings';
 import { interruptions } from './interruptions/manager';
 import { todayStats } from './stats';
 import { dayKey } from './time';
-import { fmtDuration } from './focus/format';
+import { fmtHM } from '@shared/format';
 
 type Job = { name: string; everyMs: number; run: () => void | Promise<void>; last: number };
 const jobs: Job[] = [];
@@ -39,7 +39,7 @@ async function checkGoal(): Promise<void> {
         glow: 'done',
         mascot: 'celebrating',
         label: 'meta batida',
-        subject: `${fmtDuration(s.workedMin * 60)} feitas!`,
+        subject: `${fmtHM(s.workedMin)} feitas!`,
         buttons: [
           { id: 'more', label: 'Mais um pouco', kbd: 'N', variant: 'secondary' },
           { id: 'close', label: 'Fechar o dia', kbd: 'Y', variant: 'primary' },
@@ -57,7 +57,7 @@ async function checkGoal(): Promise<void> {
         glow: 'attention',
         mascot: 'tired',
         label: 'passou da meta',
-        subject: `Já são ${fmtDuration(s.workedMin * 60)}`,
+        subject: `Já são ${fmtHM(s.workedMin)}`,
         buttons: [
           { id: 'more', label: 'Mais um pouco', kbd: 'N', variant: 'secondary' },
           { id: 'close', label: 'Fechar o dia', kbd: 'Y', variant: 'primary' },

@@ -1,13 +1,12 @@
-// Sequência de dias batendo a meta e acessórios desbloqueáveis (seção 6.5).
+// Sequência de dias com atividade feita e acessórios desbloqueáveis (seção 6.5).
 import { STREAK_UNLOCKS } from '@shared/config';
 import type { StreakInfo, UnlockableAccessory, Weekday } from '@shared/types';
 import { emit } from '../bus';
 import { showCard } from '../cards';
 import { db } from '../db';
 import { isNeutral } from '../db/repos/days';
-import { actionsDoneOn } from '../db/repos/goals';
 import { getProfile } from '../db/repos/profile';
-import { focusMinutes, statsFor } from '../stats';
+import { activitiesDone } from '../stats';
 import { addDays, dayKey, dayRange } from '../time';
 
 export interface DayResult {
@@ -16,9 +15,9 @@ export interface DayResult {
   qualifies: boolean;
 }
 
-/** Um dia conta se teve ≥ 80% das horas-meta e ≥ 1 foco completo. */
-export function qualifies(workedMin: number, goalMin: number, focusCompleted: number): boolean {
-  return goalMin > 0 && workedMin >= goalMin * 0.8 && focusCompleted >= 1;
+/** Um dia conta quando teve pelo menos uma atividade feita (tarefa concluída ou ação da trilha). */
+export function qualifies(done: number): boolean {
+  return done >= 1;
 }
 
 /**
@@ -84,9 +83,7 @@ export async function refreshStreak(now = new Date()): Promise<StreakInfo> {
     // Ausências e dias sem registro não quebram nem contam (como um dia de folga).
     const workday = !!p && p.workDays.includes(d.getDay() as Weekday) && !isNeutral(dayKey(d));
     const { start, end } = dayRange(d);
-    const st = statsFor(d);
-    // Fazer a ação do dia de um plano também conta: a trilha vale tanto quanto as horas.
-    days.push({ date: dayKey(d), workday, qualifies: workday && (actionsDoneOn(start, end) > 0 || qualifies(st.workedMin, st.goalMin, focusMinutes(start, end).completed)) });
+    days.push({ date: dayKey(d), workday, qualifies: workday && qualifies(activitiesDone(start, end).total) });
   }
   const prev = getStreak();
   const cur = currentStreak(days, dayKey(now));
@@ -104,7 +101,7 @@ export async function refreshStreak(now = new Date()): Promise<StreakInfo> {
       mascot: 'celebrating',
       label: `${cur} dias seguidos`,
       title: `Ganhei um ${LABEL[a]}! 🎉`,
-      body: 'Obrigado por bater a meta comigo.',
+      body: 'Obrigado por fazer suas atividades comigo.',
       buttons: [{ id: 'ok', label: 'Eba!', kbd: 'Y', variant: 'primary' }],
       autoDismissMs: 8000,
     });

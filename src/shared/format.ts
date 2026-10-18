@@ -8,12 +8,6 @@ export function fmtHM(min: number): string {
   return r === 0 ? `${h}h` : `${h}h${String(r).padStart(2, '0')}`;
 }
 
-export function fmtTimer(sec: number): string {
-  const s = Math.max(0, Math.round(sec));
-  const m = Math.floor(s / 60);
-  return `${String(m).padStart(2, '0')}:${String(s % 60).padStart(2, '0')}`;
-}
-
 export function fmtTime(iso: string): string {
   const d = new Date(iso);
   return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;

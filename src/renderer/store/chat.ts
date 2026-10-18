@@ -1,10 +1,9 @@
 import { create } from 'zustand';
 import type { DraftInfo, PipoAccessory } from '@shared/pipos';
 import type { AgentErrorCode, Attachment, ChatMessage } from '@shared/types';
-import { isCreatePipoIntent, isFocusNextIntent } from '@shared/intents';
+import { isCreatePipoIntent } from '@shared/intents';
 import { api } from '../lib/api';
 import { matchCommand, runAtMention, startPipoFromText } from '../lib/commands';
-import { focusNext } from '../lib/focus';
 import { usePipos } from './pipos';
 import { play } from '../sound/sfx';
 import { useUi } from './ui';
@@ -67,11 +66,6 @@ export const useChat = create<ChatState>((set, get) => ({
       const { conversationId } = await api.invoke('pipos:chat', target.id);
       await get().openConversation(conversationId);
       await get().send(at[2]);
-      return;
-    }
-    // "foca na próxima": o app resolve na hora, sem esperar o agente.
-    if (isFocusNextIntent(t) && !get().pending.length) {
-      await focusNext();
       return;
     }
     // "quero um Pipo que…" no chat do Pipo branco: vai direto para a criação, com o pedido.

@@ -29,7 +29,6 @@ export const MINI = {
 export const DEFAULT_SHORTCUTS = {
   toggle: 'CommandOrControl+Shift+Space',
   quickCapture: 'CommandOrControl+Shift+K',
-  focusNext: 'CommandOrControl+Shift+F',
   mini: 'CommandOrControl+Shift+M',
 } as const;
 

@@ -1,5 +1,5 @@
 import { globalShortcut } from 'electron';
-import type { ShortcutId } from '@shared/config';
+import { DEFAULT_SHORTCUTS, type ShortcutId } from '@shared/config';
 import { getSettings } from './db/repos/settings';
 
 export type ShortcutActions = Record<ShortcutId, () => void>;
@@ -19,7 +19,8 @@ export function registerShortcuts(next?: ShortcutActions): ShortcutId[] {
   globalShortcut.unregisterAll();
   const failed: ShortcutId[] = [];
   const map = getSettings().shortcuts;
-  for (const id of Object.keys(map) as ShortcutId[]) {
+  // Só os atalhos que existem hoje (configurações antigas podem guardar outros, como o do foco).
+  for (const id of Object.keys(DEFAULT_SHORTCUTS) as ShortcutId[]) {
     const accel = map[id];
     const fn = actions[id];
     try {

@@ -1,11 +1,10 @@
 import { DEFAULT_DISTRACTIONS, PRESENCE_BUDGET } from '@shared/config';
-import type { Client, DistractionSettings, FocusPreset, Profile, Ritual } from '@shared/types';
+import type { Client, DistractionSettings, FocusPreset, Profile } from '@shared/types';
 
 export type DraftClient = Omit<Client, 'id'> & { id?: number };
 
 export interface Draft {
   profile: Profile;
-  rituals: Omit<Ritual, 'id'>[];
   clients: DraftClient[];
   distractions: DistractionSettings;
 }
@@ -40,7 +39,6 @@ export function defaultDraft(): Draft {
       autostart: true,
       onboardedAt: null,
     },
-    rituals: [],
     clients: [],
     distractions: { items: [...DEFAULT_DISTRACTIONS], toleranceSec: 60, allowed: [] },
   };
