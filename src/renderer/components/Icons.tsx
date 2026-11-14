@@ -176,3 +176,10 @@ export const IconMini = ({ size = 16, on = false, ...p }: P & { on?: boolean }):
     {on ? <rect x="8.5" y="4.5" width="7" height="3.6" rx="1.4" fill="currentColor" stroke="none" /> : <circle cx="16.4" cy="15" r="2.3" fill="currentColor" stroke="none" />}
   </svg>
 );
+
+/** Abrir em tela cheia: quatro cantos para fora. */
+export const IconExpand = ({ size = 16, ...p }: P): React.JSX.Element => (
+  <svg {...base(size, p)}>
+    <path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5" />
+  </svg>
+);

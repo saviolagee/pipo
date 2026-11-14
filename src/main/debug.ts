@@ -2,6 +2,7 @@
 import { emit } from './bus';
 import { createTask } from './db/repos/tasks';
 import { interruptions } from './interruptions/manager';
+import { remindNow } from './reminders';
 import { simulateMeeting } from './insights/context-reactions';
 import { handle } from './ipc';
 import { tasksChanged } from './tasks/ipc';
@@ -19,6 +20,9 @@ export function registerDebug(): void {
       case 'meeting':
         simulateMeeting(true);
         setTimeout(() => simulateMeeting(false), 8000);
+        break;
+      case 'reminder':
+        remindNow(new Date(), true);
         break;
       case 'deadline': {
         const t = createTask({ title: 'Enviar NF do mês', dueAt: new Date(Date.now() + 90 * 60_000).toISOString(), estimateMin: 15, isToday: true });

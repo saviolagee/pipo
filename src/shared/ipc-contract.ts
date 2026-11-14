@@ -124,8 +124,10 @@ export interface InvokeHandlers {
   'music:toggle': () => NowPlaying | null;
   'music:nowPlaying': () => NowPlaying | null;
 
-  'debug:simulate': (what: 'meeting' | 'deadline' | 'goal' | 'pattern' | 'unlock' | 'seed4weeks' | 'absence' | 'vacationBack') => void;
+  'debug:simulate': (what: 'meeting' | 'reminder' | 'deadline' | 'goal' | 'pattern' | 'unlock' | 'seed4weeks' | 'absence' | 'vacationBack') => void;
   'dash:open': (tab?: string | null) => void;
+  /** Abre o Pipo em tela cheia (janela normal), já numa aba se pedir. */
+  'app:openWindow': (tab?: string | null) => void;
   'dash:data': (range: DashRange) => DashData;
   'dash:exportCsv': (name: string, csv: string) => string | null;
   'dash:exportPdf': (name: string) => string | null;
@@ -253,6 +255,8 @@ export interface MainEvents {
   /** Mensagens novas numa conversa que não vieram do agente (ex.: contratado pelo botão do card). */
   'chat:changed': { conversationId: number };
   'ui:openPipoRun': { pipoId: number; runId: number };
+  /** Janela em tela cheia: vai para uma aba (ex.: clique numa notificação). */
+  'app:navigate': { tab: string };
 }
 
 export interface MediaStatus {

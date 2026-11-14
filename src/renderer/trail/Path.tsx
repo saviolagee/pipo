@@ -219,7 +219,7 @@ export function TrailPath({ goal, today }: { goal: Goal; today: string }): React
     );
 
   return (
-    <div ref={scrollRef} className="scroll-thin relative max-h-[292px] overflow-y-auto rounded-[16px]" style={{ background: 'var(--bg-card)', border: '1px solid var(--border-subtle)' }}>
+    <div ref={scrollRef} className="scroll-thin relative max-h-[calc(var(--screen-h)-80px)] overflow-y-auto rounded-[16px]" style={{ background: 'var(--bg-card)', border: '1px solid var(--border-subtle)' }}>
       <div className="relative" style={{ height }}>
         <svg aria-hidden className="pointer-events-none absolute left-0 top-0" width={COL} height={height}>
           {actions.slice(0, -1).map((it, i) => {

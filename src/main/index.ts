@@ -3,6 +3,8 @@ import { join } from 'node:path';
 import { app, ipcMain, powerMonitor, safeStorage, session } from 'electron';
 import { APP_ID, APP_NAME } from '@shared/config';
 import { emit } from './bus';
+import { openAppWindow } from './app-window';
+import { registerReminders } from './reminders';
 import { registerBootstrapIpc } from './bootstrap';
 import { handleFileProtocol, registerFileScheme } from './files/protocol';
 import { quickCheckClaude } from './agent/detect-claude';
@@ -69,6 +71,7 @@ function registerCoreIpc(): void {
   handle('window:show', ({ focusIfIdle }) => showNotch(!focusIfIdle || powerMonitor.getSystemIdleTime() >= 1));
   handle('window:setExpanded', () => undefined);
   handle('window:setMini', (on) => setMini(on));
+  handle('app:openWindow', (tab) => openAppWindow(tab ?? undefined));
   handle('app:quit', () => app.quit());
   handle('settings:get', () => getSettings());
   handle('settings:patch', (patch) => {
@@ -109,6 +112,7 @@ app.whenReady().then(() => {
   registerInsights();
   registerDays();
   registerGoals();
+  registerReminders();
   registerPiposIpc();
   registerBuilder();
   registerBrowser();

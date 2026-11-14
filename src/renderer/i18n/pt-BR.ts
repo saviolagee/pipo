@@ -15,6 +15,13 @@ export const t = {
     wakeOn: 'Ouvindo "Pipo" (microfone ligado). Clique para abrir as configurações.',
     miniOn: 'Virar miniatura no canto da tela (Ctrl+Shift+M)',
     miniOff: 'Voltar para o topo da tela (Ctrl+Shift+M)',
+    fullApp: 'Abrir em tela cheia',
+  },
+  full: {
+    tabs: { home: 'Início', trail: 'Trilha', tasks: 'Tarefas', chat: 'Chat', team: 'Equipe', review: 'Revisão do dia', add: 'Anotar', settings: 'Configurações' } as Record<'home' | 'trail' | 'tasks' | 'chat' | 'team' | 'review' | 'add' | 'settings', string>,
+    dashboards: 'Dashboards',
+    fullscreenHint: 'F11: tela cheia sem a barra da janela',
+    finishOnboarding: 'Termine as boas-vindas no Pipo do topo da tela; depois tudo aparece aqui também.',
   },
   mini: {
     open: 'Abrir o Pipo',
@@ -714,6 +721,8 @@ export const t = {
     reactionClipboard: 'Área de transferência',
     reactionUnstuck: 'Destravar sozinho',
     reactionMusic: 'Dançar com música',
+    reactionReminders: 'Lembrar das atividades do dia',
+    reactionPushed: 'Avisar quando algo passa para frente',
     volume: 'Volume',
     soundOn: 'Som ligado',
     soundOff: 'Mudo',

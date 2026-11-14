@@ -1,6 +1,9 @@
 @import 'tailwindcss';
 
 :root {
+  /* Altura útil das telas: fixa no notch; no Pipo em tela cheia, a janela inteira (ver html.full-app). */
+  --screen-h: 372px;
+  --screen-min-h: 190px;
   --bg-notch: #000000;
   /* Vidro escuro: os cartões têm um degradê leve e um fio de luz no topo, para dar profundidade
      sem perder leitura. A ilha continua preta; só o que está dentro dela ganha volume. */
@@ -46,6 +49,12 @@
   --radius-chip: 10px;
 }
 
+/* Pipo em tela cheia: as telas ocupam a janela (fora de camada, como o :root acima). */
+html.full-app {
+  --screen-h: calc(100vh - 96px);
+  --screen-min-h: calc(100vh - 96px);
+}
+
 @layer base {
 html,
 body,
@@ -71,6 +80,13 @@ html.dashboard #root {
   overflow: auto;
   background: #0b0b0d;
   user-select: text;
+}
+
+/* Pipo em tela cheia: janela normal, fundo escuro e as telas na altura da janela. */
+html.full-app,
+html.full-app body,
+html.full-app #root {
+  background: #0b0b0d;
 }
 
 /* Barra de rolagem da janela de dashboards: fina e escura, como no resto do app. */

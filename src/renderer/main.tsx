@@ -5,12 +5,14 @@ import '@fontsource-variable/jetbrains-mono';
 import './styles/tokens.css';
 import { App } from './App';
 import { DashboardApp } from './dashboard/DashboardApp';
+import { FullApp } from './FullApp';
 
-// A mesma página serve o notch e a janela de dashboards (?view=dashboard).
-const isDashboard = new URLSearchParams(location.search).get('view') === 'dashboard';
-if (isDashboard) document.documentElement.classList.add('dashboard');
+// A mesma página serve o notch, a janela de dashboards (?view=dashboard) e o Pipo em tela cheia (?view=app).
+const view = new URLSearchParams(location.search).get('view');
+if (view === 'dashboard') document.documentElement.classList.add('dashboard');
+if (view === 'app') document.documentElement.classList.add('full-app');
 
-createRoot(document.getElementById('root') as HTMLElement).render(<StrictMode>{isDashboard ? <DashboardApp /> : <App />}</StrictMode>);
+createRoot(document.getElementById('root') as HTMLElement).render(<StrictMode>{view === 'dashboard' ? <DashboardApp /> : view === 'app' ? <FullApp /> : <App />}</StrictMode>);
 
 // Acesso aos stores para o painel de debug e scripts de validação visual.
 import { useUi } from './store/ui';

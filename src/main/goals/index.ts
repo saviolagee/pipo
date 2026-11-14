@@ -1,7 +1,8 @@
 // Trilha de objetivos: IPC, aviso de mudança e a virada do dia (empurra o que ficou para trás).
 import type { Goal } from '@shared/trail';
 import { emit } from '../bus';
-import { addAction, createGoal, deleteAction, deleteGoal, listGoals, reflowAll, renameStage, reorderActions, setActionDone, updateAction, updateGoal } from '../db/repos/goals';
+import { addAction, createGoal, deleteAction, deleteGoal, listGoals, reflowAllDetailed, renameStage, reorderActions, setActionDone, updateAction, updateGoal } from '../db/repos/goals';
+import { recordPushed } from '../reminders';
 import { refreshStreak } from '../insights/streak';
 import { handle } from '../ipc';
 import { registerTools } from '../mcp/tools';
@@ -26,7 +27,7 @@ export function registerGoals(): void {
 
   handle('goals:list', () => {
     // Quem abre a trilha já vê os dias acertados, mesmo que o app tenha ficado ligado de um dia para o outro.
-    reflowAll();
+    recordPushed(reflowAllDetailed().pushed);
     return listGoals();
   });
   handle('goals:create', mut((input) => createGoal(input)));
@@ -49,6 +50,9 @@ export function registerGoals(): void {
 
   registerTools(goalTools(goalsChanged));
   every('goals:reflow', 5 * 60_000, () => {
-    if (reflowAll()) goalsChanged();
+    // O que ficou para trás vai para frente; o aviso sai no próximo lembrete do expediente.
+    const r = reflowAllDetailed();
+    recordPushed(r.pushed);
+    if (r.changed) goalsChanged();
   });
 }

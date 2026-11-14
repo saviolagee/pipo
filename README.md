@@ -21,6 +21,13 @@ logado com a sua assinatura** — sem chave de API.
   .docx para qualquer Pipo. O vídeo ele assiste no seu computador: tira 8 quadros ao longo dele e
   transcreve a fala dos primeiros 3 minutos, e a IA lê isso e abre os quadros. Mandado no chat de um
   Pipo colorido, o arquivo entra na execução dele.
+- **Lembretes das atividades:** notificação do Windows no começo do expediente (o que tem para hoje),
+  no meio da tarde e uma hora antes do fim, só quando ainda falta algo. Avisa também o que passou para
+  frente: ação da trilha que ficou para trás (e a nova data do plano) e tarefa que venceu. Liga e
+  desliga em Configurações → Privacidade → Reações ao contexto.
+- **Tela cheia:** o botão de tela cheia na barra do notch (ou "Abrir em tela cheia" na bandeja) abre o
+  Pipo numa janela normal, com barra lateral e as mesmas telas em tamanho grande; F11 tira a barra da
+  janela. O notch continua no topo e as duas mostram os mesmos dados.
 - **Modo miniatura:** `Ctrl+Shift+M` encolhe o Pipo para uma bolinha no canto inferior direito, para
   liberar o topo da tela.
 - **Equipe de Pipos coloridos:** crie ajudantes conversando (`/criarpipo` ou "quero um Pipo que…").

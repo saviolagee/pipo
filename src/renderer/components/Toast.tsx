@@ -3,6 +3,7 @@ import { useEffect } from 'react';
 import type { Toast as ToastT } from '@shared/types';
 import { t } from '../i18n/pt-BR';
 import { api } from '../lib/api';
+import { isFullApp } from '../lib/sync';
 import { useUi } from '../store/ui';
 
 function ToastItem({ toast }: { toast: ToastT }): React.JSX.Element {
@@ -18,8 +19,8 @@ function ToastItem({ toast }: { toast: ToastT }): React.JSX.Element {
       exit={{ opacity: 0, y: -6 }}
       className="pointer-events-auto flex items-center gap-[10px] rounded-full py-[6px] pl-[14px] pr-[6px] text-[12.5px] text-fg"
       style={{ background: '#151518', border: '1px solid rgba(255,255,255,0.08)', boxShadow: '0 8px 24px rgba(0,0,0,0.4)' }}
-      onMouseEnter={() => void api.invoke('window:setInteractive', true)}
-      onMouseLeave={() => void api.invoke('window:setInteractive', false)}
+      onMouseEnter={() => !isFullApp() && void api.invoke('window:setInteractive', true)}
+      onMouseLeave={() => !isFullApp() && void api.invoke('window:setInteractive', false)}
       role="status"
     >
       <span className="max-w-[380px] truncate">{toast.text}</span>

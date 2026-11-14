@@ -61,6 +61,10 @@ export interface ReactionSettings {
   unstuck: boolean;
   /** Dançar quando estiver tocando música. */
   music: boolean;
+  /** Lembrar das atividades do dia (começo, tarde e fim do expediente). */
+  reminders: boolean;
+  /** Avisar quando uma atividade passa para frente (trilha empurrada, tarefa vencida). */
+  pushed: boolean;
 }
 
 export type TaskStatus = 'todo' | 'done' | 'snoozed';

@@ -46,7 +46,7 @@ export function DayReview(): React.JSX.Element {
     return api.on('stats:changed', () => void load());
   }, [load]);
 
-  if (!data) return <div className="h-[372px]" />;
+  if (!data) return <div className="h-[var(--screen-h)]" />;
   const { stats } = data;
   const maxClient = Math.max(...data.byClient.map((x) => x.minutes), 1);
   const maxApp = Math.max(...data.byApp.map((x) => x.minutes), 1);
@@ -65,7 +65,7 @@ export function DayReview(): React.JSX.Element {
   };
 
   return (
-    <div className="flex h-[372px] gap-[10px] px-[10px] pb-[10px]">
+    <div className="flex h-[var(--screen-h)] gap-[10px] px-[10px] pb-[10px]">
       <div className="flex w-[200px] shrink-0 flex-col items-center justify-center rounded-[16px] p-[12px] text-center" style={{ background: 'var(--bg-card)' }}>
         <Mascot state={data.goalReached ? 'celebrating' : 'sleepy'} size={62} />
         <div className="mono mt-[10px] text-[22px] font-semibold">{fmtHM(stats.workedMin)}</div>

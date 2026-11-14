@@ -1,5 +1,5 @@
 import { motion } from 'motion/react';
-import { IconChart, IconChat, IconCheckCircle, IconGear, IconHome, IconMic, IconMini, IconPlus, IconSpeaker, IconTeam, IconTrail } from '../components/Icons';
+import { IconChart, IconChat, IconCheckCircle, IconExpand, IconGear, IconHome, IconMic, IconMini, IconPlus, IconSpeaker, IconTeam, IconTrail } from '../components/Icons';
 import { t } from '../i18n/pt-BR';
 import { api } from '../lib/api';
 import { useData } from '../store/data';
@@ -61,6 +61,9 @@ export function TopBar(): React.JSX.Element {
         )}
         <TabButton active={false} label={mini ? t.tabs.miniOff : t.tabs.miniOn} onClick={() => void api.invoke('window:setMini', !mini)}>
           <IconMini size={15} on={mini} />
+        </TabButton>
+        <TabButton active={false} label={t.tabs.fullApp} onClick={() => void api.invoke('app:openWindow', tab)}>
+          <IconExpand size={14} />
         </TabButton>
         <TabButton active={false} label={t.tabs.dashboards} onClick={() => void api.invoke('dash:open', null)}>
           <IconChart size={15} />

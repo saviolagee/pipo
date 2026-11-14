@@ -167,7 +167,7 @@ export function ChatScreen({ mood, accessories, state }: { mood: number; accesso
   const empty = chat.messages.length === 0 && !chat.busy;
 
   return (
-    <div className="flex flex-col px-[12px] pb-[12px]" style={{ height: 384 }}>
+    <div className="flex flex-col px-[12px] pb-[12px]" style={{ height: 'calc(var(--screen-h) + 12px)' }}>
       <div className="flex min-h-[28px] items-center gap-[6px] pl-[66px]">
         <TalkingTo />
         {allAtts.map((a) => (

@@ -2,7 +2,8 @@
 // PIPO_CAPTURE=saida.png  PIPO_CAPTURE_DELAY=ms  PIPO_CAPTURE_SCRIPT="js no renderer"
 import { writeFileSync } from 'node:fs';
 import { app } from 'electron';
-import { getWindow } from './bus';
+import { openAppWindow } from './app-window';
+import { getFullWindow, getWindow } from './bus';
 import { dashWindow, openDashboard } from './dashboard';
 
 export function maybeDevCapture(): void {
@@ -17,10 +18,15 @@ export function maybeDevCapture(): void {
     openDashboard(process.env.PIPO_DASH_TAB);
     win = dashWindow() ?? win;
   }
+  // PIPO_CAPTURE_TARGET=app: o Pipo em tela cheia (PIPO_APP_TAB escolhe a aba).
+  if (process.env.PIPO_CAPTURE_TARGET === 'app') {
+    openAppWindow(process.env.PIPO_APP_TAB);
+    win = getFullWindow() ?? win;
+  }
   win.webContents.on('console-message', (e) => console.log(`[renderer:${e.level}] ${e.message}`));
   win.webContents.once('did-finish-load', async () => {
     // Fundo tipo papel de parede para avaliar glow e transparência.
-    if (process.env.PIPO_CAPTURE_TARGET !== 'dashboard')
+    if (process.env.PIPO_CAPTURE_TARGET !== 'dashboard' && process.env.PIPO_CAPTURE_TARGET !== 'app')
       await win.webContents.executeJavaScript(
         "document.documentElement.style.background='radial-gradient(120% 90% at 70% 100%, #2b4bd8 0%, #10164a 45%, #0b0d1c 100%)'",
         true,

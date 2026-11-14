@@ -505,6 +505,22 @@ ausências.
     oficial, site vira API, navegador, script, decisão, IA); redes sociais pela API oficial.
   - **Passo `research`:** pesquisa na web dentro do plano (busca, abre as melhores fontes e traz o
     texto delas), só leitura, roda até no ensaio. O construtor também pesquisa antes de planejar.
+- **Lembretes e tela cheia (pedido em 13/11/2026):** **Implementado.**
+  - **Avisos das atividades:** notificação do sistema (aparece com o Pipo recolhido) em até três
+    momentos do expediente: no começo (o que tem para hoje), no meio da tarde (sugere uma) e uma hora
+    antes do fim (o que falta; o que não der passa para amanhã). Só avisa quando falta algo; não avisa
+    em folga, férias, feriado, fim de semana, com o Pipo pausado nem durante reunião (espera acabar).
+    Se o app abre tarde, vale só o lembrete mais recente.
+  - **O que passou para frente:** quando a trilha empurra uma ação que ficou para trás, o Pipo guarda
+    e conta no próximo lembrete, com a nova data do plano ("2 ações de Lançar o site passaram para
+    frente; o plano agora termina seg 16/11"). Tarefa que venceu e continua em Hoje também entra.
+  - **Opções:** "Lembrar das atividades do dia" e "Avisar quando algo passa para frente", em
+    Configurações → Privacidade → Reações ao contexto. Clicar na notificação abre o Pipo no Início.
+  - **Pipo em tela cheia:** janela normal (barra de título, minimizar, maximizar, barra de tarefas)
+    aberta pelo botão na barra do notch ou pela bandeja; abre maximizada e F11 vira tela cheia sem a
+    barra. Barra lateral com Início, Trilha, Tarefas, Chat, Equipe, Revisão do dia, Anotar, Dashboards
+    e Configurações; as telas são as mesmas do notch, na altura da janela. Arrastar um arquivo para a
+    janela vira anexo no chat. O notch continua no topo e as duas janelas recebem os mesmos dados.
 - **Vídeos e imagens para todos os Pipos (pedido em 18/10/2026):** qualquer Pipo recebe mp4 e
   imagens. **Implementado:** anexos aceitam vídeo (mp4, m4v, mov, webm, até 2 GB) além de PDF, imagens,
   texto e .docx. Como a IA não abre vídeo, o Pipo "assiste" no computador: a janela do Pipo abre o

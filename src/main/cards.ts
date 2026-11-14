@@ -60,6 +60,7 @@ export function registerCardsIpc(): void {
     pending.delete(id);
     payloads.set(id, decisions);
     p.resolve(decisions.some((d) => d.keep) ? 'yes' : 'no');
+    emit('card:dismiss', { id });
   });
   handle('cards:respond', (id, buttonId) => {
     const p = pending.get(id);
@@ -67,5 +68,6 @@ export function registerCardsIpc(): void {
     if (p.timer) clearTimeout(p.timer);
     pending.delete(id);
     p.resolve(buttonId);
+    emit('card:dismiss', { id });
   });
 }

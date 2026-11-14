@@ -34,6 +34,7 @@ import { useUi } from './store/ui';
 import { useWake } from './voice/wake';
 import { useEmbedBridge } from './local/embed';
 import { useMediaBridge } from './local/media';
+import { bindDataEvents } from './lib/sync';
 
 function useLook(hovered: boolean): { x: number; y: number } | null {
   const [look, setLook] = useState<{ x: number; y: number } | null>(null);
@@ -110,20 +111,13 @@ export function App(): React.JSX.Element {
       bindAgentEvents(),
       bindPipoEvents(),
       bindGoalEvents(),
+      bindDataEvents(),
       api.on('ui:toggle', () => useUi.setState((s) => ({ expanded: !s.expanded }))),
       api.on('ui:collapse', () => useUi.getState().setExpanded(false)),
       api.on('ui:navigate', (p) => {
         useUi.getState().setTab(p.tab, p.expand);
         if (p.weekly !== undefined) useUi.setState({ weeklyReview: p.weekly });
         if (p.capture !== undefined) useUi.setState({ captureMode: p.capture, voiceRequested: !!p.voice, capturePurpose: p.purpose ?? null });
-      }),
-      api.on('ui:paused', (paused) => {
-        const s = useData.getState().settings;
-        if (s) useData.getState().set({ settings: { ...s, paused } });
-      }),
-      api.on('ui:mini', (mini) => {
-        const s = useData.getState().settings;
-        if (s) useData.getState().set({ settings: { ...s, mini } });
       }),
       api.on('ui:openDebug', () => useUi.setState((s) => ({ debugOpen: !s.debugOpen }))),
       api.on('card:show', (card) => {
@@ -134,39 +128,24 @@ export function App(): React.JSX.Element {
         u.setExpanded(true);
         if (card.glow === 'attention' || wasCollapsed) play(card.glow === 'done' ? 'chime' : 'alert');
       }),
-      api.on('card:dismiss', ({ id }) => useUi.getState().dropCard(id)),
-      api.on('mascot:react', ({ state, ms }) => useUi.getState().react(state, ms)),
-      api.on('mascot:say', ({ text, ms }) => useUi.getState().say(text, ms)),
       api.on('sfx:play', (name) => play(name)),
-      api.on('claude:status', (claude) => useData.getState().set({ claude })),
       api.on('chat:send', ({ text }) => {
         useUi.getState().setTab('chat');
         useChat.getState().newConversation();
         void useChat.getState().send(text);
       }),
-      api.on('tasks:changed', () => void useData.getState().refreshTasks()),
-      api.on('stats:changed', (stats) => useData.getState().set({ stats })),
-      api.on('activity:current', (activity) => useData.getState().set({ activity })),
-      api.on('toast:show', (toast) => useUi.getState().pushToast(toast)),
-      api.on('meeting:active', (inMeeting) => useData.getState().set({ inMeeting })),
-      api.on('integrations:changed', (integrations) => useData.getState().set({ integrations })),
-      api.on('music:nowPlaying', (nowPlaying) => useData.getState().set({ nowPlaying })),
-      api.on('day:today', (today) => useData.getState().set({ today })),
       api.on('ui:openPipoRun', ({ pipoId, runId }) => {
         usePipos.getState().open(pipoId, runId);
         // Também chega da janela de dashboards, com o notch recolhido e o mouse longe dele.
         useUi.getState().hold('openRun', 12_000);
         useUi.getState().setTab('team');
       }),
-      api.on('stripe:income', (income) => useData.getState().set({ income })),
       api.on('stripe:payment', (p) => {
         const s = useData.getState().settings?.money;
         useUi.getState().pushToast({ id: `pay:${Date.now()}`, text: s?.hideValues ? t.money.paymentHidden : t.money.payment(fmtMoney(p.amount, p.currency), p.description), durationMs: 6000 });
         useUi.setState({ moneyFlash: Date.now() });
         play('chime');
       }),
-      api.on('mood:changed', (mood) => useData.getState().set({ mood })),
-      api.on('streak:changed', (streak) => useData.getState().set({ streak })),
       api.on('files:progress', (p) => setIngest(p.done && !p.error ? null : p)),
       api.on('clipboard:candidate', ({ text }) => {
         // Carinha curiosa + botão "virar tarefa?" na pill por 5s (sem expandir).

@@ -8,6 +8,7 @@ import {
   pullEarlier,
   reflow,
   reorderPending,
+  summarize,
   workOn,
   type ActionInput,
   type ActionPatch,
@@ -269,16 +270,38 @@ export function renameStage(goalId: number, from: string, to: string): Goal {
 }
 
 /** Virada do dia: empurra o que ficou para trás em todos os planos ativos. Devolve se algo mudou. */
-export function reflowAll(now = today()): boolean {
+/** Ação que ficou para trás e foi empurrada para frente na virada do dia. */
+export interface PushedAction {
+  goalId: number;
+  goal: string;
+  title: string;
+  from: string;
+  to: string;
+  /** Novo fim do plano, depois de empurrar. */
+  end: string | null;
+}
+
+/** Acerta os dias de todos os planos ativos e conta o que ficou para trás (era de antes de hoje). */
+export function reflowAllDetailed(now = today()): { changed: boolean; pushed: PushedAction[] } {
   let changed = false;
+  const pushed: PushedAction[] = [];
   for (const r of db().all<{ id: number }>("SELECT id FROM goals WHERE status = 'active'")) {
     const g = requireGoal(r.id);
-    if (reflow(g.actions, now, canWork(g.weekdays)).length) {
-      settle(r.id, now);
-      changed = true;
+    const changes = reflow(g.actions, now, canWork(g.weekdays));
+    if (!changes.length) continue;
+    const after = settle(r.id, now);
+    changed = true;
+    const end = summarize(after, now).endDay;
+    for (const c of changes) {
+      const a = g.actions.find((x) => x.id === c.id);
+      if (a && a.day < now && c.day > a.day) pushed.push({ goalId: g.id, goal: g.title, title: a.title, from: a.day, to: c.day, end });
     }
   }
-  return changed;
+  return { changed, pushed };
+}
+
+export function reflowAll(now = today()): boolean {
+  return reflowAllDetailed(now).changed;
 }
 
 /** Ações da trilha concluídas num dia (para a sequência de dias). */

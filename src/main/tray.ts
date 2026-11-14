@@ -1,6 +1,7 @@
 import { Menu, Tray, app, nativeImage } from 'electron';
 import { APP_NAME } from '@shared/config';
 import { emit } from './bus';
+import { openAppWindow } from './app-window';
 import { openDashboard } from './dashboard';
 import { getSettings, patchSettings } from './db/repos/settings';
 import { renderFace } from './icons';
@@ -37,6 +38,7 @@ function rebuildMenu(): void {
         emit('ui:navigate', { tab: 'add', expand: true, capture: true });
       },
     },
+    { label: 'Abrir em tela cheia', click: () => openAppWindow() },
     { type: 'separator' },
     { label: 'Dashboards', accelerator: 'CommandOrControl+Shift+A', click: () => openDashboard() },
     {

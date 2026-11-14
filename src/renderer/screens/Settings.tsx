@@ -162,7 +162,7 @@ export function SettingsScreen(): React.JSX.Element {
   })();
 
   return (
-    <div className="flex h-[372px] gap-[10px] px-[10px] pb-[10px]">
+    <div className="flex h-[var(--screen-h)] gap-[10px] px-[10px] pb-[10px]">
       <nav className="scroll-thin flex w-[150px] shrink-0 flex-col gap-[1px] overflow-y-auto rounded-[14px] p-[6px]" style={{ background: 'var(--bg-card)' }}>
         {SECTIONS.map((id) => (
           <button
@@ -495,6 +495,8 @@ function PrivacyBlock({ settings, onPatch, onMsg }: { settings: SettingsT; onPat
               ['clipboard', s.reactionClipboard],
               ['unstuck', s.reactionUnstuck],
               ['music', s.reactionMusic],
+              ['reminders', s.reactionReminders],
+              ['pushed', s.reactionPushed],
             ] as const
           ).map(([k, label]) => (
             <span key={k} className="flex items-center justify-between gap-2">

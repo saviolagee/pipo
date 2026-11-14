@@ -292,7 +292,7 @@ export function TasksScreen({ focusTaskId }: { focusTaskId?: number | null }): R
   const over = planned + meetings > goal && goal > 0;
 
   return (
-    <div className="flex max-h-[372px] min-h-[190px] flex-col">
+    <div className="flex max-h-[var(--screen-h)] min-h-[var(--screen-min-h)] flex-col">
       <QuickAdd />
       <div className="scroll-thin min-h-0 flex-1 overflow-y-auto px-[10px]">
         <Section title={tt.today} count={order.length}>
