@@ -505,6 +505,13 @@ ausências.
     oficial, site vira API, navegador, script, decisão, IA); redes sociais pela API oficial.
   - **Passo `research`:** pesquisa na web dentro do plano (busca, abre as melhores fontes e traz o
     texto delas), só leitura, roda até no ensaio. O construtor também pesquisa antes de planejar.
+- **Pipo que se aprimora (pedido em 15/11/2026):** método do Harness² (Google Research, Apache 2.0)
+  trazido para dentro do Pipo, sem usar o código dele (Python/Linux/Vertex). **Implementado** (ver
+  [pipos.md](pipos.md#pipo-que-se-aprimora)): estudo depois de execuções reais com motivo, duas
+  propostas (geral e do assunto) ensaiadas em modo seco, junção só com evidência, novo ensaio da
+  junção, sugestão com o porquê de cada mudança, aplicar vira versão nova, e biblioteca de lições
+  usada pelos estudos e pelo construtor. Tabelas `pipo_improvements` e `pipo_lessons` (migração
+  `010_improve`). O plano muda; os scripts não (próximo passo possível).
 - **Lembretes e tela cheia (pedido em 13/11/2026):** **Implementado.**
   - **Avisos das atividades:** notificação do sistema (aparece com o Pipo recolhido) em até três
     momentos do expediente: no começo (o que tem para hoje), no meio da tarde (sugere uma) e uma hora

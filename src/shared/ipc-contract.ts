@@ -1,6 +1,7 @@
 // Contrato de IPC tipado. Main implementa `InvokeHandlers`; o renderer chama via `window.pipo.invoke`.
 import type { DashData, DashRange, PipoDash, PipoDashConfig } from './dashboard';
 import type { HolidayPrefs } from './holidays';
+import type { PipoImprovement } from './improve';
 import type { DraftInfo, Pipo, PipoLive, PipoMemoryRule, PipoModel, PipoPlaybook, PipoRun, PipoRunStep, PipoSummary, PipoTrigger, PipoVersion } from './pipos';
 import type { ActivityInfo, CheckResult, LocalModelConfig, OwnReport } from './decide';
 import type { ActionInput, ActionPatch, Goal, GoalInput, GoalPatch } from './trail';
@@ -185,6 +186,11 @@ export interface InvokeHandlers {
   'pipos:submitSecret': (cardId: string, value: string) => { ok: boolean; error: string | null };
   'pipos:saveModel': (id: number) => PipoModel;
   'pipos:models': () => PipoModel[];
+  /** Pipo que se aprimora: últimos estudos, se estuda sozinho e se tem algum estudo rodando. */
+  'pipos:improvements': (pipoId: number) => { list: PipoImprovement[]; auto: boolean; busy: boolean };
+  'pipos:improve': (pipoId: number) => void;
+  'pipos:decideImprovement': (id: number, decision: 'apply' | 'reject') => PipoImprovement;
+  'pipos:setAutoImprove': (pipoId: number, on: boolean) => void;
   'pipos:deleteModel': (id: number) => void;
   'pipos:exportFile': (id: number) => string | null;
   'pipos:importFile': (path?: string | null) => { modelId: number; name: string; secrets: string[] } | null;
@@ -252,6 +258,8 @@ export interface MainEvents {
   'pipos:handoff': { fromPipoId: number; toPipoId: number };
   'pipos:draft': DraftInfo;
   'pipos:hired': { pipoId: number; version: number };
+  /** Um estudo de aprimoramento começou, terminou ou foi decidido. */
+  'pipos:improvement': { pipoId: number };
   /** Mensagens novas numa conversa que não vieram do agente (ex.: contratado pelo botão do card). */
   'chat:changed': { conversationId: number };
   'ui:openPipoRun': { pipoId: number; runId: number };

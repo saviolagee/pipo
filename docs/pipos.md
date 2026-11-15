@@ -247,6 +247,34 @@ arquivo mostra "assistindo…"). Para trabalhar no arquivo, ele roda o plano com
 `{{entrada.arquivos}}`; os arquivos vão para a pasta da execução (o vídeo em si fica onde está e os
 scripts leem pelo caminho).
 
+## Pipo que se aprimora
+
+Depois de uma execução de verdade, o Pipo pode estudar o que aconteceu e sugerir uma versão melhor do
+plano. O método é adaptado do [Harness²](https://github.com/google-research/harness2) (Google
+Research, Apache 2.0), feito do zero dentro do Pipo:
+
+1. **Quando:** só com motivo: a execução falhou, você recusou uma confirmação ou pulou itens, ensinou
+   uma regra nova desde a última versão, ou já foram 5 execuções desde o último estudo. No máximo uma
+   vez a cada 20 horas por Pipo, e um Pipo por vez. A chave "sozinho", na seção Aprimoramento do
+   detalhe do Pipo, liga e desliga; o botão **Aprimorar agora** estuda na hora.
+2. **Referência:** a execução real (passos, saídas, erros, o que você aprovou ou pulou, a entrada) e o
+   ensaio do plano atual com a mesma entrada.
+3. **Duas propostas (Opus):** uma **geral** (como o Pipo trabalha: erros, ordem, verificação, limites)
+   e uma **do assunto** (formato e qualidade das entregas, critérios, referências). Cada mudança aponta
+   o momento da execução que a justifica; manter o plano é uma resposta válida.
+4. **Ensaio de cada proposta**, em modo seco, com a mesma entrada.
+5. **Junção:** o Opus compara os ensaios e fica só com o que teve apoio (pode juntar, ficar com uma ou
+   manter). A versão juntada é ensaiada de novo; se falhar onde a atual passava, nada é sugerido.
+6. **Sugestão:** um card "O Pipo pode melhorar" e a seção Aprimoramento mostram cada mudança com o
+   porquê. **Aplicar** vira uma versão nova (com as regras novas, se houver); **Descartar** fica
+   registrado.
+7. **Lições:** o que se mostrou verdade nos ensaios vira uma lição (situação, o que fazer, evidência)
+   numa biblioteca usada pelos próximos estudos de todos os Pipos e pelo construtor ao criar Pipos.
+
+Segurança: uma melhoria nunca tira a confirmação de uma ação externa, não usa script, segredo ou
+servidor que o Pipo não tem, mantém as chaves dos passos e não muda os scripts (só o plano e as regras).
+Custa tokens do Opus: três perguntas e alguns ensaios por estudo.
+
 ## Painel de cada Pipo
 
 Cada Pipo tem um painel próprio na janela de dashboards, montado com o que **ele** faz. Abra pelo

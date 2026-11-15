@@ -21,6 +21,12 @@ logado com a sua assinatura** — sem chave de API.
   .docx para qualquer Pipo. O vídeo ele assiste no seu computador: tira 8 quadros ao longo dele e
   transcreve a fala dos primeiros 3 minutos, e a IA lê isso e abre os quadros. Mandado no chat de um
   Pipo colorido, o arquivo entra na execução dele.
+- **Pipos que se aprimoram:** depois de uma execução de verdade, e só com motivo (falhou, você
+  recusou ou pulou itens, ensinou uma regra nova, ou já foram 5 execuções), o Pipo estuda o que
+  aconteceu, propõe duas versões do plano (uma geral e uma do assunto), ensaia as duas em modo seco,
+  junta o que teve evidência e sugere uma versão nova, com o porquê de cada mudança. Nada muda sem
+  você aprovar. As lições comprovadas vão para uma biblioteca que todos os Pipos e o construtor usam.
+  Método adaptado do [Harness²](https://github.com/google-research/harness2) (Google Research).
 - **Lembretes das atividades:** notificação do Windows no começo do expediente (o que tem para hoje),
   no meio da tarde e uma hora antes do fim, só quando ainda falta algo. Avisa também o que passou para
   frente: ação da trilha que ficou para trás (e a nova data do plano) e tarefa que venceu. Liga e

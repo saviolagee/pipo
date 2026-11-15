@@ -239,6 +239,7 @@ export type CardKind =
   | 'pipo_plan'
   | 'pipo_secret'
   | 'pipo_batch'
+  | 'pipo_improve'
   | 'info';
 
 export interface CardButton {

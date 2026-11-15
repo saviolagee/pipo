@@ -28,6 +28,7 @@ import { registerGoals } from './goals';
 import { registerBrowser } from './browser';
 import { registerDecide } from './decide';
 import { registerPiposIpc } from './pipos/ipc';
+import { registerImprove } from './pipos/improve';
 import { registerBuilder } from './pipos/builder';
 import { registerTriggers } from './pipos/triggers';
 import { registerPipoChat } from './pipos/pipo-chat';
@@ -119,6 +120,7 @@ app.whenReady().then(() => {
   registerDecide();
   registerTriggers();
   registerPipoChat();
+  registerImprove();
   registerLinks();
   registerEvents();
   registerDashboard();

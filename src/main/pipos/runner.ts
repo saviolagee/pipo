@@ -164,6 +164,8 @@ export async function execute(req: RunRequest, deps: RunnerDeps, onStart: (runId
   mkdirSync(runDir, { recursive: true });
   // Arquivos que o usuário mandou (imagem, vídeo, documento) entram na pasta da execução.
   const input = stageInputFiles(req.input ?? null, runDir);
+  // Guardada para o aprimoramento ensaiar as versões novas com os mesmos dados.
+  if (input !== null) writeFileSync(join(runDir, '_entrada.json'), JSON.stringify(input));
   const secrets = pipoSecrets(pipo.slug);
   const mask = (s: string): string => maskSecrets(s, secrets);
   const now = new Date();

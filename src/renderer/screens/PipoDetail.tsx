@@ -9,6 +9,7 @@ import { IconChevron, IconPlay, IconX } from '../components/Icons';
 import { t } from '../i18n/pt-BR';
 import { api } from '../lib/api';
 import { Mascot } from '../mascot/Mascot';
+import { ImproveSection } from './PipoImprove';
 import { useChat } from '../store/chat';
 import { usePipos } from '../store/pipos';
 import { useUi } from '../store/ui';
@@ -345,6 +346,7 @@ export function PipoDetail({ p, onBack }: { p: PipoSummary; onBack: () => void }
           <AccessoryPicker p={p} />
         </div>
         <div>
+          {p.activeVersion !== null && <ImproveSection pipoId={p.id} color={color} />}
           <Section title={tt.runs}>
             {(d?.runs.length ?? 0) === 0 && <p className="text-[12px] text-fg-3">{tt.noRuns}</p>}
             <div className="flex flex-col gap-[2px]">
