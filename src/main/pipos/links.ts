@@ -150,7 +150,8 @@ export function runOutputs(slug: string, runId: number): Record<string, unknown>
   const out: Record<string, unknown> = {};
   if (!existsSync(dir)) return out;
   let total = 0;
-  for (const f of readdirSync(dir).filter((x) => x.endsWith('.json'))) {
+  // Arquivos com "_" na frente são do executor (contexto, entrada guardada), não saídas de passo.
+  for (const f of readdirSync(dir).filter((x) => x.endsWith('.json') && !x.startsWith('_'))) {
     const text = readFileSync(join(dir, f), 'utf8');
     total += text.length;
     if (total > MAX_OUTPUTS_BYTES) break;

@@ -20,8 +20,9 @@ export interface ToolCtx {
    * 'capture': captura rápida (cria direto, sem confirmação).
    * 'builder': conversa do /criarpipo (ferramentas de construção do Pipo colorido).
    * 'pipo': conversa com um Pipo colorido (Fase 20).
+   * 'team': chat geral da equipe (o Pipo branco modera e chama os coloridos).
    */
-  mode: 'chat' | 'capture' | 'builder' | 'pipo';
+  mode: 'chat' | 'capture' | 'builder' | 'pipo' | 'team';
   conversationId: number | null;
   /** Rascunho do /criarpipo ligado a esta conversa. */
   draftId?: number | null;
@@ -435,10 +436,12 @@ export function registerTools(defs: ToolDef[]): void {
   }
 }
 
-const DEFAULT_MODES: Array<ToolCtx['mode']> = ['chat', 'capture', 'builder', 'pipo'];
+const DEFAULT_MODES: Array<ToolCtx['mode']> = ['chat', 'capture', 'builder', 'pipo', 'team'];
 
 function availableIn(t: ToolDef, mode: ToolCtx['mode']): boolean {
-  return (t.modes ?? DEFAULT_MODES).includes(mode);
+  const modes = t.modes ?? DEFAULT_MODES;
+  // O chat geral é o chat do Pipo branco com mais ferramentas: o que vale no chat vale lá.
+  return modes.includes(mode) || (mode === 'team' && modes.includes('chat'));
 }
 
 export function toolDescriptors(ctx?: ToolCtx): ToolDescriptor[] {

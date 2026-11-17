@@ -10,8 +10,9 @@ logado com a sua assinatura** — sem chave de API.
 - **Sabe o que você está fazendo:** lê o app e o título da janela ativa (localmente) para registrar o
   tempo por cliente e reagir ao contexto.
 - **Tem emoção:** o humor do Pipo acompanha seu dia e sua semana; acessórios desbloqueiam com a sequência.
-  O mascote é um boneco animado por código: pisca, olha em volta, acena, se espreguiça, pula e dá
-  pirueta, com transição suave entre as expressões (`Ctrl+Alt+D` → Galeria mostra todas).
+  O mascote é uma bola de contorno preto, olhar de canto e a língua de fora, animada por código: pisca,
+  olha em volta, acena, se espreguiça, pula e dá pirueta, com transição suave entre as expressões
+  (`Ctrl+Alt+D` → Galeria mostra todas). O Pipo original é branco; os da equipe são coloridos.
 - **Interrompe pouco:** orçamento diário de interrupções (3/5/8). Fora dele, só muda de expressão.
 - **Trilha de objetivos:** diga o resultado que você quer e até quando; o plano vira uma trilha com
   uma ação por dia. Dá para ajustar à mão (criar, editar, reordenar, mudar o dia, apagar) ou pedir ao
@@ -42,6 +43,17 @@ logado com a sua assinatura** — sem chave de API.
   segredos e um plano de execução fixo e versionado, que roda sob demanda, num horário, por evento
   ou depois de outro Pipo. Na pill, os mini-Pipos acendem enquanto trabalham. Veja
   [docs/pipos.md](docs/pipos.md).
+- **Loja de Pipos:** Pipos prontos para instalar (Equipe → Loja). O primeiro é o **Prospector**: acha
+  empresas do jeito que você descrever (ex.: com vaga de diretor financeiro aberta), descobre os
+  decisores, valida o e-mail de cada um, envia pela sua conta com a sua revisão e um limite por dia,
+  lê as respostas e testa assuntos e textos até achar os que mais respondem.
+- **Chat geral da equipe:** uma conversa com todos os Pipos. Você pede, o Pipo certo pega a tarefa e
+  avisa quando termina; chame um com `@nome` e ele responde com a cor dele; eles trabalham em conjunto
+  quando o pedido passa por mais de um.
+- **Memória da equipe:** o que um Pipo aprende sobre você e o negócio, todos passam a saber. Dá para
+  ver e apagar cada fato na Equipe.
+- **Excluir Pipos:** lixeira no cartão e no detalhe do Pipo, `/excluirpipo nome` ou pedindo no chat,
+  sempre com confirmação.
 - **Navegador:** os Pipos usam sites que não têm API (abrir, clicar, preencher, ler), cada um com a
   sua sessão; você faz o login uma vez na janela do navegador dele. No chat, o Pipo branco pesquisa
   na web, lê páginas e age em sites, pedindo confirmação antes de enviar qualquer coisa.

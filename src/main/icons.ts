@@ -1,10 +1,11 @@
-// Rasteriza o rosto do mascote (squircle + dois olhos) em PNG, sem depender de imagens.
+// Rasteriza o rosto do mascote (a bola de olhar de canto, boca reta e língua de fora) em PNG, sem
+// depender de imagens.
 // Usado no tray/menu bar [Ref 10] e para gerar os ícones do app (scripts/gen-icons.ts).
 import { deflateSync } from 'node:zlib';
 
 export interface FaceOptions {
   size: number;
-  /** 'mono': silhueta preta com olhos vazados (template do macOS). 'light': corpo branco, olhos pretos. */
+  /** 'mono': silhueta preta com o rosto vazado (template do macOS). 'mono-white': a mesma, branca. 'color': o Pipo branco. */
   style: 'mono' | 'mono-white' | 'color';
   /** Fundo opcional (ícone do app). */
   background?: [number, number, number] | null;
@@ -63,72 +64,93 @@ function sdRoundRect(px: number, py: number, hw: number, hh: number, r: number):
   return Math.hypot(ox, oy) + Math.min(Math.max(qx, qy), 0) - r;
 }
 
-function sdEllipse(px: number, py: number, rx: number, ry: number): number {
-  // Aproximação suficiente para olhos pequenos.
-  const k = Math.hypot(px / rx, py / ry);
-  return (k - 1) * Math.min(rx, ry);
+// O rosto, nas mesmas medidas do mascote (viewBox 0..100, bola com centro em 50,57).
+const FACE = { cx: 50, cy: 57, rx: 28.2, ry: 26.8, dx: 0.9, eyeY: 51.9, eyeDx: 10.7, w: 8.6, up: 0.4, down: 7.6, tilt: 0.9, skew: 0.5, pupil: 3.2, gaze: 2.2, mouthY: 70, mouthW: 10.5, tongueX: 6.3, tongueH: 6.2 };
+
+type Part = 'none' | 'body' | 'ink' | 'eye' | 'tongue';
+
+/**
+ * O que há num ponto do rosto. `line` é a espessura do traço (mais grosso em ícones pequenos) e
+ * `zoom` aumenta olhos e boca dentro da bola, para o rosto continuar legível em 16 px.
+ */
+function partAt(x0: number, y0: number, line: number, zoom: number): Part {
+  const f = FACE;
+  const k = Math.hypot((x0 - f.cx) / f.rx, (y0 - f.cy) / f.ry);
+  if (k > 1) return 'none';
+  if ((1 - k) * Math.min(f.rx, f.ry) < line * 1.2) return 'ink';
+  const x = f.cx + (x0 - f.cx) / zoom;
+  const y = 60 + (y0 - 60) / zoom;
+  const ink = line / zoom;
+  const fx = x - f.dx;
+  for (const side of [-1, 1]) {
+    const cx = f.cx + side * f.eyeDx;
+    const u = (fx - (cx - f.w)) / (2 * f.w);
+    if (u < -0.08 || u > 1.08) continue;
+    const tilt = (f.tilt + (side < 0 ? f.skew : -f.skew)) * -side;
+    // Canto esquerdo e direito do olho (o de fora é mais alto) e as duas bordas, em curva.
+    const yl = f.eyeY - tilt;
+    const yr = f.eyeY + tilt;
+    const uu = Math.max(0, Math.min(1, u));
+    const edge = (mid: number): number => (1 - uu) * (1 - uu) * yl + 2 * uu * (1 - uu) * mid + uu * uu * yr;
+    const top = edge(f.eyeY - 2 * f.up);
+    const bottom = edge(f.eyeY + 2 * f.down);
+    if (Math.abs(y - top) < ink * 0.85 && u > -0.05 && u < 1.05) return 'ink';
+    if (u < 0 || u > 1 || y < top || y > bottom) continue;
+    if (bottom - y < ink * 0.6) return 'ink';
+    return Math.hypot(fx - (cx + f.gaze), y - (f.eyeY + 3)) < f.pupil ? 'ink' : 'eye';
+  }
+  if (Math.abs(y - f.mouthY) < ink * 0.65 && Math.abs(fx - f.cx) < f.mouthW) return 'ink';
+  const t = sdRoundRect(fx - (f.cx + f.tongueX), y - (f.mouthY + f.tongueH / 2 - 1.5), 3, f.tongueH / 2 + 1.5, 3);
+  if (y > f.mouthY && t < 0) return t > -ink * 0.55 ? 'ink' : 'tongue';
+  return 'body';
 }
 
-const clamp01 = (v: number): number => Math.max(0, Math.min(1, v));
+const COLORS: Record<Exclude<Part, 'none'>, [number, number, number]> = { body: [255, 255, 255], ink: [10, 10, 11], eye: [255, 241, 168], tongue: [244, 163, 160] };
 
 export function renderFace(opts: FaceOptions): Buffer {
   const { size, style } = opts;
   const out = new Uint8Array(size * size * 4);
   const S = 4; // supersampling
-  const cx = size / 2;
-  const cy = size / 2;
-  const scale = opts.background ? size * 0.62 : size * 0.94;
-  const hw = scale / 2;
-  // Mesma proporção do mascote (corpo 64×48, olhos 4.4×7.6 a ±11 do centro).
-  const hh = scale / 1.33 / 2;
-  const r = hh * 0.66;
-  const eyeRx = scale * 0.07;
-  const eyeRy = scale * 0.12;
-  const eyeDx = scale * 0.175;
-  const eyeY = scale * 0.02;
+  // A bola ocupa quase tudo; com fundo (ícone do app), sobra margem.
+  const diameter = size * (opts.background ? (size <= 32 ? 0.84 : 0.7) : 0.97);
+  const unit = diameter / (FACE.rx * 2);
+  const ink = Math.max(1.6, 1.15 / unit);
+  const zoom = diameter < 28 ? 1.25 : diameter < 48 ? 1.12 : 1;
   const bgR = size * 0.22;
+  const mono = style !== 'color';
 
   for (let y = 0; y < size; y++) {
     for (let x = 0; x < size; x++) {
-      let body = 0;
-      let eye = 0;
-      let bg = 0;
+      let r = 0;
+      let g = 0;
+      let b = 0;
+      let alpha = 0;
       for (let sy = 0; sy < S; sy++) {
         for (let sx = 0; sx < S; sx++) {
-          const px = x + (sx + 0.5) / S - cx;
-          const py = y + (sy + 0.5) / S - cy;
-          if (sdRoundRect(px, py, hw, hh, r) <= 0) body++;
-          if (sdEllipse(px - eyeDx, py - eyeY, eyeRx, eyeRy) <= 0 || sdEllipse(px + eyeDx, py - eyeY, eyeRx, eyeRy) <= 0) eye++;
-          if (opts.background && sdRoundRect(px, py, size / 2, size / 2, bgR) <= 0) bg++;
+          const px = x + (sx + 0.5) / S - size / 2;
+          const py = y + (sy + 0.5) / S - size / 2;
+          const part = partAt(px / unit + FACE.cx, py / unit + FACE.cy, ink, zoom);
+          let c: [number, number, number] | null = null;
+          if (mono) {
+            // Silhueta: o corpo cheio, com olhos, boca e contorno da língua vazados.
+            if (part === 'body' || part === 'tongue') c = style === 'mono' ? [0, 0, 0] : [255, 255, 255];
+            else if (part === 'ink' && Math.hypot((px / unit) / FACE.rx, (py / unit) / FACE.ry) > 0.9) c = style === 'mono' ? [0, 0, 0] : [255, 255, 255];
+          } else if (part !== 'none') c = COLORS[part];
+          else if (opts.background && sdRoundRect(px, py, size / 2, size / 2, bgR) <= 0) c = opts.background;
+          if (c) {
+            r += c[0];
+            g += c[1];
+            b += c[2];
+            alpha++;
+          }
         }
       }
-      const n = S * S;
-      const b = body / n;
-      const e = Math.min(eye, body) / n;
-      const g = bg / n;
       const i = (y * size + x) * 4;
-      if (style === 'mono' || style === 'mono-white') {
-        const a = clamp01(b - e);
-        const c = style === 'mono' ? 0 : 255;
-        out[i] = c;
-        out[i + 1] = c;
-        out[i + 2] = c;
-        out[i + 3] = Math.round(a * 255);
-      } else {
-        // Corpo branco levemente acinzentado embaixo, olhos pretos, fundo opcional.
-        const shade = 255 - Math.round(((y - (cy - hh)) / (2 * hh)) * 22);
-        const bodyRGB = [shade, shade, Math.min(255, shade + 5)];
-        const bgRGB = opts.background ?? [0, 0, 0];
-        const bodyOnly = b - e;
-        const fgA = clamp01(b);
-        const baseA = opts.background ? g : 0;
-        const a = clamp01(fgA + baseA * (1 - fgA));
-        for (let ch = 0; ch < 3; ch++) {
-          const fg = fgA > 0 ? (bodyRGB[ch] * bodyOnly + 10 * e) / fgA : 0;
-          const v = a > 0 ? (fg * fgA + bgRGB[ch] * baseA * (1 - fgA)) / a : 0;
-          out[i + ch] = Math.round(v);
-        }
-        out[i + 3] = Math.round(a * 255);
+      if (alpha) {
+        out[i] = Math.round(r / alpha);
+        out[i + 1] = Math.round(g / alpha);
+        out[i + 2] = Math.round(b / alpha);
+        out[i + 3] = Math.round((alpha / (S * S)) * 255);
       }
     }
   }

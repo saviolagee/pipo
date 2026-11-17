@@ -1,7 +1,7 @@
 // Pesquisa na web: buscar, abrir as melhores fontes e trazer o texto delas. Serve ao chat
 // (web_search) e ao passo `research` dos planos. Só leitura: nada é enviado a site nenhum.
 import type { ResearchStep } from '@shared/pipos';
-import { renderText } from '@shared/template';
+import { render, renderText } from '@shared/template';
 import { hostOf } from '@shared/web-guard';
 import { StepError, type StepEnv } from '../pipos/steps';
 import { isHttpUrl, pipoPartition, webSession, type WebSession } from './session';
@@ -58,8 +58,58 @@ export function researchQuery(step: Pick<ResearchStep, 'query' | 'sites'>, rende
   return q && sites.length ? `${q} ${sites.map((x) => `site:${x}`).join(' OR ')}` : q;
 }
 
+export const MAX_QUERIES = 12;
+const PER_SOURCE_MULTI = 3500;
+const wait = (ms: number): Promise<void> => new Promise((r) => setTimeout(r, ms));
+
+/** A lista de buscas de um passo com `queries` (texto solto vira uma busca só; no máximo 12). */
+export function queryList(raw: unknown): string[] {
+  const list = Array.isArray(raw) ? raw : typeof raw === 'string' && raw.trim() ? [raw] : [];
+  return [...new Set(list.map((q) => (typeof q === 'string' ? q : q && typeof q === 'object' ? String((q as { consulta?: unknown; query?: unknown }).consulta ?? (q as { query?: unknown }).query ?? '') : String(q ?? ''))).map((q) => q.replace(/\s+/g, ' ').trim()).filter(Boolean))].slice(0, MAX_QUERIES);
+}
+
+/**
+ * Várias buscas num passo só: para cada uma, os resultados (título, endereço, trecho) e o texto das
+ * primeiras fontes que abrirem. Uma busca que falha não derruba as outras.
+ */
+async function runQueries(step: ResearchStep, e: StepEnv, slug: string): Promise<unknown> {
+  const list = queryList(render(step.queries as string, e.ctx));
+  if (!list.length) return { aviso: WEB_NOTICE, consultas: [], total: 0 };
+  const want = Math.min(3, Math.max(0, Math.round(step.sources ?? 1)));
+  const s = webSession(pipoPartition(slug));
+  const consultas: Array<{ consulta: string; resultados: Array<{ titulo: string; url: string; trecho: string }>; fontes: Array<{ titulo: string; url: string; texto: string }>; erro?: string }> = [];
+  for (const q of list) {
+    if (e.signal.aborted) throw new StepError('Cancelado.');
+    const consulta = researchQuery({ query: q, sites: step.sites }, (t) => t);
+    try {
+      const hits = (await searchWeb(s, consulta, e.signal)).filter((h) => !ENGINES.test(hostOf(h.url) ?? ''));
+      const fontes: Array<{ titulo: string; url: string; texto: string }> = [];
+      for (const h of hits) {
+        if (fontes.length >= want || e.signal.aborted) break;
+        try {
+          await s.goto(h.url, e.signal);
+          const text = (await s.text()).replace(/\n{3,}/g, '\n\n').trim();
+          if (text.length >= 200) fontes.push({ titulo: h.title, url: s.url() || h.url, texto: text.slice(0, PER_SOURCE_MULTI) });
+        } catch {
+          // página que não abre (login, bloqueio): tenta a próxima
+        }
+      }
+      consultas.push({ consulta, resultados: hits.map((h) => ({ titulo: h.title, url: h.url, trecho: h.snippet })), fontes });
+    } catch (x) {
+      if (e.signal.aborted) throw new StepError('Cancelado.');
+      consultas.push({ consulta, resultados: [], fontes: [], erro: (x as Error).message });
+    }
+    // Um respiro entre as buscas, para o buscador não bloquear.
+    await wait(1200);
+  }
+  const total = consultas.reduce((n, c) => n + c.resultados.length, 0);
+  if (!total) throw new StepError('Nenhuma das buscas devolveu resultados (o buscador pode ter bloqueado). Tente de novo em alguns minutos.');
+  return { aviso: WEB_NOTICE, consultas, total };
+}
+
 /** Passo `research`: busca, abre as melhores fontes (1 a 5) e devolve o texto de cada uma. */
 export async function runResearch(step: ResearchStep, e: StepEnv, slug: string): Promise<unknown> {
+  if (step.queries?.trim()) return runQueries(step, e, slug);
   const query = researchQuery(step, (t) => renderText(t, e.ctx));
   if (!query) throw new StepError('A pesquisa ficou sem o que buscar.');
   const want = Math.min(5, Math.max(1, Math.round(step.sources ?? 3)));

@@ -4,6 +4,7 @@ import type { HolidayPrefs } from './holidays';
 import type { PipoImprovement } from './improve';
 import type { DraftInfo, Pipo, PipoLive, PipoMemoryRule, PipoModel, PipoPlaybook, PipoRun, PipoRunStep, PipoSummary, PipoTrigger, PipoVersion } from './pipos';
 import type { ActivityInfo, CheckResult, LocalModelConfig, OwnReport } from './decide';
+import type { StoreConfig, StoreItem, TeamFact } from './team';
 import type { ActionInput, ActionPatch, Goal, GoalInput, GoalPatch } from './trail';
 import type {
   ActivityBlock,
@@ -206,6 +207,18 @@ export interface InvokeHandlers {
   'pipos:wouldCycle': (fromId: number, toId: number) => boolean;
   /** Abre a janela do navegador do Pipo (a sessão em que ele usa os sites) para o usuário entrar com a senha dele. */
   'pipos:openBrowser': (id: number) => boolean;
+  /** Chat geral da equipe (uma conversa só, criada na primeira vez). */
+  'team:chat': () => { conversationId: number };
+  /** Memória da equipe: o que todos os Pipos sabem sobre o usuário e o negócio. */
+  'team:facts': () => TeamFact[];
+  'team:addFact': (text: string) => TeamFact[];
+  'team:deleteFact': (id: number) => TeamFact[];
+  /** Loja de Pipos prontos. */
+  'store:list': () => StoreItem[];
+  'store:install': (id: string, values: Record<string, string>) => { pipoId: number; slug: string };
+  /** Configuração de um Pipo que veio da loja (null se não veio). */
+  'store:config': (pipoId: number) => StoreConfig | null;
+  'store:saveConfig': (pipoId: number, values: Record<string, string>) => StoreConfig;
 }
 
 export type InvokeChannel = keyof InvokeHandlers;

@@ -89,7 +89,40 @@ export const COMMANDS: SlashCommand[] = [
     name: 'equipe',
     usage: '/equipe',
     hint: t.team.cmdTeam,
-    run: async () => useUi.getState().setTab('team'),
+    run: async () => {
+      usePipos.setState({ view: 'list', openId: null, openRunId: null });
+      useUi.getState().setTab('team');
+    },
+  },
+  {
+    name: 'geral',
+    usage: '/geral',
+    hint: t.team.cmdGeneral,
+    run: async (args) => {
+      const { conversationId } = await api.invoke('team:chat');
+      useUi.getState().setTab('chat');
+      await useChat.getState().openConversation(conversationId);
+      if (args.trim()) await useChat.getState().send(args.trim());
+    },
+  },
+  {
+    name: 'loja',
+    usage: '/loja',
+    hint: t.team.cmdStore,
+    run: async () => {
+      usePipos.setState({ view: 'store', openId: null, openRunId: null });
+      useUi.getState().setTab('team');
+    },
+  },
+  {
+    name: 'excluirpipo',
+    usage: '/excluirpipo nome',
+    hint: t.team.cmdDelete,
+    // Só abre a pergunta na aba Equipe: excluir sempre passa pela confirmação.
+    run: withPipo(async (p) => {
+      usePipos.setState({ view: 'list', openId: null, openRunId: null, askDelete: p.id });
+      useUi.getState().setTab('team');
+    }),
   },
   {
     name: 'rodar',

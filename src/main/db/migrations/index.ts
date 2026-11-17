@@ -9,7 +9,8 @@ import m007 from './007_decisions';
 import m008 from './008_decision_vectors';
 import m009 from './009_no_focus';
 import m010 from './010_improve';
+import m011 from './011_team';
 
-const migrations: string[] = [m001, m002, m003, m004, m005, m006, m007, m008, m009, m010];
+const migrations: string[] = [m001, m002, m003, m004, m005, m006, m007, m008, m009, m010, m011];
 
 export default migrations;

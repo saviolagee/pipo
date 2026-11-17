@@ -3,7 +3,7 @@ import { motion } from 'motion/react';
 import { useEffect, useState } from 'react';
 import { MiniPipo } from '../mascot/MiniPipo';
 import { PIPO_COLORS, pipoAccessoryLayers, type PipoSummary } from '@shared/pipos';
-import { IconPlay } from '../components/Icons';
+import { IconBag, IconChat, IconPlay, IconTrash } from '../components/Icons';
 import { api } from '../lib/api';
 import { fmtWhen, PipoDetail } from './PipoDetail';
 import { Button } from '../components/Button';
@@ -12,6 +12,8 @@ import { Mascot } from '../mascot/Mascot';
 import { useChat } from '../store/chat';
 import { usePipos } from '../store/pipos';
 import { useUi } from '../store/ui';
+import { StoreScreen } from './Store';
+import { TeamMemory } from './TeamMemory';
 
 const tt = t.team;
 
@@ -27,6 +29,13 @@ export async function importPipoFile(): Promise<void> {
   } catch (e) {
     useUi.getState().pushToast({ id: `imp:${Date.now()}`, text: (e instanceof Error ? e.message : String(e)).replace(/^Error invoking remote method '[^']+': (Error: )?/, ''), durationMs: 6000 });
   }
+}
+
+/** Abre o chat geral da equipe (uma conversa só, com todos os Pipos). */
+export async function openTeamChat(): Promise<void> {
+  const { conversationId } = await api.invoke('team:chat');
+  useUi.getState().setTab('chat');
+  await useChat.getState().openConversation(conversationId);
 }
 
 export function startCreatePipo(): void {
@@ -45,9 +54,14 @@ function EmptyTeam(): React.JSX.Element {
       </div>
       <p className="text-[14px] font-semibold text-fg">{tt.emptyTitle}</p>
       <p className="max-w-[380px] text-[12.5px] text-fg-2">{tt.emptyBody}</p>
-      <Button variant="primary" onClick={startCreatePipo}>
-        {tt.create}
-      </Button>
+      <div className="flex gap-[8px]">
+        <Button onClick={() => usePipos.setState({ view: 'store' })}>
+          <IconBag size={12} /> {tt.store.emptyCta}
+        </Button>
+        <Button variant="primary" onClick={startCreatePipo}>
+          {tt.create}
+        </Button>
+      </div>
     </div>
   );
 }
@@ -122,6 +136,20 @@ export function PipoCard({ p, onOpen }: { p: PipoSummary; onOpen: () => void }):
         </span>
         <span className={`block truncate text-[11.5px] ${p.live.state === 'error' ? 'text-[#FCA5A5]' : 'text-fg-2'}`}>{status}</span>
       </span>
+      {!working && (
+        <button
+          type="button"
+          aria-label={`${tt.delete} ${p.name}`}
+          title={`${tt.delete} ${p.name}`}
+          onClick={(e) => {
+            e.stopPropagation();
+            usePipos.setState({ askDelete: p.id });
+          }}
+          className="flex h-[24px] w-[24px] shrink-0 items-center justify-center rounded-full text-fg-3 opacity-0 transition-opacity hover:bg-white/[0.08] hover:text-[#F87171] focus:opacity-100 group-hover:opacity-100"
+        >
+          <IconTrash size={13} />
+        </button>
+      )}
       {p.activeVersion && !working && (
         <button
           type="button"
@@ -177,18 +205,47 @@ function LinkChooser({ list, pending, onDone }: { list: PipoSummary[]; pending: 
   );
 }
 
+/** "Excluir o Prospector?": a confirmação fica na própria lista (o botão da lixeira e o /excluirpipo caem aqui). */
+function DeleteAsk({ p }: { p: PipoSummary }): React.JSX.Element {
+  const close = (): void => usePipos.setState({ askDelete: null });
+  return (
+    <div className="mb-[8px] flex flex-wrap items-center gap-[6px] rounded-[12px] px-[10px] py-[8px] text-[12px]" role="alertdialog" aria-label={tt.deleteAsk(p.name)} style={{ background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.25)' }}>
+      <span className="mr-[4px] min-w-0 flex-1 text-fg">{tt.deleteAsk(p.name)}</span>
+      <Button size="sm" variant="tertiary" onClick={close}>
+        {t.common.cancel}
+      </Button>
+      <Button
+        size="sm"
+        autoFocus
+        onClick={async () => {
+          await api.invoke('pipos:delete', p.id);
+          close();
+          useUi.getState().pushToast({ id: `del:${p.id}`, text: tt.deleted(p.name), durationMs: 4000 });
+        }}
+      >
+        <IconTrash size={11} /> {tt.delete}
+      </Button>
+    </div>
+  );
+}
+
 export function TeamScreen(): React.JSX.Element {
   const list = usePipos((s) => s.list);
   const loaded = usePipos((s) => s.loaded);
   const openId = usePipos((s) => s.openId);
   const pending = usePipos((s) => s.pendingLink);
+  const view = usePipos((s) => s.view);
+  const askDelete = usePipos((s) => s.askDelete);
+  const deleting = list.find((p) => p.id === askDelete) ?? null;
   const open = list.find((p) => p.id === openId) ?? null;
   const [edges, setEdges] = useState<Edge[]>([]);
   const reloadEdges = (): void => void api.invoke('pipos:links').then(setEdges);
   useEffect(reloadEdges, [list]);
   return (
-    <div className={`flex flex-col px-[12px] pb-[12px] ${open || (loaded && list.length === 0) ? 'h-[var(--screen-h)]' : 'max-h-[var(--screen-h)]'}`}>
-      {open ? (
+    <div className={`flex flex-col px-[12px] pb-[12px] ${open || view === 'store' || (loaded && list.length === 0) ? 'h-[var(--screen-h)]' : 'max-h-[var(--screen-h)]'}`}>
+      {view === 'store' && !open ? (
+        <StoreScreen />
+      ) : open ? (
         <PipoDetail p={open} onBack={() => usePipos.getState().open(null)} />
       ) : loaded && list.length === 0 ? (
         <EmptyTeam />
@@ -200,11 +257,18 @@ export function TeamScreen(): React.JSX.Element {
               <Button size="sm" variant="tertiary" onClick={() => void importPipoFile()}>
                 {tt.importPipo}
               </Button>
+              <Button size="sm" onClick={() => void openTeamChat()}>
+                <IconChat size={11} /> {tt.general}
+              </Button>
+              <Button size="sm" onClick={() => usePipos.setState({ view: 'store' })}>
+                <IconBag size={11} /> {tt.store.open}
+              </Button>
               <Button size="sm" onClick={startCreatePipo}>
                 + {tt.create}
               </Button>
             </span>
           </div>
+          {deleting && <DeleteAsk p={deleting} />}
           {pending && <LinkChooser list={list} pending={pending} onDone={reloadEdges} />}
           <div className="scroll-thin min-h-0 flex-1 overflow-y-auto">
             <div className="grid auto-rows-min grid-cols-2 gap-[8px]">
@@ -213,6 +277,7 @@ export function TeamScreen(): React.JSX.Element {
               ))}
             </div>
             <LinksMap list={list} edges={edges} />
+            <TeamMemory />
           </div>
         </>
       )}

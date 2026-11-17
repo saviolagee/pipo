@@ -45,7 +45,7 @@ function textsOf(s: PipoStep): string[] {
     case 'browser':
       return [s.url, ...(s.actions ?? []).flatMap((a) => Object.values(a).filter((v): v is string => typeof v === 'string'))];
     case 'research':
-      return [s.query ?? '', ...(s.sites ?? [])];
+      return [s.query ?? '', s.queries ?? '', ...(s.sites ?? [])];
     case 'mcp':
       return [s.args];
     case 'sheet':
@@ -115,8 +115,10 @@ export function validatePlaybook(p: PipoPlaybook, env: { secrets: string[]; scri
         break;
       }
       case 'research':
-        if (!s.query?.trim()) issues.push({ level: 'error', step: at, message: 'A pesquisa precisa de "query" (o que buscar).' });
-        if (s.sources !== undefined && !(s.sources >= 1 && s.sources <= 5)) issues.push({ level: 'error', step: at, message: '"sources" vai de 1 a 5.' });
+        if (!s.query?.trim() && !s.queries?.trim()) issues.push({ level: 'error', step: at, message: 'A pesquisa precisa de "query" (o que buscar).' });
+        if (s.queries?.trim() && !s.queries.includes('{{')) issues.push({ level: 'error', step: at, message: '"queries" é um template que vira uma lista de buscas (ex.: "{{passos.planejar.saida.consultas}}").' });
+        if (s.queries?.trim() ? s.sources !== undefined && !(s.sources >= 0 && s.sources <= 3) : s.sources !== undefined && !(s.sources >= 1 && s.sources <= 5))
+          issues.push({ level: 'error', step: at, message: s.queries?.trim() ? 'Com "queries", "sources" vai de 0 a 3 por busca.' : '"sources" vai de 1 a 5.' });
         if (s.sites !== undefined && !Array.isArray(s.sites)) issues.push({ level: 'error', step: at, message: '"sites" é uma lista de endereços.' });
         break;
       case 'mcp':
@@ -183,6 +185,7 @@ function detailOf(s: PipoStep): string {
     case 'browser':
       return `${s.url}${s.actions?.length ? ` · ${s.actions.length} ${s.actions.length === 1 ? 'ação' : 'ações'}` : ''}`;
     case 'research':
+      if (s.queries?.trim()) return `várias buscas (${s.queries}) · ${s.sources ?? 1} ${(s.sources ?? 1) === 1 ? 'fonte' : 'fontes'} por busca${s.sites?.length ? ` em ${s.sites.join(', ')}` : ''}`;
       return `"${s.query}" · ${s.sources ?? 3} fontes${s.sites?.length ? ` em ${s.sites.join(', ')}` : ''}`;
     case 'mcp':
       return `${s.server} → ${s.tool}`;

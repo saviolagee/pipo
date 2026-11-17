@@ -56,14 +56,18 @@ export function agentAvailable(): boolean {
 export const promptHooks: {
   builder: ((draftId: number) => string) | null;
   pipo: ((pipoId: number) => string) | null;
-  /** Descobre o modo de uma conversa (rascunho aberto → construtor; conversa de um Pipo → pipo). */
-  modeFor: ((conversationId: number) => { mode: 'builder' | 'pipo'; draftId?: number; pipoId?: number } | null) | null;
-} = { builder: null, pipo: null, modeFor: null };
+  /** O que o chat geral da equipe acrescenta ao prompt do Pipo branco (quem é a equipe, como chamar cada um). */
+  team: (() => string) | null;
+  /** Entra no prompt do Pipo branco em todo chat (ex.: a memória da equipe). */
+  extra: (() => string) | null;
+  /** Descobre o modo de uma conversa (rascunho aberto → construtor; conversa de um Pipo → pipo; chat geral → team). */
+  modeFor: ((conversationId: number) => { mode: 'builder' | 'pipo' | 'team'; draftId?: number; pipoId?: number } | null) | null;
+} = { builder: null, pipo: null, team: null, extra: null, modeFor: null };
 
-function systemPrompt(mode: 'chat' | 'capture' | 'builder' | 'pipo', ctx?: ToolCtx): string {
+function systemPrompt(mode: ToolCtx['mode'], ctx?: ToolCtx): string {
   if (mode === 'builder' && ctx?.draftId && promptHooks.builder) return promptHooks.builder(ctx.draftId);
   if (mode === 'pipo' && ctx?.pipoId && promptHooks.pipo) return promptHooks.pipo(ctx.pipoId);
-  return buildSystemPrompt({
+  const base = buildSystemPrompt({
     profile: getProfile(),
     clients: listClients(),
     goalTodayMin: goalForDate(getProfile(), new Date()),
@@ -71,13 +75,15 @@ function systemPrompt(mode: 'chat' | 'capture' | 'builder' | 'pipo', ctx?: ToolC
     timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
     mode: mode === 'capture' ? 'capture' : 'chat',
   });
+  if (mode === 'capture') return base;
+  return [base, promptHooks.extra?.(), mode === 'team' ? promptHooks.team?.() : null].filter(Boolean).join('\n');
 }
 
 /** Roda uma chamada ao provedor e repassa os eventos. */
 async function run(opts: {
   conversationId: number | null;
   prompt: string;
-  mode: 'chat' | 'capture' | 'builder' | 'pipo';
+  mode: ToolCtx['mode'];
   draftId?: number;
   pipoId?: number;
   sessionId: string | null;
@@ -155,7 +161,8 @@ export async function sendMessage(opts: { conversationId: number | null; text: s
       mode: special?.mode ?? 'chat',
       draftId: special?.draftId,
       pipoId: special?.pipoId,
-      sessionId: conv.claudeSessionId,
+      // Lida de novo: o chat geral recomeça a sessão a cada dia (o contexto vai no prompt).
+      sessionId: getConversation(conv.id)?.claudeSessionId ?? null,
       signal: ac.signal,
       ...(opts.thinkMore ? { model: 'opus' as const, effort: 'high' as const } : special?.mode === 'builder' ? BUILDER_AGENT : {}),
       onEvent: (e) => {

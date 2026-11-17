@@ -5,11 +5,12 @@ import { useEffect, useState } from 'react';
 import { describePlaybook } from '@shared/plan-check';
 import { PIPO_ACCESSORY_NAMES, PIPO_COLORS, pipoAccessoryLayers, type PipoAccessory, type PipoColor, type PipoMemoryRule, type PipoRun, type PipoRunStep, type PipoSummary, type PipoTrigger, type PipoVersion } from '@shared/pipos';
 import { Button } from '../components/Button';
-import { IconChevron, IconPlay, IconX } from '../components/Icons';
+import { IconChevron, IconPlay, IconTrash, IconX } from '../components/Icons';
 import { t } from '../i18n/pt-BR';
 import { api } from '../lib/api';
 import { Mascot } from '../mascot/Mascot';
 import { ImproveSection } from './PipoImprove';
+import { StoreConfigScreen } from './Store';
 import { useChat } from '../store/chat';
 import { usePipos } from '../store/pipos';
 import { useUi } from '../store/ui';
@@ -151,6 +152,13 @@ export function PipoDetail({ p, onBack }: { p: PipoSummary; onBack: () => void }
   const [msg, setMsg] = useState<string | null>(null);
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [more, setMore] = useState(false);
+  // Pipo que veio da loja tem uma tela de configuração (busca, conta de e-mail, limites).
+  const [fromStore, setFromStore] = useState(false);
+  const [configuring, setConfiguring] = useState(false);
+  useEffect(() => {
+    setConfiguring(false);
+    void api.invoke('store:config', p.id).then((c) => setFromStore(!!c));
+  }, [p.id]);
   const [events, setEvents] = useState<Array<{ id: number; type: 'email_label' | 'folder' | 'meeting_end' | 'webhook'; label: string; lastFiredAt: string | null }>>([]);
   useEffect(() => {
     void api.invoke('pipos:events', p.id).then(setEvents);
@@ -176,6 +184,7 @@ export function PipoDetail({ p, onBack }: { p: PipoSummary; onBack: () => void }
   }, [msg]);
 
   if (openRunId) return <RunTimeline runId={openRunId} color={color} onBack={() => usePipos.getState().open(p.id, null)} />;
+  if (configuring) return <StoreConfigScreen pipoId={p.id} onBack={() => setConfiguring(false)} />;
 
   const version = d?.versions.find((v) => v.version === p.activeVersion) ?? null;
   const steps = version ? describePlaybook(version.playbook) : [];
@@ -234,6 +243,11 @@ export function PipoDetail({ p, onBack }: { p: PipoSummary; onBack: () => void }
         </Button>
         <Button size="sm" onClick={() => void act(() => api.invoke('pipos:update', p.id, { paused: !p.paused }))}>{p.paused ? tt.resume : tt.pause}</Button>
         <Button size="sm" onClick={() => void openPipoChat(p)}>{tt.talk}</Button>
+        {fromStore && (
+          <Button size="sm" onClick={() => setConfiguring(true)}>
+            {tt.store.configure}
+          </Button>
+        )}
         <Button
           size="sm"
           onClick={() => {
@@ -256,6 +270,10 @@ export function PipoDetail({ p, onBack }: { p: PipoSummary; onBack: () => void }
           </>
         ) : (
           // O que se usa pouco fica guardado no "Mais": a fileira cabe sempre numa linha só.
+          <>
+          <Button size="sm" variant="tertiary" aria-label={`${tt.delete} ${p.name}`} title={`${tt.delete} ${p.name}`} onClick={() => setConfirmDelete(true)}>
+            <IconTrash size={12} />
+          </Button>
           <div className="relative" onMouseLeave={() => setMore(false)}>
             <Button size="sm" variant="tertiary" aria-expanded={more} onClick={() => setMore((v) => !v)}>
               {tt.more}
@@ -267,9 +285,8 @@ export function PipoDetail({ p, onBack }: { p: PipoSummary; onBack: () => void }
                     [
                       [tt.saveModel, !p.activeVersion, () => void act(() => api.invoke('pipos:saveModel', p.id), tt.savedModel)],
                       [tt.exportPipo, !p.activeVersion, () => void act(async () => { const path = await api.invoke('pipos:exportFile', p.id); if (path) setMsg(tt.exported); })],
-                      [tt.delete, false, () => setConfirmDelete(true)],
                     ] as Array<[string, boolean, () => void]>
-                  ).map(([label, disabled, run], i) => (
+                  ).map(([label, disabled, run]) => (
                     <button
                       key={label}
                       type="button"
@@ -279,7 +296,7 @@ export function PipoDetail({ p, onBack }: { p: PipoSummary; onBack: () => void }
                         run();
                       }}
                       className="rounded-[8px] px-[10px] py-[6px] text-left text-[12px] transition-colors hover:bg-white/[0.07] disabled:opacity-40"
-                      style={{ color: i === 2 ? '#F87171' : 'var(--text-primary)' }}
+                      style={{ color: 'var(--text-primary)' }}
                     >
                       {label}
                     </button>
@@ -288,6 +305,7 @@ export function PipoDetail({ p, onBack }: { p: PipoSummary; onBack: () => void }
               </div>
             )}
           </div>
+          </>
         )}
       </div>
 

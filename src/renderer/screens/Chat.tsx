@@ -13,6 +13,7 @@ import { IconChevron } from '../components/Icons';
 import { suggestCommands } from '../lib/commands';
 import { api } from '../lib/api';
 import { Mascot } from '../mascot/Mascot';
+import { MiniPipo } from '../mascot/MiniPipo';
 import { useChat } from '../store/chat';
 import { useData } from '../store/data';
 import { useUi } from '../store/ui';
@@ -71,28 +72,38 @@ function DraftBar({ draft }: { draft: DraftInfo }): React.JSX.Element {
 /** "Conversando com ● Prospector ▾": troca entre o Pipo branco e os coloridos. */
 function TalkingTo(): React.JSX.Element {
   const owner = useChat((s) => s.owner);
+  const inTeam = useChat((s) => s.team);
   const all = usePipos((s) => s.list);
   const team = all.filter((p) => p.activeVersion);
   const [open, setOpen] = useState(false);
   useEffect(() => useUi.getState().pin('talkPicker', open), [open]);
-  if (!team.length && !owner) return <span />;
+  if (!team.length && !owner && !inTeam) return <span />;
   return (
     <div className="relative">
       <button type="button" onClick={() => setOpen((v) => !v)} className="flex items-center gap-[6px] rounded-full px-[8px] py-[2px] text-[11.5px] text-fg-2 hover:bg-white/[0.06] hover:text-fg">
         <span className="text-fg-3">{t.team.talkingTo}</span>
-        <span className="h-[7px] w-[7px] rounded-[2px]" style={{ background: owner?.color ?? '#F4F4F5' }} />
-        <span className="font-medium text-fg">{owner?.name ?? t.team.whitePipo}</span>
+        {inTeam ? (
+          <span className="flex">
+            {['#F4F4F5', ...team.slice(0, 3).map((p) => PIPO_COLORS[p.color])].map((col, i) => (
+              <span key={i} className="-ml-[2px] h-[7px] w-[7px] rounded-[2px] first:ml-0" style={{ background: col, boxShadow: '0 0 0 1px #0B0B0D' }} />
+            ))}
+          </span>
+        ) : (
+          <span className="h-[7px] w-[7px] rounded-[2px]" style={{ background: owner?.color ?? '#F4F4F5' }} />
+        )}
+        <span className="font-medium text-fg">{inTeam ? t.team.generalName : (owner?.name ?? t.team.whitePipo)}</span>
         <IconChevron size={8} dir={open ? 'up' : 'down'} />
       </button>
       {open && (
         <div className="absolute left-0 top-[24px] z-20 w-[220px] rounded-[12px] p-[4px]" style={{ background: '#161618', border: '1px solid var(--border-subtle)', boxShadow: '0 10px 30px rgba(0,0,0,0.5)' }}>
-          {[{ id: 0, name: t.team.whitePipo, color: '#F4F4F5', slug: '' }, ...team.map((p) => ({ id: p.id, name: p.name, color: PIPO_COLORS[p.color], slug: p.slug }))].map((p) => (
+          {[{ id: -1, name: t.team.generalName, color: 'linear-gradient(135deg, #F4F4F5 0 50%, #3DDC84 50%)', slug: t.team.generalHint }, { id: 0, name: t.team.whitePipo, color: '#F4F4F5', slug: '' }, ...team.map((p) => ({ id: p.id, name: p.name, color: PIPO_COLORS[p.color], slug: `@${p.slug}` }))].map((p) => (
             <button
               key={p.id}
               type="button"
               onClick={async () => {
                 setOpen(false);
                 if (!p.id) useChat.getState().newConversation();
+                else if (p.id < 0) await useChat.getState().openConversation((await api.invoke('team:chat')).conversationId);
                 else {
                   const { conversationId } = await api.invoke('pipos:chat', p.id);
                   await useChat.getState().openConversation(conversationId);
@@ -102,7 +113,7 @@ function TalkingTo(): React.JSX.Element {
             >
               <span className="h-[8px] w-[8px] rounded-[3px]" style={{ background: p.color }} />
               <span className="flex-1">{p.name}</span>
-              {p.slug && <span className="mono text-[10.5px] text-fg-3">@{p.slug}</span>}
+              {p.slug && <span className="mono text-[10.5px] text-fg-3">{p.slug}</span>}
             </button>
           ))}
         </div>
@@ -185,7 +196,7 @@ export function ChatScreen({ mood, accessories, state }: { mood: number; accesso
       <div ref={listRef} className="scroll-thin relative min-h-0 flex-1 overflow-y-auto pl-[66px] pr-[4px]" style={{ background: 'radial-gradient(80% 60% at 50% 100%, rgba(99,102,241,0.08), transparent)' }}>
         {empty && (
           <div className="flex h-full flex-col items-start justify-center gap-[10px]">
-            <p className="text-[13px] text-fg-2">{claude.state === 'ok' ? c.emptyHint : c.noClaude}</p>
+            <p className="text-[13px] text-fg-2">{claude.state === 'ok' ? (chat.team ? t.team.generalEmpty : c.emptyHint) : c.noClaude}</p>
             <div className="flex flex-wrap gap-[6px]">
               {c.suggestions.map((s) => (
                 <button key={s} type="button" disabled={claude.state !== 'ok'} onClick={() => submit(s)} className="rounded-full px-[12px] py-[6px] text-[12px] text-fg transition-colors hover:bg-white/[0.1] disabled:opacity-40" style={{ background: 'var(--bg-card-hover)' }}>
@@ -209,8 +220,15 @@ export function ChatScreen({ mood, accessories, state }: { mood: number; accesso
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 className="group max-w-[90%] select-text text-[13px] leading-[1.5] text-fg"
-                style={chat.owner ? { borderLeft: `2px solid ${chat.owner.color}`, paddingLeft: 10 } : undefined}
+                style={m.author || chat.owner ? { borderLeft: `2px solid ${m.author?.color ?? chat.owner?.color}`, paddingLeft: 10 } : chat.team ? { borderLeft: '2px solid rgba(244,244,245,0.35)', paddingLeft: 10 } : undefined}
               >
+                {chat.team && (
+                  // No chat geral cada fala diz de quem é (o Pipo branco ou um colorido).
+                  <div className="mb-[2px] flex items-center gap-[5px] text-[11px] font-medium" style={{ color: m.author?.color ?? '#E4E4E7' }}>
+                    <MiniPipo color={m.author?.color ?? '#F4F4F5'} state="done" size={12} title={m.author?.name ?? t.team.whitePipo} />
+                    {m.author?.name ?? t.team.whitePipo}
+                  </div>
+                )}
                 <Rich text={m.text} />
                 <div className="mt-[3px] flex h-[16px] items-center gap-[10px] text-[10.5px] text-fg-3">
                   {m.model && <span title={m.model}>{prettyModel(m.model)}</span>}

@@ -23,7 +23,7 @@ import {
 } from './repo';
 import { deletePipoSecrets, moveSecrets, secretNames, setPipoSecret } from './secrets';
 import { startRun } from './deps';
-import { cancelRun } from './runner';
+import { activeRuns, cancelRun } from './runner';
 
 /** Preenchido pelos gatilhos (Fase 19): próxima execução agendada. */
 export const pipoHooks: { nextRunAt: (pipoId: number) => string | null; deleted: (slug: string) => void } = { nextRunAt: () => null, deleted: () => undefined };
@@ -34,6 +34,20 @@ export function summaries(): PipoSummary[] {
 
 export function pipesChanged(): void {
   emit('pipos:changed', summaries());
+}
+
+/** Exclui um Pipo de vez: plano, histórico, pasta, segredos e a sessão de navegador dele. */
+export function removePipo(id: number): boolean {
+  const p = getPipo(id);
+  if (!p) return false;
+  for (const r of activeRuns()) if (r.pipoId === id) cancelRun(r.runId);
+  deletePipoSecrets(p.slug);
+  deletePipo(id);
+  clearLive(id);
+  // Apaga também a sessão de navegador dele (cookies e logins).
+  pipoHooks.deleted(p.slug);
+  pipesChanged();
+  return true;
 }
 
 export function registerPiposIpc(): void {
@@ -58,14 +72,7 @@ export function registerPiposIpc(): void {
     return r;
   });
   handle('pipos:delete', (id) => {
-    const p = getPipo(id);
-    if (!p) return;
-    deletePipoSecrets(p.slug);
-    deletePipo(id);
-    clearLive(id);
-    // Apaga também a sessão de navegador dele (cookies e logins).
-    pipoHooks.deleted(p.slug);
-    pipesChanged();
+    removePipo(id);
   });
   handle('pipos:run', async (id, opts) => ({ runId: await startRun(id, { dryRun: opts?.dryRun, trigger: opts?.trigger ?? 'manual', input: opts?.input }) }));
   handle('pipos:cancel', (runId) => cancelRun(runId));

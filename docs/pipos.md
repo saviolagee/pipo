@@ -4,7 +4,8 @@ Um Pipo colorido é um ajudante que **você cria conversando** com o Pipo origin
 personalidade (missão, tom, o que nunca fazer), uma cor, um acessório e um **plano de execução fixo e
 versionado**, que ele repete quando você pede, num horário ou quando algo acontece.
 
-O app não traz nenhum Pipo pronto. Ele traz só a estrutura, e a equipe é sua.
+Nenhum Pipo vem instalado: a equipe é sua. Você cria os seus conversando ou instala um pronto da
+[Loja](#loja-de-pipos).
 
 ## Criar: `/criarpipo`
 
@@ -58,7 +59,7 @@ Cada passo tem uma `key` (usada nos templates) e um `title`. Tipos:
 | `script` | Roda um arquivo de `scripts/` do Pipo (node, python, powershell, pwsh, bash, sh). Recebe os segredos como variáveis de ambiente, a entrada em `PIPO_INPUT` e `PIPO_DRY_RUN=1` no ensaio. Imprime JSON. |
 | `http` | Chamada de API (GET/POST/…). Resposta JSON vira a saída. |
 | `browser` | Abre uma página num navegador de verdade e faz as ações em ordem (clicar, preencher, ler). Veja [Navegador](#navegador). |
-| `research` | Pesquisa na web, só leitura: busca (`query`, com `sites` opcionais), abre as melhores fontes (`sources`, 1 a 5) e devolve o texto de cada uma em `fontes`. Roda até no ensaio. Use antes dos passos de IA que criam conteúdo. |
+| `research` | Pesquisa na web, só leitura: busca (`query`, com `sites` opcionais), abre as melhores fontes (`sources`, 1 a 5) e devolve o texto de cada uma em `fontes`. Com `queries` (template de uma lista de até 12 buscas) faz várias de uma vez e devolve `consultas: [{consulta, resultados, fontes}]`, com `sources` por busca (0 a 3). Roda até no ensaio. Use antes dos passos de IA que criam conteúdo. |
 | `mcp` | Ferramenta de um servidor MCP declarado no `mcp.json` do Pipo. |
 | `sheet` | Ler, adicionar ou atualizar linhas no Google Sheets (conexão das Configurações). |
 | `agent` | Julgamento: escrever, classificar, resumir. Pode pedir JSON e consultar outro Pipo. |
@@ -78,6 +79,9 @@ Cada passo tem uma `key` (usada nos templates) e um `title`. Tipos:
   `nome`, `caminho`, `tipo` (`video`, `imagem` ou `documento`) e `mime`; o vídeo traz também `leitura`
   (descrição com quadros e fala), `quadros`, `duracaoSeg` e `fala`. `{{entrada.pedido}}` traz o que
   você pediu. Scripts recebem tudo em `PIPO_INPUT`; os passos de IA abrem as imagens e os quadros.
+- Scripts leem as saídas dos passos anteriores no arquivo JSON indicado em `PIPO_CONTEXT_FILE`
+  (`{passos, entrada}`, sem segredos). A variável `PIPO_CONTEXT` traz o mesmo conteúdo só quando ele é
+  pequeno (o Windows limita o tamanho de uma variável).
 - `{{pipo.nome}}`, `{{agora.data}}`, `{{agora.hora}}`, `{{execucao.seco}}`.
 - `{{segredo.NOME}}`: só em `script`, `http`, `browser` e `mcp`. O valor nunca aparece em logs nem no
   histórico (mostrado como `••••`).
@@ -234,6 +238,81 @@ página já aberta) pede. Ele nunca digita senha: para login, abre a janela do n
 - **Depois de outro Pipo:** arraste um Pipo sobre outro na Equipe para conectar ("depois de", com
   atraso opcional, como "3 dias depois"). Ciclos (A → B → A) são recusados.
 
+## Loja de Pipos
+
+Em **Equipe → Loja** (ou `/loja`) ficam os Pipos prontos. Você preenche o que é seu, clica em
+**Contratar** e ele entra na equipe já com o plano fixado, os scripts e a agenda. Depois, o botão
+**Configurar** no detalhe do Pipo muda qualquer campo (a senha só é trocada se você preencher de novo).
+Os scripts de um Pipo da loja são atualizados junto com o app; o plano e os seus dados não mudam.
+
+### Prospector
+
+Acha empresas do jeito que você descrever, descobre quem decide, valida o e-mail, escreve e envia a
+abordagem pela sua conta e testa assuntos e textos até achar os que mais respondem.
+
+Você preenche: que empresas procurar (ex.: "empresas no Brasil com vaga aberta de diretor financeiro,
+CFO ou controller"), quem quer alcançar, o que oferece, seu nome e assinatura, o e-mail de envio e a
+**senha de app** dele (no Gmail: Conta Google → Segurança → Verificação em duas etapas → Senhas de app),
+o máximo de e-mails por dia e quando rodar. Sem a conta de e-mail ele acha os leads e escreve, mas não
+envia.
+
+A cada rodada:
+
+1. **Lê a caixa de entrada** (só leitura, IMAP): quem respondeu e quais e-mails voltaram. A IA
+   classifica cada resposta: interessado, depois, sem interesse, pediu para sair ou resposta automática.
+2. **Planeja as buscas** a partir do seu pedido, fugindo das empresas que já estão na base, e pesquisa
+   na web (várias buscas num passo só).
+3. **Escolhe as empresas** que têm evidência (o título da vaga, de onde veio) e pesquisa quem decide.
+4. **Identifica os decisores**: só pessoas que aparecem nas pesquisas, com a fonte. Nunca inventa.
+5. **Valida os e-mails**: confere se o domínio recebe e-mail, monta os formatos mais comuns
+   (nome.sobrenome, nome, nsobrenome…), com o formato já visto na empresa na frente, e **sonda o
+   servidor de destino** sem enviar nada. O e-mail fica marcado como *verificado*, *encontrado* (estava
+   escrito numa página) ou *padrão* (o servidor aceita tudo ou a sondagem não foi possível; muitas
+   operadoras fecham a porta 25 em internet residencial). Endereço que o servidor recusa fica de fora.
+6. **Escreve** um e-mail curto por pessoa, cada um seguindo a variante que está testando, e um lembrete
+   para quem não respondeu depois de alguns dias (um só).
+7. **Você revisa** a lista num carrossel: edita, pula ou aprova. Só depois ele envia, um por vez, com
+   intervalo e até o limite do dia. Cada envio é gravado na hora, então ninguém recebe duas vezes.
+8. **Mede**: enviados, respostas, interessados e e-mails que voltaram por variante. Com amostra
+   suficiente, a variante que responde menos da metade da melhor é aposentada e uma desafiante entra.
+   O relatório (HTML) fica no painel do Pipo.
+
+Todo e-mail leva a sua assinatura e uma frase de saída ("é só responder sair"). Quem pede para sair,
+quem recusa e os endereços que voltam entram numa lista de bloqueio e nunca mais recebem. Os dados
+(leads, variantes, bloqueios, configuração) ficam em `data/` na pasta do Pipo, neste computador, e não
+vão junto no `.pipo`.
+
+## Chat geral da equipe
+
+Em **Equipe → Chat geral**, no seletor "Conversando com" do chat ou com `/geral`, você fala com a
+equipe inteira numa conversa só:
+
+- O **Pipo branco** modera e responde por padrão, com as ferramentas de sempre (tarefas, agenda, web).
+- Pedido que é o trabalho de um Pipo ("prospecta mais 10") vai para ele: o Pipo **pega a tarefa**,
+  avisa no chat e conta o resultado quando termina.
+- `@nome` ou uma pergunta sobre o trabalho de um Pipo: **ele mesmo responde**, com o nome e a cor dele.
+- **Trabalho em conjunto:** o Pipo branco passa o resultado de um para o outro, ou pede a visão de
+  vários e fecha com uma conclusão.
+- Execuções agendadas também aparecem ali quando falham ou produzem algo.
+
+Um Pipo recebe o pedido do chat em `{{entrada.pedido}}`, os arquivos em `{{entrada.arquivos}}` e o que
+outro Pipo produziu em `{{entrada.contexto}}`.
+
+## Memória da equipe
+
+O que um Pipo aprende sobre você e o seu negócio, todos passam a saber: o que você vende, para quem,
+preços, preferências. Conte no chat (qualquer um) e ele guarda; ou escreva em **Equipe → O que a equipe
+sabe**, onde dá para ver e apagar cada fato. Esses fatos entram no chat do Pipo branco, no chat de cada
+Pipo, nos passos de IA de todas as execuções e na criação de Pipos novos (que param de perguntar o que
+a equipe já sabe). As **regras** de um Pipo continuam sendo só dele.
+
+## Excluir um Pipo
+
+Passe o mouse no cartão do Pipo na Equipe e clique na **lixeira**, use o botão de lixeira no detalhe
+dele, digite `/excluirpipo nome` ou peça no chat. Sempre há uma confirmação. Excluir apaga o plano, o
+histórico, os arquivos, as chaves do cofre e a sessão de navegador dele; uma execução em andamento é
+cancelada.
+
 ## Conversar com um Pipo
 
 Clique em **Conversar** no Pipo. Ele responde com a personalidade dele, consulta o próprio plano e as
@@ -305,11 +384,12 @@ escolha fica guardada por Pipo nesta máquina (não vai junto no `.pipo`).
 - **Exportar .pipo:** arquivo JSON legível com personalidade, plano, gatilho e scripts. Leva só os
   **nomes** dos segredos, nunca os valores. Quem importa recebe os campos seguros para preencher.
 
-## Exemplo: Prospector + Follow-up
+## Exemplo: equipe montada pelo `/criarpipo`
 
-Exemplo de equipe montada pelo `/criarpipo`. Nenhuma linha dele existe no app:
+Um par de Pipos criado só conversando, com serviços de terceiros (diferente do Prospector da loja, que
+envia pela sua própria conta):
 
-**Prospector** (dias úteis às 9h)
+**Captador** (dias úteis às 9h)
 
 1. `http` GET no dataset do Apify (`{{segredo.APIFY_TOKEN}}`).
 2. `script` que tira quem já está na planilha.
@@ -320,7 +400,7 @@ Exemplo de equipe montada pelo `/criarpipo`. Nenhuma linha dele existe no app:
 7. `sheet` (ou script) que atualiza a planilha.
 8. `notify` "N e-mails enviados".
 
-**Follow-up** (3 dias depois do Prospector)
+**Follow-up** (3 dias depois do Captador)
 
 Recebe `{{entrada.saidas.enviar}}`, escreve o segundo e-mail, pede confirmação em lote e envia com
 `onceBy`, para que ninguém receba dois follow-ups.

@@ -4,6 +4,7 @@ import { app, ipcMain, powerMonitor, safeStorage, session } from 'electron';
 import { APP_ID, APP_NAME } from '@shared/config';
 import { emit } from './bus';
 import { openAppWindow } from './app-window';
+import { OFFSCREEN } from './dev-flags';
 import { registerReminders } from './reminders';
 import { registerBootstrapIpc } from './bootstrap';
 import { handleFileProtocol, registerFileScheme } from './files/protocol';
@@ -33,6 +34,8 @@ import { registerBuilder } from './pipos/builder';
 import { registerTriggers } from './pipos/triggers';
 import { registerPipoChat } from './pipos/pipo-chat';
 import { registerLinks } from './pipos/links';
+import { registerStore } from './store';
+import { registerTeam } from './team';
 import { registerEvents } from './pipos/events';
 import { openDashboard, registerDashboard } from './dashboard';
 import { registerContextReactions } from './insights/context-reactions';
@@ -51,7 +54,9 @@ app.commandLine.appendSwitch('lang', 'pt-BR');
 // que o usuário pede, em sessões separadas. Sem atualizações de componentes nem
 // download de dicionários do Chromium.
 app.commandLine.appendSwitch('disable-component-update');
-app.commandLine.appendSwitch('disable-features', 'SpellcheckService,MediaRouter,OptimizationHints,AutofillServerCommunication');
+// Fora da tela (testes), o Chromium não pode achar que a janela está escondida e parar de desenhar.
+app.commandLine.appendSwitch('disable-features', `SpellcheckService,MediaRouter,OptimizationHints,AutofillServerCommunication${OFFSCREEN ? ',CalculateNativeWinOcclusion' : ''}`);
+if (OFFSCREEN) app.commandLine.appendSwitch('disable-backgrounding-occluded-windows');
 if (process.platform === 'linux') {
   // Janelas transparentes no Linux (útil para desenvolvimento).
   app.commandLine.appendSwitch('enable-transparent-visuals');
@@ -122,6 +127,8 @@ app.whenReady().then(() => {
   registerPipoChat();
   registerImprove();
   registerLinks();
+  registerTeam();
+  registerStore();
   registerEvents();
   registerDashboard();
   startScheduler();

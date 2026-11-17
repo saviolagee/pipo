@@ -9,6 +9,7 @@ import { emit } from '../bus';
 import { getKV, setKV } from '../db/repos/settings';
 import { balanceTransactions, stripeKey } from '../integrations/stripe';
 import { interruptions } from '../interruptions/manager';
+import { OFF_X, OFFSCREEN } from '../dev-flags';
 import { handle } from '../ipc';
 import { registerTools } from '../mcp/tools';
 import { every } from '../scheduler';
@@ -30,6 +31,7 @@ export function dashWindow(): BrowserWindow | null {
 export function openDashboard(tab?: string): void {
   if (win && !win.isDestroyed()) {
     if (tab) win.webContents.send('dash:tab', tab);
+    if (OFFSCREEN) return;
     win.show();
     win.focus();
     return;
@@ -51,7 +53,12 @@ export function openDashboard(tab?: string): void {
       spellcheck: false,
     },
   });
-  win.once('ready-to-show', () => win?.show());
+  win.once('ready-to-show', () => {
+    if (OFFSCREEN) {
+      win?.setPosition(OFF_X, 0);
+      win?.showInactive();
+    } else win?.show();
+  });
   win.on('closed', () => (win = null));
   win.webContents.on('will-navigate', (e) => e.preventDefault());
   win.webContents.setWindowOpenHandler(() => ({ action: 'deny' }));

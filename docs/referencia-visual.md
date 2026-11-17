@@ -19,6 +19,16 @@ Notas extraídas de cada frame, usadas para implementar o visual:
 | 10 | Bandeja | Rosto do mascote monocromático na barra de menus. |
 | 11 | Tonto | Olhos em espiral, bochechas rosas, card com glow rosa: título em negrito + subtítulo cinza. |
 
+## O mascote (0.4.0)
+
+O Pipo é uma **bola com contorno preto grosso**: olhos de meia-lua com a pálpebra reta, fundo creme
+(`#FFF1A8`) e pupila preta olhando de canto; boca em um risco reto com a ponta da **língua rosa**
+(`#F4A3A0`) de fora no canto direito. O original é **branco**; os Pipos da equipe têm o mesmo desenho
+na cor de cada um. As expressões mudam a forma da pálpebra, da boca e a língua (feliz: olhos em arco e
+boca aberta; atento: olhos redondos; sono: olhos fechados com a língua de fora). O traço engrossa nos
+tamanhos pequenos para continuar legível, e os ícones do app e da bandeja usam o mesmo rosto
+(`src/main/icons.ts`, `npm run icons`).
+
 ## Direção visual: "vidro escuro" (0.3.2)
 
 A ilha continua preta, para sumir no topo da tela. O que está dentro dela ganhou profundidade, na linha

@@ -17,6 +17,10 @@ interface PiposState {
   handoff: { from: number; to: number; at: number } | null;
   /** Pipo solto sobre outro na Equipe (pergunta o atraso). */
   pendingLink: { from: number; to: number } | null;
+  /** Lista da equipe ou a loja de Pipos prontos. */
+  view: 'list' | 'store';
+  /** Pipo que o usuário pediu para excluir (aguardando a confirmação). */
+  askDelete: number | null;
   load: () => Promise<void>;
   setLive: (l: PipoLive) => void;
   open: (id: number | null, runId?: number | null) => void;
@@ -31,9 +35,11 @@ export const usePipos = create<PiposState>((set) => ({
   flashIds: [],
   handoff: null,
   pendingLink: null,
+  view: 'list',
+  askDelete: null,
   load: async () => set({ list: await api.invoke('pipos:list'), loaded: true }),
   setLive: (l) => set((s) => ({ list: s.list.map((p) => (p.id === l.pipoId ? { ...p, live: l } : p)) })),
-  open: (id, runId = null) => set({ openId: id, openRunId: runId }),
+  open: (id, runId = null) => set({ openId: id, openRunId: runId, view: 'list' }),
 }));
 
 export function bindPipoEvents(): () => void {

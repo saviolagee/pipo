@@ -22,7 +22,8 @@ const out = join(home, 'smoke.png');
 const args = process.platform === 'linux' ? ['--no-sandbox', '--disable-gpu'] : [];
 console.log(`Abrindo ${bin}`);
 const r = spawnSync(bin, args, {
-  env: { ...process.env, PIPO_E2E: '1', PIPO_CAPTURE: out, PIPO_CAPTURE_DELAY: '4000', PIPO_USER_DATA: join(home, 'data') },
+  // Fora do CI há alguém usando o computador: a janela do teste fica fora da tela.
+  env: { ...process.env, PIPO_E2E: '1', PIPO_CAPTURE: out, PIPO_CAPTURE_DELAY: '4000', PIPO_USER_DATA: join(home, 'data'), ...(process.env.CI ? {} : { PIPO_CAPTURE_OFFSCREEN: '1' }) },
   timeout: 90_000,
   encoding: 'utf8',
 });

@@ -3,12 +3,14 @@
 import { join } from 'node:path';
 import { BrowserWindow, nativeImage } from 'electron';
 import { attachFullWindow, getFullWindow } from './bus';
+import { OFF_X, OFFSCREEN } from './dev-flags';
 import { renderFace } from './icons';
 
 export function openAppWindow(tab?: string): void {
   const cur = getFullWindow();
   if (cur) {
     if (tab) cur.webContents.send('app:navigate', { tab });
+    if (OFFSCREEN) return;
     if (cur.isMinimized()) cur.restore();
     cur.show();
     cur.focus();
@@ -34,6 +36,11 @@ export function openAppWindow(tab?: string): void {
   });
   // Abre ocupando a tela (maximizada); F11 vira tela cheia de verdade, sem a barra de título.
   win.once('ready-to-show', () => {
+    if (OFFSCREEN) {
+      win.setBounds({ x: OFF_X, y: 0, width: 1600, height: 900 });
+      win.showInactive();
+      return;
+    }
     win.maximize();
     win.show();
   });

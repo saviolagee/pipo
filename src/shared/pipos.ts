@@ -132,9 +132,14 @@ export interface BrowserStep extends StepCommon {
  */
 export interface ResearchStep extends StepCommon {
   kind: 'research';
-  /** O que buscar (aceita templates). */
+  /** O que buscar (aceita templates). Fica vazio quando o passo usa `queries`. */
   query: string;
-  /** Quantas fontes abrir: 1 a 5 (padrão 3). */
+  /**
+   * Várias buscas de uma vez: template de uma lista de textos (até 12), ex.: "{{passos.planejar.saida.consultas}}".
+   * A saída vira {consultas: [{consulta, resultados, fontes}]}: os resultados da busca (título, endereço e trecho) e as fontes abertas.
+   */
+  queries?: string;
+  /** Quantas fontes abrir: 1 a 5 (padrão 3). Com `queries`, por busca: 0 a 3 (padrão 1; 0 = só os resultados). */
   sources?: number;
   /** Só nestes sites (ex.: ["business.instagram.com", "newsroom.tiktok.com"]). */
   sites?: string[];

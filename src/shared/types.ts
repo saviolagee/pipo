@@ -347,6 +347,8 @@ export interface ChatMessage {
   createdAt: string;
   /** Modelo que respondeu (id reportado pelo Claude, ex.: claude-sonnet-5-5). */
   model?: string | null;
+  /** Pipo colorido que escreveu (chat geral). Sem autor, a fala é do Pipo branco. */
+  author?: import('./team').MessageAuthor | null;
 }
 
 export interface Conversation {

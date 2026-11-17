@@ -128,6 +128,19 @@ export const IconX = ({ size = 12, ...p }: P): React.JSX.Element => (
   </svg>
 );
 
+export const IconTrash = ({ size = 12, ...p }: P): React.JSX.Element => (
+  <svg {...base(size, p)}>
+    <path d="M4.5 7h15M9.5 7V4.8h5V7M6.5 7l.9 12.2h9.2L17.5 7M10 10.5v5.5M14 10.5v5.5" />
+  </svg>
+);
+
+/** Loja: uma sacola. */
+export const IconBag = ({ size = 12, ...p }: P): React.JSX.Element => (
+  <svg {...base(size, p)}>
+    <path d="M5.5 8.5h13l-1 11h-11zM9 8.5V7a3 3 0 0 1 6 0v1.5" />
+  </svg>
+);
+
 export const IconGrip = ({ size = 12, ...p }: P): React.JSX.Element => (
   <svg {...base(size, p)} stroke="none" fill="currentColor">
     {[6, 12, 18].map((y) => (

@@ -7,6 +7,7 @@ import type { HttpStep, McpStep, ScriptStep, SheetStep } from '@shared/pipos';
 import { render, renderJson, renderText, type TemplateCtx } from '@shared/template';
 import { augmentedPath } from '../agent/claude-bin';
 import { callMcpTool, readMcpConfig } from './mcp-client';
+import { maskSecrets } from './secrets';
 
 export class StepError extends Error {}
 
@@ -69,6 +70,9 @@ export function parseOutput(stdout: string): unknown {
   }
 }
 
+/** Acima disto o contexto só vai pelo arquivo (PIPO_CONTEXT_FILE). */
+export const MAX_ENV_CONTEXT = 24_000;
+
 export interface StepEnv {
   pipoDir: string;
   runDir: string;
@@ -88,6 +92,11 @@ export async function runScript(step: ScriptStep, e: StepEnv): Promise<unknown> 
   const finalArgs = ps ? ['-NoProfile', '-ExecutionPolicy', 'Bypass', '-File', ...args] : args;
   const inputFile = join(e.runDir, 'entrada.json');
   writeFileSync(inputFile, JSON.stringify(e.input ?? null));
+  // O contexto (saídas dos passos e a entrada, sem segredos) vai sempre num arquivo; na variável só quando é pequeno,
+  // porque o Windows não aceita variável de ambiente com mais de 32 mil caracteres.
+  const context = maskSecrets(JSON.stringify({ passos: e.ctx.passos, entrada: e.ctx.entrada }), e.secrets);
+  const contextFile = join(e.runDir, '_contexto.json');
+  writeFileSync(contextFile, context);
   const stepEnv = Object.fromEntries(Object.entries(step.env ?? {}).map(([k, v]) => [k, renderText(v, e.ctx, { allowSecrets: true })]));
   const env: NodeJS.ProcessEnv = {
     PATH: augmentedPath(),
@@ -106,7 +115,8 @@ export async function runScript(step: ScriptStep, e: StepEnv): Promise<unknown> 
     PIPO_DRY_RUN: e.dryRun ? '1' : '0',
     PIPO_INPUT: inputFile,
     PIPO_RUN_DIR: e.runDir,
-    PIPO_CONTEXT: JSON.stringify({ passos: e.ctx.passos, entrada: e.ctx.entrada }),
+    PIPO_CONTEXT: context.length <= MAX_ENV_CONTEXT ? context : '{}',
+    PIPO_CONTEXT_FILE: contextFile,
   };
   return new Promise((resolvePromise, reject) => {
     const child = spawn(bin, finalArgs, { cwd: e.pipoDir, env, windowsHide: true, stdio: ['ignore', 'pipe', 'pipe'] });

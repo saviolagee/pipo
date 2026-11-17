@@ -3,6 +3,7 @@ import { BrowserWindow, ipcMain, screen } from 'electron';
 import { MINI, WINDOW } from '@shared/config';
 import { attachWindow, emit, getWindow } from './bus';
 import { getSettings, patchSettings } from './db/repos/settings';
+import { OFF_X, OFFSCREEN } from './dev-flags';
 
 const isMac = process.platform === 'darwin';
 
@@ -42,7 +43,8 @@ function isMini(): boolean {
 }
 
 function targetBounds(): Electron.Rectangle {
-  return isMini() && !expanded ? miniBounds() : topBounds();
+  const b = isMini() && !expanded ? miniBounds() : topBounds();
+  return OFFSCREEN ? { ...b, x: OFF_X } : b;
 }
 
 function applyBounds(): void {
@@ -155,7 +157,7 @@ export function showNotch(focus: boolean): void {
   const win = getWindow();
   if (!win) return;
   if (!win.isVisible()) win.showInactive();
-  if (focus) {
+  if (focus && !OFFSCREEN) {
     setInteractive(true);
     win.focus();
     win.webContents.focus();

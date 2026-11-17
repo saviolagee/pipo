@@ -15,6 +15,7 @@ import { inputFiles } from '../files/for-agent';
 import { startRun } from './deps';
 import { pipesChanged } from './ipc';
 import { activePlaybook, addMemory, deleteMemory, getPipo, getRun, listMemory, listRuns, runSteps } from './repo';
+import { factsText } from '../team/facts';
 import { nextRunAt, scheduleLabel } from './triggers';
 
 const convKey = (pipoId: number): string => `pipo:conv:${pipoId}`;
@@ -57,13 +58,17 @@ function buildPipoPrompt(pipoId: number): string {
     v ? `Seu plano de execução fixo (v${v.version}):\n${describePlaybook(v.playbook).map((s) => `${s.title} — ${s.detail}`).join('\n')}` : 'Você ainda não tem um plano contratado.',
     `Quando roda: ${scheduleLabel(pipoId) ?? 'só quando pedem'}${nextRunAt(pipoId) ? ` (próxima: ${new Date(nextRunAt(pipoId) as string).toLocaleString('pt-BR')})` : ''}${p.paused ? ' — PAUSADO' : ''}.`,
     last.length ? `Últimas execuções: ${last.map((r) => `#${r.id} ${r.status} — ${r.summary ?? r.error ?? ''}`).join(' | ')}` : 'Ainda não rodou de verdade.',
+    factsText(),
     'Fale em português do Brasil, curto (o chat é pequeno), na primeira pessoa. Sem markdown pesado.',
     CHAT_PRINCIPLES,
+    'Se o usuário contar algo sobre ele ou o negócio que serve para a equipe inteira (não só para o seu trabalho), guarde com remember_fact.',
     'Use my_runs e run_detail para responder sobre execuções (por que falhou, o que foi enviado). Nunca invente números.',
     'Você recebe vídeos, imagens e documentos pelo chat: imagem você abre com Read; vídeo vem com uma descrição (quadros e fala). Para trabalhar neles com o seu plano, chame run_me com files.',
     'Se pedirem para rodar, chame run_me. Se o usuário corrigir algo que vale para sempre ("não manda pra concorrente X"), chame remember com a regra curta.',
     `Você NÃO muda o próprio plano. Se pedirem mudança de passos, limites ou horário, explique e sugira "/editarpipo ${p.slug}".`,
-  ].join('\n');
+  ]
+    .filter(Boolean)
+    .join('\n');
 }
 
 export function registerPipoChat(): void {

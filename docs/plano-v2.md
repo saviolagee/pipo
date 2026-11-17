@@ -896,6 +896,7 @@ Vem primeiro porque são melhorias visíveis no app de hoje (seção 3.1).
 ## 8. Fora do escopo da V2
 
 - Pipos executando com o PC desligado: fica para a V3 (nuvem).
-- Pipos pré-instalados: nenhum. O app traz só a estrutura, e os Pipos são do usuário.
+- Pipos pré-instalados: nenhum. O app traz só a estrutura, e os Pipos são do usuário. (Desde a 0.4.0
+  existe a Loja: Pipos prontos que o usuário escolhe instalar; veja `docs/pipos.md`.)
 - Ordens de compra/venda reais em qualquer Pipo: nunca.
 - Bash livre para qualquer Pipo: nunca.

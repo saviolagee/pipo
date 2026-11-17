@@ -10,6 +10,7 @@ import { stageInputFiles } from './input-files';
 import type { AgentStep, BrowserStep, Pipo, PipoPlaybook, PipoRun, PipoStep, ResearchStep, TokenUsage } from '@shared/pipos';
 import { evaluate, render, renderText, SENT_KEY, type TemplateCtx } from '@shared/template';
 import type { AgentEffort, AgentModel } from '@shared/types';
+import { factsText } from '../team/facts';
 import { setLive } from './live';
 import { consecutiveFailures, createRun, ensurePipoDirs, finishRun, getPermission, listMemory, setPermission, setStep, updatePipo } from './repo';
 import { maskSecrets, pipoSecrets } from './secrets';
@@ -183,6 +184,8 @@ export async function execute(req: RunRequest, deps: RunnerDeps, onStart: (runId
   };
   const env: StepEnv = { pipoDir, runDir, ctx, secrets, dryRun, signal: ac.signal, input };
   const rules = listMemory(pipo.id).map((m) => m.rule);
+  // A memória da equipe: o que qualquer Pipo aprendeu sobre o usuário e o negócio.
+  const facts = factsText();
   let notified = false;
   const timeout = setTimeout(() => ac.abort(), Math.max(1, playbook.limits.maxRunMinutes) * 60_000);
   const startedAt = Date.now();
@@ -292,7 +295,7 @@ export async function execute(req: RunRequest, deps: RunnerDeps, onStart: (runId
       prompt += `\n\nO Pipo @${step.askPipo} respondeu:\n${answer}`;
     }
     const text = await deps.agent({
-      system: pipoSystemPrompt(pipo, rules, !!step.json),
+      system: [pipoSystemPrompt(pipo, rules, !!step.json), facts].filter(Boolean).join('\n'),
       prompt: `${prompt}\n\n(Saídas completas dos passos anteriores, se precisar: ${runDir})`,
       model: step.model ?? pipo.model,
       effort: step.effort ?? pipo.effort,

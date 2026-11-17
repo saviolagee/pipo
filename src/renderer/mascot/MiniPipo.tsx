@@ -1,11 +1,12 @@
-// Mini-Pipo colorido da pill (seção 3 do plano V2): apagado, aceso, esperando você, erro, concluiu e rascunho.
+// Mini-Pipo colorido da pill (seção 3 do plano V2): a mesma bola do mascote, bem pequena. Apagado,
+// aceso, esperando você, erro, concluiu e rascunho.
 import { motion } from 'motion/react';
 import type { PipoLiveState } from '@shared/pipos';
 
 interface Props {
   color: string;
   state: PipoLiveState;
-  /** Corpo em px (o mini da pill tem 12px de altura). */
+  /** Diâmetro do espaço em px (a bola ocupa uns 85%). */
   size?: number;
   title?: string;
   /** Pipo recém-contratado: cai na pill com um quique. */
@@ -15,8 +16,8 @@ interface Props {
 }
 
 export function MiniPipo({ color, state, size = 16, title, arriving = false, flash = false }: Props): React.JSX.Element {
-  const w = size;
-  const h = size * 0.75;
+  const w = size * 0.86;
+  const h = w;
   const lit = state === 'working' || state === 'waiting' || state === 'done' || flash;
   const draft = state === 'draft';
   const eyesOpen = lit;
@@ -49,7 +50,7 @@ export function MiniPipo({ color, state, size = 16, title, arriving = false, fla
       <motion.svg
         width={w}
         height={h}
-        viewBox="0 0 32 24"
+        viewBox="0 0 24 24"
         style={{ overflow: 'visible' }}
         initial={false}
         animate={{
@@ -58,22 +59,20 @@ export function MiniPipo({ color, state, size = 16, title, arriving = false, fla
         }}
         transition={state === 'waiting' ? { opacity: { duration: 0.3 }, filter: { duration: 1.6, repeat: Infinity, repeatType: 'reverse' } } : { duration: 0.6 }}
       >
-        {draft ? (
-          <rect x={1} y={1} width={30} height={22} rx={8} fill={`${color}33`} stroke={color} strokeWidth={1.6} strokeDasharray="3 2.4" />
-        ) : (
-          <rect x={0} y={0} width={32} height={24} rx={8.5} fill={color} />
-        )}
+        {draft ? <circle cx={12} cy={12} r={10.6} fill={`${color}33`} stroke={color} strokeWidth={1.6} strokeDasharray="3 2.4" /> : <circle cx={12} cy={12} r={11.4} fill={color} />}
         {eyesOpen ? (
-          <motion.g fill="#0A0A0B" animate={state === 'working' ? { x: [-1.2, 1.2, -1.2] } : { x: 0 }} transition={{ duration: 2.4, repeat: state === 'working' ? Infinity : 0, ease: 'easeInOut' }}>
-            <motion.ellipse cx={10.5} cy={12.5} rx={2.2} animate={{ ry: [3.4, 3.4, 0.4, 3.4] }} transition={{ duration: 3.2, times: [0, 0.9, 0.95, 1], repeat: Infinity }} />
-            <motion.ellipse cx={21.5} cy={12.5} rx={2.2} animate={{ ry: [3.4, 3.4, 0.4, 3.4] }} transition={{ duration: 3.2, times: [0, 0.9, 0.95, 1], repeat: Infinity }} />
+          // Aceso: olhos de meia-lua, olhando de um lado para o outro enquanto trabalha.
+          <motion.g fill="#0A0A0B" animate={state === 'working' ? { x: [-0.9, 0.9, -0.9] } : { x: 0 }} transition={{ duration: 2.4, repeat: state === 'working' ? Infinity : 0, ease: 'easeInOut' }}>
+            <path d="M4.6 8.8 L11 10.6 Q8.6 14.4 5.6 12 Z" />
+            <path d="M13 10.6 L19.4 9.4 Q18.8 13.4 15 13.2 Z" />
           </motion.g>
         ) : (
-          <g stroke={draft ? color : '#0A0A0B'} strokeWidth={1.8} strokeLinecap="round">
-            <path d="M8 13 h5" />
-            <path d="M19 13 h5" />
+          <g stroke={draft ? color : '#0A0A0B'} strokeWidth={1.7} strokeLinecap="round">
+            <path d="M5.4 10 L10.6 11.2" />
+            <path d="M13.4 11.2 L18.6 10" />
           </g>
         )}
+        <path d="M7.6 16.6 H16.4" stroke={draft ? color : '#0A0A0B'} strokeWidth={1.5} strokeLinecap="round" />
       </motion.svg>
       {state === 'waiting' && (
         <motion.span className="absolute -right-[1px] -top-[1px] h-[5px] w-[5px] rounded-full bg-white" animate={{ opacity: [1, 0.35, 1] }} transition={{ duration: 1.6, repeat: Infinity }} style={{ boxShadow: '0 0 0 1.2px #000' }} />
